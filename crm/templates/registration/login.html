@@ -1,0 +1,3 @@
+{% load static %}
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Masuk · Arbain OneFlow</title><link rel="stylesheet" href="{% static 'crm/app.css' %}"></head>
+<body class="login-page"><main class="login-card"><div class="brand-mark" aria-hidden="true">a</div><p class="eyebrow">ARBAIN ONEFLOW</p><h1>Semua pekerjaan,<br>satu alur.</h1><p class="muted">Hubungkan pelanggan, aktivitas sales, dan stok.</p><form method="post">{% csrf_token %}{{ form.as_p }}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}<button class="button" type="submit">Masuk ke OneFlow</button></form><p class="login-foot">Gunakan akun yang disiapkan tim Anda.</p></main></body></html>

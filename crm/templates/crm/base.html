@@ -1,0 +1,30 @@
+{% load static %}
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Arbain OneFlow{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'crm/app.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Lewati navigasi</a>
+  <header class="topbar">
+    <a href="/" class="brand"><span class="brand-mark" aria-hidden="true">a</span><span>arbain <strong>oneflow</strong><small>Pelanggan · Sales · Stok</small></span></a>
+    <div class="account"><span class="account-avatar" aria-hidden="true">{{ request.user.get_full_name|default:request.user.username|slice:':1'|upper }}</span><span class="account-name">{{ request.user.get_full_name|default:request.user.username }} <small>{% if role == 'MANAGER' %}Manajer{% elif role == 'WAREHOUSE' %}Gudang{% else %}Sales{% endif %}</small></span><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="text-button">Keluar</button></form></div>
+  </header>
+  <nav class="navigation" aria-label="Menu utama">
+    <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='calendar' %} Hari Ini</a>
+    {% if role != 'WAREHOUSE' %}<a href="/customers/" {% if '/customers/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='users' %} Pelanggan</a>{% endif %}
+    <a href="/orders/" {% if '/orders/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='order' %} Pesanan</a>
+    <a href="/stock/" {% if '/stock/' in request.path or '/products/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='box' %} Produk &amp; Stok</a>
+  </nav>
+  <main id="main" class="main-shell">
+    {% if demo_mode %}<div class="demo-label">DATA SIMULASI <span>Untuk demonstrasi · bukan data CV Arbain</span></div>{% endif %}
+    {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">Arbain OneFlow <span>Satu alur, data terhubung.</span></footer>
+  <script src="{% static 'crm/app.js' %}" defer></script>
+</body>
+</html>

@@ -1,0 +1,695 @@
+[
+  {
+    "id": "C01",
+    "description": "Tindak lanjut hari ini",
+    "input": {
+      "as_of": "2026-10-11",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "followup": {
+            "due": "2026-10-11"
+          }
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": null,
+        "kind": "FOLLOWUP",
+        "state": "READY",
+        "typical_quantity": null,
+        "priority": 0
+      }
+    ]
+  },
+  {
+    "id": "C02",
+    "description": "Tindak lanjut terlambat tujuh hari",
+    "input": {
+      "as_of": "2026-10-11",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "followup": {
+            "due": "2026-10-04"
+          }
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": null,
+        "kind": "FOLLOWUP",
+        "state": "READY",
+        "typical_quantity": null,
+        "priority": 80
+      }
+    ]
+  },
+  {
+    "id": "C03",
+    "description": "Tindak lanjut di masa depan",
+    "input": {
+      "as_of": "2026-10-11",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "followup": {
+            "due": "2026-10-12"
+          }
+        }
+      ]
+    },
+    "expected": []
+  },
+  {
+    "id": "C04",
+    "description": "Tindak lanjut sudah selesai",
+    "input": {
+      "as_of": "2026-10-11",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "followup": {
+            "due": "2026-10-04",
+            "status": "DONE"
+          }
+        }
+      ]
+    },
+    "expected": []
+  },
+  {
+    "id": "C05",
+    "description": "Tidak ada riwayat",
+    "input": {
+      "as_of": "2026-10-11",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": []
+        }
+      ]
+    },
+    "expected": []
+  },
+  {
+    "id": "C06",
+    "description": "Satu tanggal pembelian",
+    "input": {
+      "as_of": "2026-10-11",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-09-01",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": []
+  },
+  {
+    "id": "C07",
+    "description": "Dua tanggal pembelian",
+    "input": {
+      "as_of": "2026-10-11",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-08-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-01",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": []
+  },
+  {
+    "id": "C08",
+    "description": "Tiga tanggal dan prioritas jatuh tempo",
+    "input": {
+      "as_of": "2026-04-01",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-01-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-02-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-03-01",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "READY",
+        "typical_quantity": 8,
+        "priority": 31
+      }
+    ]
+  },
+  {
+    "id": "C09",
+    "description": "Hanya enam tanggal terakhir untuk interval",
+    "input": {
+      "as_of": "2026-09-01",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-01-01",
+              "quantity": 3
+            },
+            {
+              "at": "2026-02-01",
+              "quantity": 3
+            },
+            {
+              "at": "2026-03-01",
+              "quantity": 3
+            },
+            {
+              "at": "2026-04-01",
+              "quantity": 3
+            },
+            {
+              "at": "2026-05-01",
+              "quantity": 3
+            },
+            {
+              "at": "2026-06-01",
+              "quantity": 3
+            },
+            {
+              "at": "2026-07-01",
+              "quantity": 3
+            },
+            {
+              "at": "2026-08-01",
+              "quantity": 3
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "READY",
+        "typical_quantity": 3,
+        "priority": 20
+      }
+    ]
+  },
+  {
+    "id": "C10",
+    "description": "Pembelian hari sama digabung",
+    "input": {
+      "as_of": "2026-04-01",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-01-01",
+              "quantity": 4
+            },
+            {
+              "at": "2026-01-01",
+              "quantity": 4
+            },
+            {
+              "at": "2026-01-31",
+              "quantity": 8
+            },
+            {
+              "at": "2026-03-02",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "READY",
+        "typical_quantity": 8,
+        "priority": 20
+      }
+    ]
+  },
+  {
+    "id": "C11",
+    "description": "Interval 29,5 dibulatkan half-up",
+    "input": {
+      "as_of": "2026-03-31",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-01-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-01-30",
+              "quantity": 8
+            },
+            {
+              "at": "2026-03-01",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "READY",
+        "typical_quantity": 8,
+        "priority": 20
+      }
+    ]
+  },
+  {
+    "id": "C12",
+    "description": "Stok tepat mencukupi",
+    "input": {
+      "as_of": "2026-10-30",
+      "on_hand": 8,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-08-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-08-31",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-30",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "READY",
+        "typical_quantity": 8,
+        "priority": 20
+      }
+    ]
+  },
+  {
+    "id": "C13",
+    "description": "Reservasi mengurangi stok tersedia",
+    "input": {
+      "as_of": "2026-10-30",
+      "on_hand": 10,
+      "reserved": 3,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-08-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-08-31",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-30",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "WAITING_STOCK",
+        "typical_quantity": 8,
+        "priority": 20
+      }
+    ]
+  },
+  {
+    "id": "C14",
+    "description": "Stok habis",
+    "input": {
+      "as_of": "2026-10-30",
+      "on_hand": 0,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-08-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-08-31",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-30",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "WAITING_STOCK",
+        "typical_quantity": 8,
+        "priority": 20
+      }
+    ]
+  },
+  {
+    "id": "C15",
+    "description": "Sudah ada pesanan dikonfirmasi",
+    "input": {
+      "as_of": "2026-10-30",
+      "on_hand": 20,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-08-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-08-31",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-30",
+              "quantity": 8
+            }
+          ],
+          "pending_quantity": 8
+        }
+      ]
+    },
+    "expected": []
+  },
+  {
+    "id": "C16",
+    "description": "Seluruh nilai pelanggan nol",
+    "input": {
+      "as_of": "2026-10-30",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 0,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-08-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-08-31",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-30",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "READY",
+        "typical_quantity": 8,
+        "priority": 0
+      }
+    ]
+  },
+  {
+    "id": "C17",
+    "description": "SKU tidak aktif",
+    "input": {
+      "as_of": "2026-10-30",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": false,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-08-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-08-31",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-30",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": []
+  },
+  {
+    "id": "C18",
+    "description": "Pelanggan tidak aktif",
+    "input": {
+      "as_of": "2026-10-30",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-08-01",
+              "quantity": 8
+            },
+            {
+              "at": "2026-08-31",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-30",
+              "quantity": 8
+            }
+          ],
+          "active": false
+        }
+      ]
+    },
+    "expected": []
+  },
+  {
+    "id": "C19",
+    "description": "Timestamp memakai tanggal WIB; masa depan diabaikan",
+    "input": {
+      "as_of": "2026-10-30",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUS001",
+          "history": [
+            {
+              "at": "2026-07-31T17:30:00+00:00",
+              "quantity": 8
+            },
+            {
+              "at": "2026-08-30T17:30:00+00:00",
+              "quantity": 8
+            },
+            {
+              "at": "2026-09-29T17:30:00+00:00",
+              "quantity": 8
+            },
+            {
+              "at": "2026-10-30T17:30:00+00:00",
+              "quantity": 8
+            }
+          ]
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUS001",
+        "product_sku": "MADU01",
+        "kind": "REORDER",
+        "state": "READY",
+        "typical_quantity": 8,
+        "priority": 20
+      }
+    ]
+  },
+  {
+    "id": "C20",
+    "description": "Skor seri stabil menurut kode pelanggan",
+    "input": {
+      "as_of": "2026-10-11",
+      "on_hand": 10,
+      "reserved": 0,
+      "price_rupiah": 50000,
+      "product_active": true,
+      "customers": [
+        {
+          "code": "CUSB",
+          "followup": {
+            "due": "2026-10-11"
+          }
+        },
+        {
+          "code": "CUSA",
+          "followup": {
+            "due": "2026-10-11"
+          }
+        }
+      ]
+    },
+    "expected": [
+      {
+        "customer_code": "CUSA",
+        "product_sku": null,
+        "kind": "FOLLOWUP",
+        "state": "READY",
+        "typical_quantity": null,
+        "priority": 0
+      },
+      {
+        "customer_code": "CUSB",
+        "product_sku": null,
+        "kind": "FOLLOWUP",
+        "state": "READY",
+        "typical_quantity": null,
+        "priority": 0
+      }
+    ]
+  }
+]

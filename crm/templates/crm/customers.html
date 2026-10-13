@@ -1,0 +1,7 @@
+{% extends 'crm/base.html' %}
+{% block title %}Pelanggan · Arbain OneFlow{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">RELASI PELANGGAN</p><h1>Pelanggan</h1><p class="muted">Profil, riwayat, dan tindak lanjut dalam satu tempat.</p></div><a class="button" href="{% url 'customer_create' %}">+ Tambah pelanggan</a></div>
+<form class="search-bar" method="get"><label for="search">Cari pelanggan</label><input id="search" name="q" value="{{ query }}" placeholder="Nama atau kode pelanggan"><button class="button secondary">Cari</button></form>
+<div class="table-wrap panel"><table><thead><tr><th>Pelanggan</th><th>Kontak</th><th>Penanggung jawab</th><th>Status</th><th></th></tr></thead><tbody>{% for customer in customers %}<tr><td><a class="table-primary" href="{% url 'customer_detail' customer.id %}">{{ customer.name }}</a><small>{{ customer.code }}</small></td><td>{{ customer.phone|default:'Belum diisi' }}</td><td>{{ customer.owner.get_full_name|default:customer.owner.username }}</td><td><span class="badge">{% if customer.is_active %}Aktif{% else %}Tidak aktif{% endif %}</span></td><td><a href="{% url 'customer_detail' customer.id %}">Buka profil →</a></td></tr>{% empty %}<tr><td colspan="5" class="empty">Belum ada pelanggan. Mulai dengan menambahkan profil.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

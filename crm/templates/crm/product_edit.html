@@ -1,0 +1,36 @@
+{% extends 'crm/base.html' %}
+{% load l10n %}
+{% block title %}Edit produk · {{ product.sku }} · Arbain OneFlow{% endblock %}
+{% block content %}
+<a class="back-link" href="{% url 'stock' %}">← Katalog &amp; stok</a>
+<div class="page-heading edit-heading">
+  <div><p class="eyebrow">PENGELOLAAN KATALOG</p><h1>Edit produk &amp; harga</h1><p class="muted">Perbarui informasi produk, lalu tinjau harga sebelum menyimpan.</p></div>
+  <span class="identity-chip">{% include 'crm/icon.html' with icon='box' %} {{ product.sku }}</span>
+</div>
+<div class="product-edit-grid">
+  <form class="panel edit-form" method="post">
+    {% csrf_token %}{{ form.non_field_errors }}
+    <div class="section-heading"><h2>Informasi produk</h2><span class="step-label">01 / DATA KATALOG</span></div>
+    <div class="product-identity"><div><span>SKU</span><strong>{{ product.sku }}</strong></div><div><span>Satuan stok</span><strong>{{ product.unit }}</strong></div></div>
+    <p class="field-help identity-help">SKU dan satuan tetap agar catatan stok serta pesanan konsisten.</p>
+    <div class="field">{{ form.name.label_tag }}{{ form.name }}{{ form.name.errors }}</div>
+    <div class="edit-fields">
+      <div class="field">{{ form.price_rupiah.label_tag }}<div class="currency-input"><span aria-hidden="true">Rp</span>{{ form.price_rupiah }}</div><p class="field-help">{{ form.price_rupiah.help_text }}</p>{{ form.price_rupiah.errors }}</div>
+      <div class="field">{{ form.min_stock.label_tag }}{{ form.min_stock }}<p class="field-help">{{ form.min_stock.help_text }}</p>{{ form.min_stock.errors }}</div>
+    </div>
+    <label class="checkbox-row" for="{{ form.is_active.id_for_label }}">{{ form.is_active }}<span><strong>Produk aktif dijual</strong><small>Produk tidak aktif tetap tersimpan dalam riwayat.</small></span></label>{{ form.is_active.errors }}
+    <div class="edit-save-row"><button class="button" type="submit">{% include 'crm/icon.html' with icon='check' %} Simpan perubahan</button><a class="button secondary" href="{% url 'stock' %}">Batal</a></div>
+  </form>
+  <aside class="price-preview panel" aria-label="Tinjauan perubahan harga">
+    <p class="step-label">02 / TINJAU PERUBAHAN</p>
+    <div class="product-symbol large">{% include 'crm/icon.html' with icon='box' %}</div>
+    <p class="eyebrow">{{ product.sku }} · {{ product.unit }}</p>
+    <h2 id="preview-product-name">{{ product.name }}</h2>
+    <div class="previous-price"><span>Harga tersimpan</span><strong>Rp {{ original_price }}</strong></div>
+    <div class="new-price"><span>Harga setelah disimpan</span><strong id="preview-price" data-original-price="{{ original_price|unlocalize }}">Rp {{ original_price }}</strong><small>/ {{ product.unit }}</small></div>
+    <p class="price-shift" id="preview-price-change" aria-live="polite">Harga belum berubah</p>
+    <div class="preview-note">{% include 'crm/icon.html' with icon='order' %}<p>Pesanan yang sudah tersimpan tetap memakai harga semula. Harga baru digunakan saat membuat pesanan.</p></div>
+    <p class="muted small-text">Saldo fisik dan reservasi tetap dikelola melalui transaksi stok.</p>
+  </aside>
+</div>
+{% endblock %}

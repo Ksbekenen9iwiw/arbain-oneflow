@@ -1,0 +1,1506 @@
+{
+  "executed_at": "2026-10-11T09:18:28.794006+00:00",
+  "data_type": "synthetic",
+  "case_count": 20,
+  "passed_cases": 20,
+  "cases": [
+    {
+      "id": "C01",
+      "description": "Tindak lanjut hari ini",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": null,
+          "kind": "FOLLOWUP",
+          "state": "READY",
+          "typical_quantity": null,
+          "priority": 0
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": null,
+          "kind": "FOLLOWUP",
+          "state": "READY",
+          "typical_quantity": null,
+          "priority": 0
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": null,
+              "kind": "FOLLOWUP",
+              "state": "READY",
+              "typical_quantity": null,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            null
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": null,
+              "kind": "FOLLOWUP",
+              "state": "READY",
+              "typical_quantity": null,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "C02",
+      "description": "Tindak lanjut terlambat tujuh hari",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": null,
+          "kind": "FOLLOWUP",
+          "state": "READY",
+          "typical_quantity": null,
+          "priority": 80
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": null,
+          "kind": "FOLLOWUP",
+          "state": "READY",
+          "typical_quantity": null,
+          "priority": 80
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": null,
+              "kind": "FOLLOWUP",
+              "state": "READY",
+              "typical_quantity": null,
+              "priority": 80
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            null
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": null,
+              "kind": "FOLLOWUP",
+              "state": "READY",
+              "typical_quantity": null,
+              "priority": 80
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "C03",
+      "description": "Tindak lanjut di masa depan",
+      "expected": [],
+      "actual": [],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "baseline_b": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "oneflow": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        }
+      }
+    },
+    {
+      "id": "C04",
+      "description": "Tindak lanjut sudah selesai",
+      "expected": [],
+      "actual": [],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "baseline_b": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "oneflow": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        }
+      }
+    },
+    {
+      "id": "C05",
+      "description": "Tidak ada riwayat",
+      "expected": [],
+      "actual": [],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "baseline_b": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "oneflow": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        }
+      }
+    },
+    {
+      "id": "C06",
+      "description": "Satu tanggal pembelian",
+      "expected": [],
+      "actual": [],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "baseline_b": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "oneflow": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        }
+      }
+    },
+    {
+      "id": "C07",
+      "description": "Dua tanggal pembelian",
+      "expected": [],
+      "actual": [],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "baseline_b": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "oneflow": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        }
+      }
+    },
+    {
+      "id": "C08",
+      "description": "Tiga tanggal dan prioritas jatuh tempo",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 31
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 31
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 31
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 31
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "C09",
+      "description": "Hanya enam tanggal terakhir untuk interval",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 3,
+          "priority": 20
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 3,
+          "priority": 20
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 3,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 3,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 3,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "C10",
+      "description": "Pembelian hari sama digabung",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "C11",
+      "description": "Interval 29,5 dibulatkan half-up",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "C12",
+      "description": "Stok tepat mencukupi",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            8
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            8
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            8
+          ]
+        }
+      }
+    },
+    {
+      "id": "C13",
+      "description": "Reservasi mengurangi stok tersedia",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "WAITING_STOCK",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "WAITING_STOCK",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 1,
+          "available_quantities": [
+            7
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 1,
+          "available_quantities": [
+            7
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "WAITING_STOCK",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            7
+          ]
+        }
+      }
+    },
+    {
+      "id": "C14",
+      "description": "Stok habis",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "WAITING_STOCK",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "WAITING_STOCK",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 1,
+          "available_quantities": [
+            0
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 1,
+          "available_quantities": [
+            0
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "WAITING_STOCK",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            0
+          ]
+        }
+      }
+    },
+    {
+      "id": "C15",
+      "description": "Sudah ada pesanan dikonfirmasi",
+      "expected": [],
+      "actual": [],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            12
+          ]
+        },
+        "baseline_b": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "oneflow": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        }
+      }
+    },
+    {
+      "id": "C16",
+      "description": "Seluruh nilai pelanggan nol",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 0
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 0
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "C17",
+      "description": "SKU tidak aktif",
+      "expected": [],
+      "actual": [],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "baseline_b": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "oneflow": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        }
+      }
+    },
+    {
+      "id": "C18",
+      "description": "Pelanggan tidak aktif",
+      "expected": [],
+      "actual": [],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "baseline_b": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "oneflow": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        }
+      }
+    },
+    {
+      "id": "C19",
+      "description": "Timestamp memakai tanggal WIB; masa depan diabaikan",
+      "expected": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUS001",
+          "product_sku": "MADU01",
+          "kind": "REORDER",
+          "state": "READY",
+          "typical_quantity": 8,
+          "priority": 20
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUS001",
+              "product_sku": "MADU01",
+              "kind": "REORDER",
+              "state": "READY",
+              "typical_quantity": 8,
+              "priority": 20
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "C20",
+      "description": "Skor seri stabil menurut kode pelanggan",
+      "expected": [
+        {
+          "customer_code": "CUSA",
+          "product_sku": null,
+          "kind": "FOLLOWUP",
+          "state": "READY",
+          "typical_quantity": null,
+          "priority": 0
+        },
+        {
+          "customer_code": "CUSB",
+          "product_sku": null,
+          "kind": "FOLLOWUP",
+          "state": "READY",
+          "typical_quantity": null,
+          "priority": 0
+        }
+      ],
+      "actual": [
+        {
+          "customer_code": "CUSA",
+          "product_sku": null,
+          "kind": "FOLLOWUP",
+          "state": "READY",
+          "typical_quantity": null,
+          "priority": 0
+        },
+        {
+          "customer_code": "CUSB",
+          "product_sku": null,
+          "kind": "FOLLOWUP",
+          "state": "READY",
+          "typical_quantity": null,
+          "priority": 0
+        }
+      ],
+      "matches_expected": true,
+      "methods": {
+        "baseline_a": {
+          "actual": [],
+          "invalid_offers": 0,
+          "available_quantities": []
+        },
+        "baseline_b": {
+          "actual": [
+            {
+              "customer_code": "CUSA",
+              "product_sku": null,
+              "kind": "FOLLOWUP",
+              "state": "READY",
+              "typical_quantity": null,
+              "priority": 0
+            },
+            {
+              "customer_code": "CUSB",
+              "product_sku": null,
+              "kind": "FOLLOWUP",
+              "state": "READY",
+              "typical_quantity": null,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            null,
+            null
+          ]
+        },
+        "oneflow": {
+          "actual": [
+            {
+              "customer_code": "CUSA",
+              "product_sku": null,
+              "kind": "FOLLOWUP",
+              "state": "READY",
+              "typical_quantity": null,
+              "priority": 0
+            },
+            {
+              "customer_code": "CUSB",
+              "product_sku": null,
+              "kind": "FOLLOWUP",
+              "state": "READY",
+              "typical_quantity": null,
+              "priority": 0
+            }
+          ],
+          "invalid_offers": 0,
+          "available_quantities": [
+            null,
+            null
+          ]
+        }
+      }
+    }
+  ],
+  "methods": {
+    "baseline_a": {
+      "invalid_offers": 2
+    },
+    "baseline_b": {
+      "invalid_offers": 2
+    },
+    "oneflow": {
+      "invalid_offers": 0
+    }
+  },
+  "sensitivity": {
+    "weights": [
+      1.0,
+      0.0
+    ],
+    "cases": [
+      {
+        "id": "C01",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": null,
+            "kind": "FOLLOWUP",
+            "state": "READY",
+            "typical_quantity": null,
+            "priority": 0
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": null,
+            "kind": "FOLLOWUP",
+            "state": "READY",
+            "typical_quantity": null,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C02",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": null,
+            "kind": "FOLLOWUP",
+            "state": "READY",
+            "typical_quantity": null,
+            "priority": 80
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": null,
+            "kind": "FOLLOWUP",
+            "state": "READY",
+            "typical_quantity": null,
+            "priority": 100
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C03",
+        "default": [],
+        "urgency_only": [],
+        "order_changed": false
+      },
+      {
+        "id": "C04",
+        "default": [],
+        "urgency_only": [],
+        "order_changed": false
+      },
+      {
+        "id": "C05",
+        "default": [],
+        "urgency_only": [],
+        "order_changed": false
+      },
+      {
+        "id": "C06",
+        "default": [],
+        "urgency_only": [],
+        "order_changed": false
+      },
+      {
+        "id": "C07",
+        "default": [],
+        "urgency_only": [],
+        "order_changed": false
+      },
+      {
+        "id": "C08",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 31
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 14
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C09",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 3,
+            "priority": 20
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 3,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C10",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 20
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C11",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 20
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C12",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 20
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C13",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "WAITING_STOCK",
+            "typical_quantity": 8,
+            "priority": 20
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "WAITING_STOCK",
+            "typical_quantity": 8,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C14",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "WAITING_STOCK",
+            "typical_quantity": 8,
+            "priority": 20
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "WAITING_STOCK",
+            "typical_quantity": 8,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C15",
+        "default": [],
+        "urgency_only": [],
+        "order_changed": false
+      },
+      {
+        "id": "C16",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 0
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C17",
+        "default": [],
+        "urgency_only": [],
+        "order_changed": false
+      },
+      {
+        "id": "C18",
+        "default": [],
+        "urgency_only": [],
+        "order_changed": false
+      },
+      {
+        "id": "C19",
+        "default": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 20
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUS001",
+            "product_sku": "MADU01",
+            "kind": "REORDER",
+            "state": "READY",
+            "typical_quantity": 8,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      },
+      {
+        "id": "C20",
+        "default": [
+          {
+            "customer_code": "CUSA",
+            "product_sku": null,
+            "kind": "FOLLOWUP",
+            "state": "READY",
+            "typical_quantity": null,
+            "priority": 0
+          },
+          {
+            "customer_code": "CUSB",
+            "product_sku": null,
+            "kind": "FOLLOWUP",
+            "state": "READY",
+            "typical_quantity": null,
+            "priority": 0
+          }
+        ],
+        "urgency_only": [
+          {
+            "customer_code": "CUSA",
+            "product_sku": null,
+            "kind": "FOLLOWUP",
+            "state": "READY",
+            "typical_quantity": null,
+            "priority": 0
+          },
+          {
+            "customer_code": "CUSB",
+            "product_sku": null,
+            "kind": "FOLLOWUP",
+            "state": "READY",
+            "typical_quantity": null,
+            "priority": 0
+          }
+        ],
+        "order_changed": false
+      }
+    ],
+    "changed_orders": 0
+  }
+}
