@@ -1,2 +1,5 @@
 Django>=5.2.13,<5.3
 tzdata
+gunicorn
+whitenoise
+psycopg[binary]

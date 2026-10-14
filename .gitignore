@@ -8,4 +8,5 @@ __pycache__/
 *.sqlite3-*
 .env
 node_modules/
+staticfiles/
 crm/static/crm/react/

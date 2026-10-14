@@ -1,0 +1,8 @@
+.git/
+.venv/
+node_modules/
+runtime/
+staticfiles/
+crm/static/crm/react/
+*.sqlite3
+*.sqlite3-*
