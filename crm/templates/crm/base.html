@@ -1,30 +1,15 @@
 {% load static %}
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Arbain OneFlow{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'crm/app.css' %}">
-</head>
-<body>
-  <a class="skip-link" href="#main">Lewati navigasi</a>
-  <header class="topbar">
-    <a href="/" class="brand"><span class="brand-mark" aria-hidden="true">a</span><span>arbain <strong>oneflow</strong><small>Pelanggan · Sales · Stok</small></span></a>
-    <div class="account"><span class="account-avatar" aria-hidden="true">{{ request.user.get_full_name|default:request.user.username|slice:':1'|upper }}</span><span class="account-name">{{ request.user.get_full_name|default:request.user.username }} <small>{% if role == 'MANAGER' %}Manajer{% elif role == 'WAREHOUSE' %}Gudang{% else %}Sales{% endif %}</small></span><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="text-button">Keluar</button></form></div>
-  </header>
-  <nav class="navigation" aria-label="Menu utama">
-    <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='calendar' %} Hari Ini</a>
-    {% if role != 'WAREHOUSE' %}<a href="/customers/" {% if '/customers/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='users' %} Pelanggan</a>{% endif %}
-    <a href="/orders/" {% if '/orders/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='order' %} Pesanan</a>
-    <a href="/stock/" {% if '/stock/' in request.path or '/products/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='box' %} Produk &amp; Stok</a>
-  </nav>
-  <main id="main" class="main-shell">
-    {% if demo_mode %}<div class="demo-label">DATA SIMULASI <span>Untuk demonstrasi · bukan data CV Arbain</span></div>{% endif %}
-    {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
-    {% block content %}{% endblock %}
-  </main>
-  <footer class="footer">Arbain OneFlow <span>Satu alur, data terhubung.</span></footer>
-  <script src="{% static 'crm/app.js' %}" defer></script>
-</body>
-</html>
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Arbain OneFlow{% endblock %}</title>{% include "crm/frontend_assets.html" %}</head>
+<body class="app-layout">{% if frontend_assets.js %}{% include "crm/frontend_root.html" %}<noscript>{% endif %}<link rel="stylesheet" href="{% static 'crm/app.css' %}"><a class="skip-link" href="#main">Lewati navigasi</a>
+<aside class="sidebar"><a href="/" class="brand"><span class="brand-mark" aria-hidden="true">a</span><span>oneflow<small>ARBAIN WORKSPACE</small></span></a>
+<div class="workspace-label"><span class="workspace-dot"></span> Operasional <span class="workspace-tag">{% if role == 'MANAGER' %}Manajer{% elif role == 'WAREHOUSE' %}Gudang{% else %}Sales{% endif %}</span></div>
+<p class="nav-caption">WORKSPACE</p><nav class="navigation" aria-label="Menu utama">
+<a href="/" {% if request.path == '/' %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='calendar' %} Hari ini</a>
+{% if role != 'WAREHOUSE' %}<a href="/customers/" {% if '/customers/' in request.path or '/activities/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='users' %} Pelanggan</a>{% endif %}
+<a href="/orders/" {% if '/orders/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='order' %} Pesanan</a>
+<a href="/stock/" {% if '/stock/' in request.path or '/products/' in request.path %}aria-current="page"{% endif %}>{% include 'crm/icon.html' with icon='box' %} Produk &amp; stok</a></nav>
+<div class="sidebar-bottom">{% if demo_mode %}<div class="demo-label"><span class="workspace-dot"></span> Workspace demo<small>Data simulasi untuk demonstrasi</small></div>{% endif %}<div class="account"><span class="account-avatar">{{ request.user.get_full_name|default:request.user.username|slice:':1'|upper }}</span><span class="account-name">{{ request.user.get_full_name|default:request.user.username }}<small>{% if role == 'MANAGER' %}Manajer{% elif role == 'WAREHOUSE' %}Tim gudang{% else %}Tim sales{% endif %}</small></span><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="text-button" aria-label="Keluar dari akun" title="Keluar">↗</button></form></div></div></aside>
+<div class="workspace"><header class="workspace-header"><span>Workspace <span class="crumb-divider">/</span> <strong>{% if '/orders/' in request.path %}Pesanan{% elif '/customers/' in request.path or '/activities/' in request.path %}Pelanggan{% elif '/stock/' in request.path or '/products/' in request.path %}Produk &amp; stok{% else %}Hari ini{% endif %}</strong></span><span>{{ today_date|date:'j F Y' }} <span class="header-timezone">WIB</span></span></header>
+<main id="main" class="main-shell">{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{% include 'crm/icon.html' with icon='check' %} {{ message }}<button type="button" class="text-button dismiss-notice" aria-label="Tutup pemberitahuan">×</button></div>{% endfor %}{% block content %}{% endblock %}</main></div>
+<dialog id="confirm-dialog" class="dialog confirm-dialog" aria-labelledby="confirm-title"><form method="dialog"><button class="dialog-close text-button" aria-label="Tutup">×</button></form><span class="dialog-symbol">{% include 'crm/icon.html' with icon='order' %}</span><h2 id="confirm-title">Konfirmasi tindakan</h2><p id="confirm-description" class="muted"></p><div class="button-row"><button type="button" class="button secondary" id="confirm-back">Kembali</button><button type="button" class="button" id="confirm-proceed">Lanjutkan</button></div></dialog>
+{% if frontend_assets.js %}</noscript>{% else %}<script src="{% static 'crm/app.js' %}" defer></script>{% endif %}</body></html>

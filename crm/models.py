@@ -72,6 +72,8 @@ class Activity(models.Model):
     status = models.CharField('Status', max_length=12, choices=Status.choices, default=Status.PLANNED)
     note = models.TextField('Catatan', blank=True)
     result = models.TextField('Hasil interaksi', blank=True)
+    completed_at = models.DateTimeField('Waktu hasil disimpan', null=True, blank=True)
+    followup_of = models.ForeignKey('self', on_delete=models.PROTECT, related_name='followups', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

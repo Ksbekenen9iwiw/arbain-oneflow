@@ -126,7 +126,7 @@ class ProductEditTests(TestCase):
         self.client.force_login(self.sales)
         self.assertNotContains(self.client.get('/stock/'), '/edit/')
 
-    def test_stock_summary_uses_actual_balances_and_active_minimums(self):
+    def test_stock_summary_uses_actual_balances_regardless_of_active_status(self):
         make_product('LOW01', on_hand=2)
         conflict = make_product('CONFLICT01', on_hand=2)
         conflict.balance.reserved = 3
@@ -136,7 +136,7 @@ class ProductEditTests(TestCase):
         inactive.save()
         response = self.client.get('/stock/')
         self.assertIn('stock_summary', response.context)
-        self.assertEqual(response.context['stock_summary'], {'product_count': 4, 'low_stock_count': 2, 'conflict_count': 1})
+        self.assertEqual(response.context['stock_summary'], {'product_count': 4, 'low_stock_count': 3, 'conflict_count': 1})
 
     def test_empty_recommendations_do_not_claim_overdue_visits_are_complete(self):
         models.Activity.objects.create(customer=self.customer, sales=self.sales, kind='VISIT', scheduled_date=timezone.localdate() - timedelta(days=1))

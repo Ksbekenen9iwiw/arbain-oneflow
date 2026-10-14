@@ -1,0 +1,1 @@
+{% for css in frontend_assets.css %}<link rel="stylesheet" href="{{ css }}">{% endfor %}{% if frontend_assets.js %}<script type="module" src="{{ frontend_assets.js }}"></script>{% endif %}{% for js in frontend_assets.preload %}<link rel="modulepreload" href="{{ js }}">{% endfor %}

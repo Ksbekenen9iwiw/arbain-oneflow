@@ -157,8 +157,8 @@ def record_action(actor, key, outcome, note, next_date=None, order_id=None, as_o
     if outcome == 'DONE':
         result = note or f'Pesanan OF-{linked_order.id:04d} ditautkan.'
         if candidate.kind == 'FOLLOWUP':
-            Activity.objects.filter(pk=candidate.reasons['activity_id'], status='PLANNED').update(status='DONE', result=result)
+            Activity.objects.filter(pk=candidate.reasons['activity_id'], status='PLANNED').update(status='DONE', result=result, completed_at=timezone.now())
         elif note:
-            Activity.objects.create(customer=customer, sales=customer.owner, kind='INTERACTION', stage='CONTACTED', status='DONE', result=note, note='Hasil rekomendasi pembelian ulang.')
+            Activity.objects.create(customer=customer, sales=customer.owner, kind='INTERACTION', stage='CONTACTED', status='DONE', result=note, completed_at=timezone.now(), note='Hasil rekomendasi pembelian ulang.')
     decision, _ = ActionDecision.objects.update_or_create(key=key, defaults={'customer': customer, 'product_id': candidate.product_id, 'actor': actor, 'outcome': outcome, 'note': note, 'next_date': next_date, 'order': linked_order})
     return decision
