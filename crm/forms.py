@@ -1,7 +1,7 @@
 import re
 from django import forms
 from crm.access import active_sales, customers_for, require_role, role_of
-from crm.models import ActionDecision, Activity, Customer, Product
+from crm.models import Activity, Customer, Product
 
 
 class CustomerForm(forms.ModelForm):
@@ -14,6 +14,9 @@ class CustomerForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         role = role_of(actor)
         require_role(actor, {'SALES', 'MANAGER'})
+        self.fields['code'].help_text = 'Kode unik pelanggan, misalnya CUS013. Gunakan kode yang belum terdaftar.'
+        self.fields['is_active'].label = 'Pelanggan aktif'
+        self.fields['is_active'].help_text = 'Pelanggan aktif dapat dipilih saat membuat pesanan baru.'
         self.fields['owner'].queryset = active_sales()
         if role == 'SALES':
             self.fields['owner'].queryset = self.fields['owner'].queryset.filter(pk=actor.pk)
@@ -30,6 +33,8 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = ['sku', 'name', 'unit', 'price_rupiah', 'min_stock', 'is_active']
+        labels = {'name': 'Nama produk', 'unit': 'Satuan', 'price_rupiah': 'Harga jual per satuan (Rp)', 'min_stock': 'Batas minimum stok', 'is_active': 'Produk aktif dijual'}
+        help_texts = {'price_rupiah': 'Masukkan angka rupiah tanpa pemisah ribuan, misalnya 75000.', 'min_stock': 'Peringatan muncul jika stok tersedia di bawah jumlah ini.'}
 
     def __init__(self, *args, actor, **kwargs):
         require_role(actor, {'WAREHOUSE', 'MANAGER'})
@@ -51,7 +56,7 @@ class ActivityForm(forms.ModelForm):
 class ActivityCompletionForm(forms.Form):
     result = forms.CharField(label='Hasil interaksi', widget=forms.Textarea(attrs={'rows': 3}))
     stage = forms.ChoiceField(label='Tahap prospek', choices=Activity.Stage.choices)
-    followup_date = forms.DateField(label='Tindak lanjut berikutnya (opsional)', required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    followup_date = forms.DateField(label='Tindak lanjut berikutnya (opsional)', help_text='Membuat satu aktivitas baru setelah hasil disimpan. Aktivitas ini tetap ditandai selesai.', required=False, widget=forms.DateInput(attrs={'type': 'date'}))
 
 
 class StrictIntegerField(forms.IntegerField):
@@ -97,7 +102,7 @@ class OrderLineForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['product'].label_from_instance = lambda product: f"{product.sku} · {product.name} · harga Rp {format(product.price_rupiah, ',').replace(',', '.')} · tersedia {product.balance.available} {product.unit}"
+        self.fields['product'].label_from_instance = lambda product: f"{product.sku} · {product.name}"
 
 
 OrderLineFormSet = forms.formset_factory(OrderLineForm, extra=0, min_num=1, validate_min=True, max_num=50, validate_max=True, absolute_max=50, can_delete=True)
@@ -109,10 +114,23 @@ class CancelOrderForm(forms.Form):
 
 class ActionDecisionForm(forms.Form):
     key = forms.CharField(max_length=200, widget=forms.HiddenInput())
-    outcome = forms.ChoiceField(label='Hasil tindakan', choices=ActionDecision.Outcome.choices)
+    outcome = forms.ChoiceField(label='Keputusan untuk rekomendasi', choices=[('', 'Pilih keputusan'), ('DONE', 'Sudah ditindaklanjuti'), ('SNOOZED', 'Ingatkan rekomendasi nanti'), ('DISMISSED', 'Tutup rekomendasi ini')])
     note = forms.CharField(label='Hasil interaksi / alasan', required=False, widget=forms.Textarea(attrs={'rows': 2}))
-    next_date = forms.DateField(label='Tunda sampai', required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    next_date = forms.DateField(label='Ingatkan rekomendasi pada', help_text='Tidak mengubah tanggal kunjungan atau tindak lanjut.', required=False, widget=forms.DateInput(attrs={'type': 'date'}))
     order_id = StrictIntegerField(label='Nomor pesanan terkait (opsional)', required=False, min_value=1, max_value=2**63-1)
+
+
+    def clean(self):
+        from django.utils import timezone
+        data = super().clean()
+        outcome = data.get('outcome')
+        if outcome == 'DISMISSED' and not data.get('note'):
+            self.add_error('note', 'Tuliskan alasan menutup rekomendasi ini.')
+        elif outcome == 'DONE' and not data.get('note') and not data.get('order_id'):
+            self.add_error('note', 'Catat hasil interaksi atau pilih pesanan terkait.')
+        if outcome == 'SNOOZED' and (not data.get('next_date') or data['next_date'] <= timezone.localdate()):
+            self.add_error('next_date', 'Pilih tanggal setelah hari ini.')
+        return data
 
 
 class SalesTargetForm(forms.Form):
@@ -124,6 +142,8 @@ class SalesTargetForm(forms.Form):
         require_role(actor, {'MANAGER'})
         super().__init__(*args, **kwargs)
         self.fields['sales'].queryset = active_sales()
+        self.fields['sales'].label_from_instance = lambda sales: sales.get_full_name() or sales.username
+        self.fields['target_rupiah'].help_text = 'Target tersimpan dimuat saat sales atau bulan diganti. Menyimpan akan memperbarui target periode tersebut.'
 
     def clean_month(self):
         return self.cleaned_data['month'].replace(day=1)

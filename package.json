@@ -1,0 +1,36 @@
+{
+  "name": "arbain-oneflow",
+  "private": true,
+  "devDependencies": {
+    "@astryxdesign/cli": "^0.7.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  },
+  "dependencies": {
+    "@astryxdesign/core": "^0.7.0",
+    "@astryxdesign/theme-neutral": "^0.7.0",
+    "@fontsource-variable/figtree": "^5.3.0",
+    "@heroicons/react": "^2.2.0",
+    "@stylexjs/stylex": "^0.19.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "recharts": "^3.10.1"
+  },
+  "scripts": {
+    "build": "npm run build:loading && vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build",
+    "format": "prettier --write frontend vite.config.ts tsconfig.json",
+    "test:wizard": "node --experimental-strip-types --test frontend/orderWizard.test.mjs",
+    "test:frontend": "node --experimental-strip-types --test frontend/*.test.mjs",
+    "build:loading": "node scripts/build-loading.mjs"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

@@ -135,7 +135,8 @@ class OrderTests(TestCase):
     def test_order_post_ignores_client_price(self):
         self.client.force_login(self.sales)
         self.assertContains(self.client.get('/orders/new/'), 'name="lines-0-product"')
-        self.assertContains(self.client.get('/orders/new/'), 'harga Rp 50.000 · tersedia 10 botol')
+        catalog = self.client.get('/orders/new/').context['catalog']
+        self.assertEqual((catalog[0]['price'], catalog[0]['available']), ('50000', '10'))
         payload = {'customer': self.customer.id, 'lines-TOTAL_FORMS': 1, 'lines-INITIAL_FORMS': 0, 'lines-MIN_NUM_FORMS': 1, 'lines-MAX_NUM_FORMS': 50, 'lines-0-product': self.product.id, 'lines-0-quantity': 8, 'lines-0-unit_price_rupiah': 1, 'role': 'MANAGER', 'actor_id': self.other.id}
         response = self.client.post('/orders/new/', payload)
         self.assertEqual(response.status_code, 302)

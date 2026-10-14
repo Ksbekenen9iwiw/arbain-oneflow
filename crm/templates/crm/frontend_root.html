@@ -1,0 +1,17 @@
+{% load static %}
+{{ frontend_payload|json_script:"oneflow-page" }}
+<div id="oneflow-root">
+{% if frontend_payload.screen == 'login' %}
+  {% include 'crm/generated/loading-login.html' %}
+{% elif frontend_payload.screen == 'order_form' or frontend_payload.screen == 'form' or frontend_payload.screen == 'product_edit' %}
+  {% include 'crm/generated/loading-form.html' %}
+{% elif frontend_payload.screen == 'today' and role != 'WAREHOUSE' %}
+  {% include 'crm/generated/loading-dashboard.html' %}
+{% elif frontend_payload.screen == 'customers' or frontend_payload.screen == 'orders' or frontend_payload.screen == 'stock' or frontend_payload.screen == 'today' %}
+  {% include 'crm/generated/loading-list.html' %}
+{% else %}
+  {% include 'crm/generated/loading-detail.html' %}
+{% endif %}
+</div>
+<script src="{% static 'crm/bootstrap.js' %}" defer></script>
+<noscript><style>#oneflow-root { display: none; }</style></noscript>

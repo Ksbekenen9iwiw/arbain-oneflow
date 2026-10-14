@@ -79,3 +79,91 @@ class CustomerTests(TestCase):
         self.assertEqual(self.client.get(f'/activities/{activity.id}/complete/').status_code, 200)
         activity.refresh_from_db()
         self.assertEqual(activity.status, 'PLANNED')
+
+
+class CustomerWorkspaceTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.sales = make_user('workspace-sales', 'SALES')
+        cls.other = make_user('workspace-other', 'SALES')
+        cls.manager = make_user('workspace-manager', 'MANAGER')
+        cls.a = make_customer(cls.sales, 'ALPHA')
+        cls.b = make_customer(cls.other, 'BETA')
+        cls.c = make_customer(cls.other, 'GAMMA')
+        cls.c.is_active = False
+        cls.c.save()
+
+    def setUp(self):
+        self.client.force_login(self.manager)
+        self.headers = {'HTTP_X_ONEFLOW_PAGE': '1'}
+
+    def data(self, params=None):
+        return self.client.get('/customers/', params or {}, **self.headers).json()['data']
+
+    def test_search_preserves_owner_and_full_owner_choices_even_when_empty(self):
+        result = self.data({'sales': self.other.pk, 'q': 'ALPHA'})
+        self.assertEqual(result['customers'], [])
+        self.assertEqual(result['selected_sales'], str(self.other.pk))
+        self.assertEqual({s['value'] for s in result['sales_options']}, {str(self.sales.pk), str(self.other.pk)})
+        result = self.data({'sales': self.other.pk, 'q': 'BETA', 'status': 'active'})
+        self.assertEqual([c['id'] for c in result['customers']], [str(self.b.pk)])
+        self.assertEqual(self.data({'status': 'inactive'})['customers'][0]['id'], str(self.c.pk))
+
+    def test_sales_scope_and_invalid_owner(self):
+        for owner in ('abc', '9' * 100, '999999999'):
+            self.assertEqual(self.client.get('/customers/', {'sales': owner}).status_code, 404)
+        self.client.force_login(self.sales)
+        self.assertEqual(self.client.get('/customers/', {'sales': self.other.pk}).status_code, 403)
+        self.assertEqual(self.data()['sales_options'], [])
+        self.assertEqual([c['id'] for c in self.data()['customers']], [str(self.a.pk)])
+
+    def test_activity_priority_counts_latest_stage_and_undated_sorting(self):
+        from datetime import timedelta
+        today = timezone.localdate()
+        old = models.Activity.objects.create(customer=self.a, sales=self.sales, kind='VISIT', scheduled_date=today - timedelta(days=2))
+        models.Activity.objects.create(customer=self.a, sales=self.sales, kind='FOLLOWUP', followup_date=today)
+        models.Activity.objects.create(customer=self.a, sales=self.sales, kind='INTERACTION', status='DONE', stage='WON', result='Selesai')
+        models.Activity.objects.create(customer=self.b, sales=self.other, kind='VISIT', scheduled_date=today + timedelta(days=1))
+        models.Activity.objects.create(customer=self.c, sales=self.other, kind='INTERACTION')
+        result = self.data({'view': 'overdue'})
+        self.assertEqual(result['view_counts'], {'all': '3', 'overdue': '1', 'today': '1'})
+        summary = result['customers'][0]['summary']
+        self.assertEqual(summary['next_activity']['id'], str(old.pk))
+        self.assertEqual(summary['latest_stage'], models.Activity.Stage.WON.label)
+        self.assertEqual(summary['open_count'], '2')
+        self.assertEqual([c['id'] for c in self.data({'view': 'today'})['customers']], [str(self.a.pk)])
+        self.assertEqual([c['id'] for c in self.data({'sort': '-next_due'})['customers']], [str(self.b.pk), str(self.a.pk), str(self.c.pk)])
+        detail = self.client.get(f'/customers/{self.c.pk}/', **self.headers).json()['data']
+        self.assertIsNone(detail['open_activities'][0]['due'])
+        detail = self.client.get(f'/customers/{self.a.pk}/', **self.headers).json()['data']
+        self.assertEqual(detail['open_activities'][0]['id'], str(old.pk))
+        self.assertEqual(len(detail['completed_activities']), 1)
+
+    def test_return_context_survives_create_and_completion_without_external_redirects(self):
+        from urllib.parse import urlencode
+        back = f'/customers/?sales={self.other.pk}&q=BETA&sort=-name&view=overdue'
+        query = '?' + urlencode({'return_to': back})
+        detail = f'/customers/{self.b.pk}/' + query
+        self.assertEqual(self.client.get(detail, **self.headers).json()['data']['back_url'], back)
+        create = f'/customers/{self.b.pk}/activities/new/' + query
+        response = self.client.post(create, {'kind': 'INTERACTION', 'stage': 'NEW', 'status': 'PLANNED'})
+        self.assertEqual(response.url, detail)
+        activity = models.Activity.objects.get(customer=self.b)
+        response = self.client.post(f'/activities/{activity.pk}/complete/' + query, {'stage': 'CONTACTED', 'result': 'Dihubungi'})
+        # Completion honors the originating list; create still returns to the profile.
+        self.assertEqual(response.url, back)
+        for invalid in ('https://example.com/customers/', '//example.com/customers/', '/orders/new/', '/customers/\\evil', '/customers/\n'):
+            result = self.client.get(f'/customers/{self.b.pk}/', {'return_to': invalid}, **self.headers).json()['data']
+            self.assertEqual(result['back_url'], '/customers/')
+
+    def test_creation_preserves_filter_and_rejects_duplicate_customer(self):
+        from urllib.parse import urlencode
+        query = '?' + urlencode({'return_to': '/customers/?q=New'})
+        payload = {'name': 'New', 'code': 'UNIQUE', 'owner': self.other.pk, 'is_active': 'on'}
+        response = self.client.post('/customers/new/' + query, payload)
+        customer = models.Customer.objects.get(code='UNIQUE')
+        self.assertEqual(response.url, f'/customers/{customer.pk}/' + query)
+        response = self.client.post('/customers/new/' + query, payload, **self.headers)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['data']['back_url'], '/customers/?q=New')
+        self.assertTrue(next(f for f in response.json()['data']['form']['fields'] if f['key'] == 'code')['errors'])

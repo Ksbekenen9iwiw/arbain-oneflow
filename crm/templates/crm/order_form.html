@@ -1,0 +1,19 @@
+{% extends 'crm/base.html' %}
+{% block title %}Buat pesanan · Arbain OneFlow{% endblock %}
+{% block content %}
+<a class="back-link" href="/orders/">← Pesanan</a>
+<div class="page-heading"><div><p class="eyebrow">PESANAN BARU</p><h1>Buat pesanan</h1><p class="muted">Susun produk pesanan, lalu periksa ringkasannya.</p></div><span class="badge">Draft baru</span></div>
+{% if suggested %}<div class="notice">{% include 'crm/icon.html' with icon='check' %} Produk dan jumlah diisi dari rekomendasi. Sesuaikan dengan kebutuhan pelanggan.</div>{% endif %}
+<form method="post" id="order-form" class="order-editor">{% csrf_token %}
+<div class="order-editor-main"><section class="panel"><div class="section-heading"><h2><span class="section-number">1</span> Pelanggan</h2></div>{{ form.non_field_errors }}<div class="field">{{ form.customer.label_tag }}{{ form.customer }}{{ form.customer.errors }}</div></section>
+<section class="panel"><div class="section-heading"><h2><span class="section-number">2</span> Produk pesanan</h2><button type="button" class="button small secondary" id="browse-products" hidden>{% include 'crm/icon.html' with icon='box' %} Cari produk</button></div>
+{{ formset.management_form }}{{ formset.non_form_errors }}
+<div id="order-lines">{% for line_form in formset %}{% include 'crm/order_line.html' %}{% endfor %}</div>
+<button type="button" class="button small secondary" id="add-line">+ Tambah baris produk</button>
+<template id="empty-order-line">{% include 'crm/order_line.html' with line_form=formset.empty_form %}</template>
+<p class="field-help">Harga mengikuti katalog saat draft disimpan. Periksa harga final di detail pesanan.</p></section></div>
+<aside class="panel order-summary"><p class="eyebrow">TINJAU PESANAN</p><h2>Ringkasan</h2><div class="summary-customer" id="summary-customer">Pilih pelanggan</div><dl class="facts"><dt>Baris produk</dt><dd id="summary-count">0</dd><dt>Status awal</dt><dd><span class="badge">Draft</span></dd></dl><div class="summary-total"><span>Estimasi nilai barang</span><strong id="summary-total" aria-live="polite">Rp 0</strong></div><p class="summary-warning" id="summary-warning" hidden></p><p class="field-help">Draft belum mereservasi stok. Ketersediaan diperiksa saat konfirmasi.</p><button type="submit" class="button full-width">Simpan draft {% include 'crm/icon.html' with icon='arrow' %}</button><a class="button secondary full-width" href="/orders/">Batal</a></aside></form>
+<noscript><section class="panel"><h2>Harga &amp; ketersediaan</h2><p>Ringkasan otomatis memerlukan JavaScript. Harga final dapat diperiksa setelah draft tersimpan.</p>{% for product in catalog %}<p>{{ product.sku }} · {{ product.name }} — Rp {{ product.price }} · tersedia {{ product.available }} {{ product.unit }}</p>{% endfor %}</section></noscript>
+{{ catalog|json_script:'product-catalog-data' }}
+<dialog id="product-dialog" class="dialog product-dialog" aria-labelledby="product-dialog-title"><div class="section-heading"><h2 id="product-dialog-title">Pilih produk</h2><form method="dialog"><button class="text-button" aria-label="Tutup pemilih produk">×</button></form></div><label class="sr-only" for="catalog-search">Cari nama produk atau SKU</label><input id="catalog-search" type="search" placeholder="Cari nama produk atau SKU…" autocomplete="off"><div class="catalog-list" id="catalog-list"></div><p class="field-help">Harga per satuan · stok tersedia saat halaman dibuka</p></dialog>
+{% endblock %}

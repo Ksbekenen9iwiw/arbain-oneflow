@@ -55,7 +55,7 @@ class FinalReviewRegressionTests(TestCase):
             make_shipped_order(self.sales, self.customer, self.product, 2, today - timedelta(days=days_ago))
         response = self.client.get(reverse('today'))
         self.assertEqual(response.context['actions'][0].kind, 'REORDER')
-        link = f"{reverse('order_create')}?customer={self.customer.id}"
+        link = f"{reverse('order_create')}?customer={self.customer.id}&product={self.product.id}&quantity=2"
         self.assertIn(link, PageElements(response).links())
         self.assert_customer_selected(link)
 

@@ -34,6 +34,49 @@ def create_draft(actor, customer_id, lines):
     return order
 
 
+def draft_version(order):
+    import hashlib
+    import json
+    snapshot = [order.customer_id, order.status, list(order.lines.order_by('product_id').values_list('product_id', 'quantity', 'unit_price_rupiah'))]
+    return hashlib.sha256(json.dumps(snapshot).encode()).hexdigest()
+
+
+@atomic_write
+def update_draft(actor, order_id, customer_id, lines, version):
+    require_role(actor, {'SALES', 'MANAGER'})
+    order = get_object_or_404(orders_for(actor).select_for_update(), pk=order_id)
+    if order.status != Order.Status.DRAFT:
+        raise BusinessError('INVALID_STATE', 'Pesanan sudah berubah status. Kembali ke detail untuk melihat keadaan terbaru.')
+    if not version or version != draft_version(order):
+        raise BusinessError('STALE_DRAFT', 'Draft diubah pengguna lain. Muat ulang sebelum mengedit agar perubahan mereka tidak tertimpa.')
+    customer = get_object_or_404(customers_for(actor), pk=customer_id, is_active=True)
+    if not active_sales().filter(pk=customer.owner_id).exists():
+        raise BusinessError('INVALID_INPUT', 'Penanggung jawab pelanggan harus sales aktif.')
+    if not isinstance(lines, list) or not 1 <= len(lines) <= 50:
+        raise BusinessError('INVALID_INPUT', 'Pesanan harus memiliki 1 sampai 50 produk.')
+    prices = dict(order.lines.values_list('product_id', 'unit_price_rupiah'))
+    prepared, used, total = [], set(), 0
+    for line in lines:
+        if not isinstance(line, dict) or set(line) != {'product_id', 'quantity'}:
+            raise BusinessError('INVALID_INPUT', 'Baris pesanan hanya boleh berisi produk dan jumlah.')
+        product_id = integer_input(line['product_id'], 1)
+        quantity = integer_input(line['quantity'], 1)
+        if product_id in used:
+            raise BusinessError('INVALID_INPUT', 'Gabungkan produk yang sama menjadi satu baris.')
+        used.add(product_id)
+        product = get_object_or_404(Product, pk=product_id, is_active=True)
+        price = prices.get(product_id, product.price_rupiah)
+        integer_input(price)
+        total += price * quantity
+        integer_input(total)
+        prepared.append(OrderLine(order=order, product=product, quantity=quantity, unit_price_rupiah=price))
+    order.customer, order.sales, order.total_rupiah = customer, customer.owner, total
+    order.save(update_fields=['customer', 'sales', 'total_rupiah'])
+    order.lines.all().delete()
+    OrderLine.objects.bulk_create(prepared)
+    return order
+
+
 def _lines_and_balances(order):
     lines = list(order.lines.select_related('product').order_by('product_id'))
     if not lines:

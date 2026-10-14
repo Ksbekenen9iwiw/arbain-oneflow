@@ -1,0 +1,12 @@
+Asset: arbain-honey-herbal.jpg
+Created with: built-in image_gen tool, 14 October 2026.
+Purpose: conceptual editorial cover for OneFlow's CV Arbain login page.
+Not a photograph of actual CV Arbain packaging. No real product claims.
+Delivery: original generated PNG encoded as JPEG (quality 85) for web delivery.
+
+Prompt:
+Use case: photorealistic-natural. Asset type: vertical editorial photograph for the right-hand cover panel of the OneFlow desktop CRM sign-in page for CV Arbain, an Indonesian honey, herbal, and cosmetics producer. Create a sophisticated, believable still-life photograph, portrait 2:3 composition. Main subject: a closed clear cylindrical glass jar containing rich amber honey, a small amber glass herbal bottle with a simple dark cap, and a modest sprig of fresh green herbal leaves arranged naturally on a warm pale limestone surface. Objects occupy the lower middle of the frame, with breathing room around them; softly out-of-focus olive foliage and a warm plaster background above. One small wooden honey dipper resting on the stone near the jar, no dripping spectacle. Directional morning window light from the left, soft long shadows, tactile glass and stone texture, restrained natural tones of honey amber, warm cream and muted olive. High-end real editorial product photography, quiet and practical rather than glossy CGI, natural optical depth and subtle grain. Keep all key objects within the central 70 percent so the image crops gracefully to a tall desktop panel. No labels or branding on packaging, no words, no logos, no text overlay, no UI, no watermark, no people, no extra props, no floating objects, no artificial glow. This is a conceptual brand image, not documentation of actual CV Arbain packaging.
+
+Layout reference:
+Astryx 0.7.0 login-split (scaffolded via installed CLI).
+Mobbin, Square: https://mobbin.com/screens/51358a95-0a92-40ef-b433-8120fe1bf67e
