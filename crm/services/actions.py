@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from crm.access import active_sales, customers_for, orders_for, require_role, role_of
 from crm.errors import BusinessError
-from crm.models import ActionDecision, Activity, OrderLine
+from crm.models import ActionDecision, Activity, OrderLine, PurchaseOrder
 from crm.services.inventory import atomic_write, integer_input
 
 
@@ -62,6 +62,10 @@ def _compute_candidates(actor, as_of, ignored_order_id=None):
             products[line.product_id] = line.product
     maximum = max(values.values(), default=0)
     pending = set(OrderLine.objects.filter(order__customer_id__in=customers, order__status='CONFIRMED').exclude(order_id=ignored_order_id).values_list('order__customer_id', 'product_id'))
+    # Confirmed inbound per product; shown as info only, never counted as ready stock.
+    inbound = defaultdict(list)
+    for po in PurchaseOrder.objects.filter(status=PurchaseOrder.Status.CONFIRMED, product_id__in={pid for _, pid in daily} or [None]).order_by('expected_date', 'pk'):
+        inbound[po.product_id].append(po)
     candidates = []
 
     def common(customer, due):
@@ -77,7 +81,8 @@ def _compute_candidates(actor, as_of, ignored_order_id=None):
         dates = sorted(quantities)[-6:]
         if len(dates) < 3 or (customer_id, product_id) in pending:
             continue
-        interval = _half_up(median((later - earlier).days for earlier, later in zip(dates, dates[1:])))
+        intervals = [(later - earlier).days for earlier, later in zip(dates, dates[1:])]
+        interval = _half_up(median(intervals))
         due = dates[-1] + timedelta(days=interval)
         if due > as_of:
             continue
@@ -86,7 +91,8 @@ def _compute_candidates(actor, as_of, ignored_order_id=None):
         balance = product.balance
         available = balance.available
         priority, reasons = common(customers[customer_id], due)
-        reasons.update({'product_sku': product.sku, 'product_name': product.name, 'unit': product.unit, 'purchase_dates': [d.isoformat() for d in dates], 'purchase_date_count': len(dates), 'interval_days': interval, 'last_purchase_date': dates[-1].isoformat(), 'typical_quantity': typical, 'available_quantity': available, 'stock_updated_at': balance.updated_at.isoformat(), 'stock_updated_label': timezone.localtime(balance.updated_at).strftime('%d/%m/%Y %H:%M WIB')})
+        arrivals = [{'number': po.number, 'remaining': po.remaining, 'expected_date': po.expected_date.isoformat() if po.expected_date else None} for po in inbound.get(product_id, [])]
+        reasons.update({'product_sku': product.sku, 'product_name': product.name, 'unit': product.unit, 'purchase_dates': [d.isoformat() for d in dates], 'purchase_date_count': len(dates), 'intervals_days': intervals, 'interval_days': interval, 'last_purchase_date': dates[-1].isoformat(), 'typical_quantity': typical, 'available_quantity': available, 'inbound': arrivals, 'stock_updated_at': balance.updated_at.isoformat(), 'stock_updated_label': timezone.localtime(balance.updated_at).strftime('%d/%m/%Y %H:%M WIB')})
         state = 'READY' if available >= typical else 'WAITING_STOCK'
         candidates.append(Candidate(f'REORDER:{customer_id}:{product_id}:{dates[-1].isoformat()}', customer_id, product_id, 'REORDER', due, typical, available, priority, state, reasons))
     return sorted(candidates, key=_sort_key)

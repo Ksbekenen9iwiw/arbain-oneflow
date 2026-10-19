@@ -80,7 +80,33 @@ def customer_history(actor, customer_id):
     orders = list(orders_for(actor).filter(customer=customer).prefetch_related('lines__product'))
     from crm.customer_workspace import customer_context
     context = customer_context(customer, activities, orders)
+    from crm.services.actions import compute_candidates
+    patterns = []
+    for candidate in compute_candidates(actor, timezone.localdate()):
+        if candidate.customer_id != customer.id or candidate.product_id is None:
+            continue
+        reasons = candidate.reasons
+        spread = max(reasons['intervals_days']) - min(reasons['intervals_days'])
+        patterns.append({'product_name': reasons['product_name'], 'product_sku': reasons.get('product_sku'), 'product_id': candidate.product_id,
+                         'purchase_dates': reasons['purchase_dates'], 'purchase_date_count': reasons['purchase_date_count'],
+                         'intervals_days': reasons['intervals_days'], 'interval_days': reasons['interval_days'],
+                         'last_purchase_date': reasons['last_purchase_date'], 'typical_quantity': candidate.typical_quantity,
+                         'available_quantity': candidate.available_quantity, 'unit': reasons['unit'],
+                         'next_due': candidate.due_date, 'inbound': reasons.get('inbound', []),
+                         'consistent': spread <= max(7, reasons['interval_days'] // 2)})
+    shipped = [(timezone.localdate(line.order.shipped_at), line) for order in orders
+                 if order.status == 'SHIPPED' and order.shipped_at for line in order.lines.all()]
+    by_product = {}
+    for day, line in shipped:
+        row = by_product.setdefault(line.product_id, {'product_name': line.product.name, 'product_sku': line.product.sku, 'dates': set()})
+        row['dates'].add(day)
+    have_pattern = {p['product_sku'] for p in patterns}
+    thin = sorted(({'product_name': row['product_name'], 'product_sku': row['product_sku'], 'dates': sorted(row['dates'])}
+                   for row in by_product.values() if len(row['dates']) < 3 and row['product_sku'] not in have_pattern),
+                  key=lambda row: row['product_sku'])
     context['overdue_count'] = sum(bool(a.due and a.due < timezone.localdate()) for a in opened)
+    context['reorder_patterns'] = sorted(patterns, key=lambda p: (p['next_due'], p['product_sku']))
+    context['thin_history'] = thin
     return dict(context, customer=customer, activities=activities, open_activities=opened,
                 completed_activities=sorted((a for a in activities if a.status == 'DONE'), key=lambda a: (a.completed_at or a.created_at, a.pk), reverse=True), orders=orders)
 

@@ -40,3 +40,17 @@ def orders_for(actor):
     if role == 'WAREHOUSE':
         return records.filter(status__in=['CONFIRMED', 'SHIPPED'])
     return records
+
+
+def sample_requests_for(actor):
+    from crm.models import SampleRequest
+    role = role_of(actor)
+    records = SampleRequest.objects.select_related(
+        'customer', 'sales', 'decided_by', 'shipped_by', 'received_by',
+        'cancelled_by', 'order',
+    )
+    if role == 'SALES':
+        return records.filter(sales=actor)
+    if role == 'WAREHOUSE':
+        return records.filter(status=SampleRequest.Status.APPROVED)
+    return records

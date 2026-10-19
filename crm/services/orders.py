@@ -3,7 +3,8 @@ from django.utils import timezone
 
 from crm.access import active_sales, customers_for, orders_for, require_role, role_of
 from crm.errors import BusinessError
-from crm.models import InventoryBalance, Order, OrderLine, Product, StockMovement
+from crm.models import BatchAllocation, BatchSwap, InventoryBalance, Order, OrderLine, Product, StockBatch, StockMovement
+from crm.services.batches import eligible_batches, sync_balance
 from crm.services.inventory import atomic_write, integer_input
 
 
@@ -89,8 +90,36 @@ def _lines_and_balances(order):
     return lines, balances
 
 
+def _plan_line(line, order):
+    """Return the FEFO allocation plan for one line and the leftover shortage."""
+    batches = eligible_batches(line.product, order.expected_receipt_date)
+    plan, remaining = [], line.quantity
+    for batch in batches:
+        if remaining <= 0:
+            break
+        take = min(batch.available, remaining)
+        if take > 0:
+            plan.append((batch, take))
+            remaining -= take
+    return plan, remaining, batches
+
+
+def _release_line_allocations(line):
+    allocations = list(line.allocations.select_related('batch'))
+    if sum(allocation.quantity for allocation in allocations) != line.quantity:
+        raise BusinessError('INVALID_STATE', 'Alokasi batch tidak sesuai pesanan. Periksa gudang.')
+    released = 0
+    for allocation in allocations:
+        batch = allocation.batch
+        batch.reserved -= allocation.quantity
+        batch.save(update_fields=['reserved'])
+        released += allocation.quantity
+        allocation.delete()
+    return released
+
+
 @atomic_write
-def confirm_order(actor, order_id):
+def confirm_order(actor, order_id, expected_receipt_date=None):
     require_role(actor, {'SALES', 'MANAGER'})
     order = get_object_or_404(orders_for(actor), pk=order_id)
     if order.status == Order.Status.CONFIRMED:
@@ -99,7 +128,11 @@ def confirm_order(actor, order_id):
         raise BusinessError('INVALID_STATE', 'Hanya pesanan draft yang dapat dikonfirmasi.')
     if not order.customer.is_active:
         raise BusinessError('INVALID_INPUT', 'Pelanggan tidak aktif.')
+    if expected_receipt_date is not None:
+        order.expected_receipt_date = expected_receipt_date
+        order.save(update_fields=['expected_receipt_date'])
     lines, balances = _lines_and_balances(order)
+    plans = {}
     for line in lines:
         balance = balances[line.product_id]
         if not line.product.is_active:
@@ -108,7 +141,16 @@ def confirm_order(actor, order_id):
             raise BusinessError('PHYSICAL_CONFLICT', f'{line.product.sku}: fisik lebih kecil daripada reservasi. Periksa gudang.')
         if balance.available < line.quantity:
             raise BusinessError('INSUFFICIENT_STOCK', f'{line.product.sku}: tersedia {balance.available} {line.product.unit}, pesanan meminta {line.quantity}.')
+        plan, remaining, batches = _plan_line(line, order)
+        if remaining:
+            eligible_total = sum(batch.available for batch in batches)
+            raise BusinessError('INSUFFICIENT_STOCK', f'{line.product.sku}: stok yang memenuhi masa simpan/kedaluwarsa {eligible_total} {line.product.unit}, pesanan meminta {line.quantity}.')
+        plans[line.pk] = plan
     for line in lines:
+        for batch, quantity in plans[line.pk]:
+            batch.reserved += quantity
+            batch.save(update_fields=['reserved'])
+            BatchAllocation.objects.create(line=line, batch=batch, quantity=quantity)
         balance = balances[line.product_id]
         balance.reserved += line.quantity
         balance.save(update_fields=['reserved', 'updated_at'])
@@ -141,6 +183,7 @@ def cancel_order(actor, order_id, reason):
         for line in lines:
             if balances[line.product_id].reserved < line.quantity:
                 raise BusinessError('INVALID_STATE', 'Reservasi tidak sesuai pesanan. Periksa gudang.')
+            _release_line_allocations(line)
         for line in lines:
             balance = balances[line.product_id]
             balance.reserved -= line.quantity
@@ -165,12 +208,71 @@ def ship_order(actor, order_id):
             raise BusinessError('INSUFFICIENT_STOCK', f'{line.product.sku}: fisik {balance.on_hand}, dibutuhkan {line.quantity}.')
         if balance.reserved < line.quantity:
             raise BusinessError('INVALID_STATE', 'Reservasi tidak sesuai pesanan. Periksa gudang.')
+        allocations = list(line.allocations.select_related('batch'))
+        if sum(allocation.quantity for allocation in allocations) != line.quantity:
+            raise BusinessError('INVALID_STATE', 'Alokasi batch tidak sesuai pesanan. Periksa gudang.')
+        for allocation in allocations:
+            if allocation.batch.on_hand < allocation.quantity:
+                raise BusinessError('INSUFFICIENT_STOCK', f'{line.product.sku}: fisik batch {allocation.batch.code} tinggal {allocation.batch.on_hand}, alokasi {allocation.quantity}. Lakukan penggantian batch.')
+            # Re-check shelf life at dispatch: dates and batch conditions may have moved.
+            if allocation.batch.expiry_date is not None and allocation.batch.expiry_date < (order.expected_receipt_date or timezone.localdate()):
+                raise BusinessError('EXPIRED_BATCH', f'{line.product.sku}: batch {allocation.batch.code} kedaluwarsa sebelum barang diterima pelanggan. Lakukan penggantian batch.')
     for line in lines:
         balance = balances[line.product_id]
-        balance.on_hand -= line.quantity
+        allocations = list(line.allocations.select_related('batch'))
+        for index, allocation in enumerate(allocations):
+            batch = allocation.batch
+            batch.on_hand -= allocation.quantity
+            batch.reserved -= allocation.quantity
+            batch.save(update_fields=['on_hand', 'reserved'])
+            allocation.delete()
+            ref = f'SHIP:{order.id}:{line.product_id}' if len(allocations) == 1 else f'SHIP:{order.id}:{line.product_id}:{batch.id}'
+            StockMovement.objects.create(product=line.product, batch=batch, delta=-allocation.quantity, input_quantity=allocation.quantity, kind=StockMovement.Kind.SHIPMENT, source_ref=ref, order=order, actor=actor, reason=f'Pengiriman OF-{order.id:04d}')
         balance.reserved -= line.quantity
-        balance.save(update_fields=['on_hand', 'reserved', 'updated_at'])
-        StockMovement.objects.create(product=line.product, delta=-line.quantity, input_quantity=line.quantity, kind=StockMovement.Kind.SHIPMENT, source_ref=f'SHIP:{order.id}:{line.product_id}', order=order, actor=actor, reason=f'Pengiriman OF-{order.id:04d}')
+        balance.save(update_fields=['reserved', 'updated_at'])
+        sync_balance(line.product)
     order.status, order.shipped_at, order.shipped_by = Order.Status.SHIPPED, timezone.now(), actor
     order.save(update_fields=['status', 'shipped_at', 'shipped_by'])
+    return order
+
+
+@atomic_write
+def swap_batch(actor, order_id, line_id, from_batch_id, to_batch_id, quantity, reason):
+    require_role(actor, {'WAREHOUSE', 'MANAGER'})
+    order = get_object_or_404(orders_for(actor), pk=order_id)
+    if order.status != Order.Status.CONFIRMED:
+        raise BusinessError('INVALID_STATE', 'Penggantian batch hanya untuk pesanan yang sudah dikonfirmasi.')
+    line = get_object_or_404(order.lines, pk=line_id)
+    quantity = integer_input(quantity, 1)
+    reason = reason.strip() if isinstance(reason, str) else ''
+    if not reason:
+        raise BusinessError('INVALID_INPUT', 'Alasan penggantian batch wajib diisi.')
+    from_batch = get_object_or_404(StockBatch.objects.filter(product=line.product), pk=from_batch_id)
+    to_batch = get_object_or_404(StockBatch.objects.filter(product=line.product), pk=to_batch_id)
+    if from_batch_id == to_batch_id:
+        raise BusinessError('INVALID_INPUT', 'Batch asal dan batch tujuan harus berbeda.')
+    if to_batch.status != StockBatch.Status.ACTIVE:
+        raise BusinessError('INVALID_INPUT', 'Batch tujuan tidak aktif.')
+    allocation = line.allocations.filter(batch=from_batch).first()
+    if not allocation or allocation.quantity < quantity:
+        raise BusinessError('INVALID_STATE', 'Alokasi pada batch asal tidak mencukupi.')
+    if to_batch.available < quantity:
+        raise BusinessError('INSUFFICIENT_STOCK', f'Batch {to_batch.code} hanya memiliki {to_batch.available} unit bebas.')
+    if line.product.min_shelf_life_days is not None and order.expected_receipt_date:
+        if to_batch.expiry_date is None or (to_batch.expiry_date - order.expected_receipt_date).days < line.product.min_shelf_life_days:
+            raise BusinessError('INVALID_INPUT', f'Batch {to_batch.code} tidak memenuhi masa simpan minimum.')
+    from_batch.reserved -= quantity
+    from_batch.save(update_fields=['reserved'])
+    to_batch.reserved += quantity
+    to_batch.save(update_fields=['reserved'])
+    if allocation.quantity == quantity:
+        allocation.delete()
+    else:
+        allocation.quantity -= quantity
+        allocation.save(update_fields=['quantity'])
+    destination, created = BatchAllocation.objects.get_or_create(line=line, batch=to_batch, defaults={'quantity': quantity})
+    if not created:
+        destination.quantity += quantity
+        destination.save(update_fields=['quantity'])
+    BatchSwap.objects.create(line=line, from_batch=from_batch, to_batch=to_batch, quantity=quantity, reason=reason, actor=actor)
     return order

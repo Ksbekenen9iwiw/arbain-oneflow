@@ -7,7 +7,8 @@ from django.shortcuts import get_object_or_404
 
 from crm.access import require_role
 from crm.errors import BusinessError
-from crm.models import InventoryBalance, Product, StockMovement
+from crm.models import InventoryBalance, Product, StockBatch, StockMovement
+from crm.services.batches import resolve_receipt_batch, set_physical_stock, sync_balance
 
 MAX_INTEGER = 2**63 - 1
 
@@ -34,7 +35,7 @@ def atomic_write(function):
     return wrapped
 
 
-def _record_stock(actor, product_id, quantity, reason, operation_id, kind):
+def _record_stock(actor, product_id, quantity, reason, operation_id, kind, batch_code=None, received_date=None, expiry_date=None):
     require_role(actor, {'WAREHOUSE', 'MANAGER'})
     integer_input(quantity, 1 if kind == StockMovement.Kind.RECEIPT else 0)
     reason = reason.strip() if isinstance(reason, str) else ''
@@ -54,16 +55,46 @@ def _record_stock(actor, product_id, quantity, reason, operation_id, kind):
     actual = balance.on_hand + quantity if kind == StockMovement.Kind.RECEIPT else quantity
     integer_input(actual)
     delta = actual - balance.on_hand
-    balance.on_hand = actual
-    balance.save(update_fields=['on_hand', 'updated_at'])
-    return StockMovement.objects.create(product=product, delta=delta, input_quantity=quantity, kind=kind, source_ref=source_ref, actor=actor, reason=reason)
+    if kind == StockMovement.Kind.RECEIPT:
+        batch = resolve_receipt_batch(product, batch_code, received_date, expiry_date)
+        batch.on_hand += quantity
+        batch.save(update_fields=['on_hand'])
+        balance.on_hand = actual
+        balance.save(update_fields=['on_hand', 'updated_at'])
+    else:
+        batch = None
+        set_physical_stock(product, actual)
+        balance = sync_balance(product)
+    return StockMovement.objects.create(product=product, batch=batch, delta=delta, input_quantity=quantity, kind=kind, source_ref=source_ref, actor=actor, reason=reason)
+
+
+def find_receipt(operation_id):
+    """Movement recorded for this operation id, or None. Lets callers stay idempotent."""
+    try:
+        source_ref = f'STOCK:{UUID(str(operation_id))}'
+    except (ValueError, TypeError, AttributeError):
+        return None
+    return StockMovement.objects.filter(source_ref=source_ref).first()
 
 
 @atomic_write
-def receive_stock(actor, product_id, quantity, reason, operation_id):
-    return _record_stock(actor, product_id, quantity, reason, operation_id, StockMovement.Kind.RECEIPT)
+def receive_stock(actor, product_id, quantity, reason, operation_id, batch_code=None, received_date=None, expiry_date=None):
+    return _record_stock(actor, product_id, quantity, reason, operation_id, StockMovement.Kind.RECEIPT, batch_code=batch_code, received_date=received_date, expiry_date=expiry_date)
 
 
 @atomic_write
 def reconcile_stock(actor, product_id, counted_quantity, reason, operation_id):
     return _record_stock(actor, product_id, counted_quantity, reason, operation_id, StockMovement.Kind.ADJUSTMENT)
+
+
+@atomic_write
+def set_batch_status(actor, product_id, batch_id, status):
+    """Hold or release a lot so FEFO only allocates stock that may be sold."""
+    require_role(actor, {'WAREHOUSE', 'MANAGER'})
+    if status not in StockBatch.Status.values:
+        raise BusinessError('INVALID_INPUT', 'Status batch tidak dikenal.')
+    batch = get_object_or_404(StockBatch.objects.filter(product_id=product_id), pk=batch_id)
+    if batch.status != status:
+        batch.status = status
+        batch.save(update_fields=['status'])
+    return batch

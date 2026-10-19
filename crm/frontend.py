@@ -113,8 +113,9 @@ def encode(value, role):
     if isinstance(value, StockMovement):
         return dict(id=str(value.pk), product=encode(value.product, role), delta=str(value.delta),
                     kind=value.get_kind_display(), actor=person(value.actor), reason=value.reason,
-                    order_id=str(value.order_id) if value.order_id else None, input_quantity=str(value.input_quantity),
-                    created_at=encode(value.created_at, role))
+                    order_id=str(value.order_id) if value.order_id else None,
+                    sample_request_id=str(value.sample_request_id) if value.sample_request_id else None,
+                    input_quantity=str(value.input_quantity), created_at=encode(value.created_at, role))
     if isinstance(value, dict):
         return {k: encode(v, role) for k, v in value.items()}
     return [encode(item, role) for item in value]

@@ -12,6 +12,8 @@ export function backLabel(path: string) {
   if (pathname.startsWith("/products/")) return "Detail produk";
   if (pathname.startsWith("/orders/"))
     return pathname === "/orders/" ? "Pesanan" : "Detail pesanan";
+  if (pathname.startsWith("/samples/"))
+    return pathname === "/samples/" ? "Sampel" : "Detail pengajuan sampel";
   return "Produk & stok";
 }
 

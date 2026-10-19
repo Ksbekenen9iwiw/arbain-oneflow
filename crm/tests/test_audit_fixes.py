@@ -82,7 +82,9 @@ class AuditFixTests(TestCase):
         product_back = f'/orders/{order.pk}/?' + urlencode({'return_to':back})
         d = self.client.get(f'/products/{self.product.pk}/', {'return_to':product_back}, **self.headers).json()['data']
         self.assertEqual(d['back_url'],product_back)
-        for url in ['//evil.test/', 'https://evil.test/', '/logout/', '/targets/', '/orders/new/', '/stock/1/receive/', '/orders/1/confirm/', '/stock/\n', '/stock/?return_to=https%3A%2F%2Fevil.test']:
+        for url in ['/samples/', '/samples/12/']:
+            self.assertEqual(safe_return(url, '/'), url)
+        for url in ['//evil.test/', 'https://evil.test/', '/logout/', '/targets/', '/orders/new/', '/samples/new/', '/stock/1/receive/', '/orders/1/confirm/', '/stock/\n', '/stock/?return_to=https%3A%2F%2Fevil.test']:
             self.assertEqual(safe_return(url, '/'), '/')
 
     def test_activity_completion_returns_to_dashboard_context(self):

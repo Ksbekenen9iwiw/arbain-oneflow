@@ -27,6 +27,7 @@ import {
   CalendarDaysIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
+  BeakerIcon,
   ArchiveBoxIcon,
   ArrowRightStartOnRectangleIcon,
   ChevronLeftIcon,
@@ -213,6 +214,12 @@ export default function Shell({ children }: { children: ReactNode }) {
                 icon={ClipboardDocumentListIcon}
                 href="/orders/"
                 isSelected={path.startsWith("/orders")}
+              />
+              <SideNavItem
+                label="Pengajuan sampel"
+                icon={BeakerIcon}
+                href="/samples/"
+                isSelected={path.startsWith("/samples")}
               />
               <SideNavItem
                 data-tour="nav-stock"

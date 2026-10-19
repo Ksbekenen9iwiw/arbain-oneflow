@@ -10,3 +10,4 @@ __pycache__/
 node_modules/
 staticfiles/
 crm/static/crm/react/
+.codegraph/

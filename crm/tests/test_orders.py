@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from datetime import date, timedelta
 from threading import Barrier
 from uuid import uuid4
 
@@ -10,7 +11,7 @@ from django.test import TestCase, TransactionTestCase
 from crm import models
 from crm.errors import BusinessError
 from crm.services import orders
-from crm.services.inventory import reconcile_stock
+from crm.services.inventory import receive_stock, reconcile_stock
 from crm.tests.factories import make_customer, make_order, make_product, make_user
 
 
@@ -156,6 +157,63 @@ class OrderTests(TestCase):
         self.assertContains(response, 'Konflik fisik')
         self.assertContains(response, 'Konfirmasi baru diblokir')
         self.assertEqual(self.balance(), (5, 8, -3))
+
+    def test_confirm_and_swap_endpoints(self):
+        today = date.today()
+        receive_stock(self.warehouse, self.product.id, 10, 'Masuk A', uuid4(),
+                      batch_code='LOT-A', received_date=today, expiry_date=today + timedelta(days=30))
+        receive_stock(self.warehouse, self.product.id, 10, 'Masuk B', uuid4(),
+                      batch_code='LOT-B', received_date=today, expiry_date=today + timedelta(days=300))
+        self.client.force_login(self.sales)
+        response = self.client.post(f'/orders/{self.order.id}/confirm/', {'expected_receipt_date': today.isoformat()})
+        self.assertEqual(response.status_code, 302)
+        self.order.refresh_from_db()
+        self.assertEqual((self.order.status, self.order.expected_receipt_date), ('CONFIRMED', today))
+        line = self.order.lines.get()
+        aging, fresh = self.product.batches.get(code='LOT-A'), self.product.batches.get(code='LOT-B')
+        self.assertEqual(line.allocations.get().batch_id, aging.id)
+        self.client.force_login(self.warehouse)
+        response = self.client.post(f'/orders/{self.order.id}/swap/', {
+            'line_id': line.id, 'from_batch_id': aging.id, 'to_batch_id': fresh.id,
+            'quantity': 3, 'reason': 'Kemasan batch LOT-A rusak saat pengambilan'})
+        self.assertEqual(response.status_code, 302)
+        aging.refresh_from_db()
+        fresh.refresh_from_db()
+        self.assertEqual((aging.reserved, fresh.reserved), (5, 3))
+        self.assertEqual(line.batch_swaps.get().reason, 'Kemasan batch LOT-A rusak saat pengambilan')
+
+    def test_order_detail_payload_exposes_batch_allocation(self):
+        today = date.today()
+        receive_stock(self.warehouse, self.product.id, 10, 'Masuk A', uuid4(),
+                      batch_code='LOT-A', received_date=today, expiry_date=today + timedelta(days=30))
+        orders.confirm_order(self.sales, self.order.id)
+        line = self.order.lines.get()
+        self.client.force_login(self.warehouse)
+        payload = self.client.get(f'/orders/{self.order.id}/', HTTP_X_ONEFLOW_PAGE='1').json()['data']
+        self.assertEqual([item['batch_code'] for item in payload['allocations'][str(line.id)]], ['LOT-A'])
+        self.assertEqual(payload['can_swap'], True)
+        self.assertEqual([field['key'] for field in payload['swap_form']['fields']],
+                         ['line_id', 'from_batch_id', 'to_batch_id', 'quantity', 'reason'])
+        self.client.force_login(self.sales)
+        payload = self.client.get(f'/orders/{self.order.id}/', HTTP_X_ONEFLOW_PAGE='1').json()['data']
+        self.assertEqual((payload['allocations'], payload['batch_swaps']), ({}, []))
+
+    def test_swap_endpoint_requires_reason_and_warehouse_role(self):
+        today = date.today()
+        receive_stock(self.warehouse, self.product.id, 10, 'Masuk A', uuid4(),
+                      batch_code='LOT-A', received_date=today, expiry_date=today + timedelta(days=30))
+        receive_stock(self.warehouse, self.product.id, 10, 'Masuk B', uuid4(),
+                      batch_code='LOT-B', received_date=today, expiry_date=today + timedelta(days=300))
+        orders.confirm_order(self.sales, self.order.id)
+        line = self.order.lines.get()
+        aging, fresh = self.product.batches.get(code='LOT-A'), self.product.batches.get(code='LOT-B')
+        payload = {'line_id': line.id, 'from_batch_id': aging.id, 'to_batch_id': fresh.id, 'quantity': 3, 'reason': '  '}
+        self.client.force_login(self.warehouse)
+        self.assertEqual(self.client.post(f'/orders/{self.order.id}/swap/', payload).status_code, 400)
+        self.client.force_login(self.sales)
+        payload['reason'] = 'Kemasan rusak'
+        self.assertEqual(self.client.post(f'/orders/{self.order.id}/swap/', payload).status_code, 403)
+        self.assertEqual(line.allocations.get().batch_id, aging.id)
 
 
 class OrderConcurrencyTests(TransactionTestCase):

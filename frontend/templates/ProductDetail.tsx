@@ -19,17 +19,63 @@ import {
   Empty,
   Banner,
   Status,
+  ServerForm,
   money,
   quantity,
   dateLabel,
 } from "../ui";
 import { useApp } from "../router";
+import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { FormDialog, SimpleForm } from "../ui";
+import type { Row } from "../types";
 import { StockCondition, MovementView, stockContext } from "./StockParts";
 export default function ProductDetail() {
-  const { page, navigate } = useApp();
+  const { page, navigate, busy, clearDirty } = useApp();
   const d = page.data,
     p = d.product;
   const [panel, setPanel] = useState(true);
+  const [supplyDialog, setSupplyDialog] = useState<{
+    open: string;
+    po: string;
+  }>({
+    open: d.dialog || "",
+    po: d.dialog_po || "",
+  });
+  const closeSupplyDialog = (open: boolean) => {
+    if (!open && !busy) {
+      clearDirty();
+      setSupplyDialog({ open: "", po: "" });
+    }
+  };
+  const receiveSpec = () => {
+    if (supplyDialog.open === "receive" && d.receive_form)
+      return d.receive_form;
+    const entry = (d.receive_forms || []).find(
+      (form: Row) => form.id === supplyDialog.po,
+    );
+    return entry ? entry.form : null;
+  };
+  const supplyForm = () =>
+    supplyDialog.open === "purchase" && d.purchase_form ? (
+      <SimpleForm
+        spec={d.purchase_form}
+        action={`/products/${p.id}/supply/orders/`}
+        label="Catat pengadaan"
+      />
+    ) : supplyDialog.open === "receive" && receiveSpec() ? (
+      <SimpleForm
+        spec={receiveSpec()}
+        action={`/supply/orders/${supplyDialog.po}/receive/`}
+        label="Simpan penerimaan"
+      />
+    ) : supplyDialog.open === "cancel" && d.cancel_form ? (
+      <SimpleForm
+        spec={d.cancel_form}
+        action={`/supply/orders/${supplyDialog.po}/cancel/`}
+        label="Batalkan pengadaan"
+        variant="destructive"
+      />
+    ) : null;
   const update = (changes: Record<string, string>) => {
     const params = new URLSearchParams(page.url.split("?")[1] || "");
     for (const [k, v] of Object.entries(changes))
@@ -37,216 +83,582 @@ export default function ProductDetail() {
     void navigate(`/products/${p.id}/` + (params.size ? "?" + params : ""));
   };
   return (
-    <Layout
-      height="fill"
-      defaultHasDividers
-      header={
-        <LayoutHeader padding={6}>
-          <VStack gap={3}>
-            <Link href={d.back_url} color="secondary">
-              ← {backLabel(d.back_url)}
-            </Link>
-            <HStack gap={4} hAlign="between" vAlign="center">
-              <StackItem size="fill">
-                <ProductIdentity sku={p.sku} name={p.name} size="detail">
-                  <VStack gap={2}>
-                    <Heading level={1}>{p.name}</Heading>
-                    <HStack gap={3} vAlign="center">
-                      <Text color="secondary">
-                        {p.sku} · {p.unit}
-                      </Text>
-                      <Status
-                        value="DRAFT"
-                        label={p.is_active ? "Aktif dijual" : "Nonaktif"}
-                      />
-                    </HStack>
-                  </VStack>
-                </ProductIdentity>
-              </StackItem>
-              {d.can_manage && (
-                <HStack gap={2}>
+    <>
+      <Layout
+        height="fill"
+        defaultHasDividers
+        header={
+          <LayoutHeader padding={6}>
+            <VStack gap={3}>
+              <Link href={d.back_url} color="secondary">
+                ← {backLabel(d.back_url)}
+              </Link>
+              <HStack gap={4} hAlign="between" vAlign="center">
+                <StackItem size="fill">
+                  <ProductIdentity sku={p.sku} name={p.name} size="detail">
+                    <VStack gap={2}>
+                      <Heading level={1}>{p.name}</Heading>
+                      <HStack gap={3} vAlign="center">
+                        <Text color="secondary">
+                          {p.sku} · {p.unit}
+                        </Text>
+                        <Status
+                          value="DRAFT"
+                          label={p.is_active ? "Aktif dijual" : "Nonaktif"}
+                        />
+                      </HStack>
+                    </VStack>
+                  </ProductIdentity>
+                </StackItem>
+                {d.can_manage && (
+                  <HStack gap={2}>
+                    <Button
+                      label="Hitung & koreksi fisik"
+                      href={stockContext(`/stock/${p.id}/reconcile/`, page.url)}
+                    />
+                    <Button
+                      label="Barang masuk"
+                      variant="primary"
+                      href={stockContext(`/stock/${p.id}/receive/`, page.url)}
+                    />
+                  </HStack>
+                )}
+              </HStack>
+            </VStack>
+          </LayoutHeader>
+        }
+        end={
+          panel ? (
+            <MotionPanel width="17rem" padding={4} role="complementary">
+              <VStack gap={4}>
+                <HStack hAlign="between" vAlign="center">
+                  <Heading level={2}>Informasi</Heading>
                   <Button
-                    label="Hitung & koreksi fisik"
-                    href={stockContext(`/stock/${p.id}/reconcile/`, page.url)}
-                  />
-                  <Button
-                    label="Barang masuk"
-                    variant="primary"
-                    href={stockContext(`/stock/${p.id}/receive/`, page.url)}
+                    label="Sembunyikan"
+                    variant="ghost"
+                    onClick={() => setPanel(false)}
                   />
                 </HStack>
-              )}
-            </HStack>
-          </VStack>
-        </LayoutHeader>
-      }
-      end={
-        panel ? (
-          <MotionPanel width="17rem" padding={4} role="complementary">
-            <VStack gap={4}>
-              <HStack hAlign="between" vAlign="center">
-                <Heading level={2}>Informasi</Heading>
-                <Button
-                  label="Sembunyikan"
-                  variant="ghost"
-                  onClick={() => setPanel(false)}
-                />
-              </HStack>
-              <Fact label="Harga per satuan">
-                {money(p.price)} / {p.unit}
-              </Fact>
-              <Fact label="Batas minimum">
-                {quantity(p.min_stock)} {p.unit}
-              </Fact>
-              <Fact label="Status produk">
-                {p.is_active
-                  ? "Aktif dijual"
-                  : "Nonaktif — tidak tersedia untuk pesanan baru"}
-              </Fact>
-              {d.can_manage && (
-                <Button
-                  label="Edit produk"
-                  href={stockContext(`/products/${p.id}/edit/`, page.url)}
-                />
-              )}
-            </VStack>
-          </MotionPanel>
-        ) : undefined
-      }
-      content={
-        <LayoutContent padding={6} data-oneflow-scroll>
-          <VStack gap={6}>
-            <VStack gap={4} data-tour="product-overview">
-              <HStack hAlign="between" vAlign="center">
-                <Heading level={2}>Stok saat ini</Heading>
-                {!panel && (
-                  <Button
-                    label="Informasi produk"
-                    variant="ghost"
-                    onClick={() => setPanel(true)}
-                  />
-                )}
-              </HStack>
-              <HStack gap={6} wrap="wrap">
+                <Fact label="Harga per satuan">
+                  {money(p.price)} / {p.unit}
+                </Fact>
+                <Fact label="Batas minimum">
+                  {quantity(p.min_stock)} {p.unit}
+                </Fact>
+                <Fact label="Status produk">
+                  {p.is_active
+                    ? "Aktif dijual"
+                    : "Nonaktif — tidak tersedia untuk pesanan baru"}
+                </Fact>
                 {d.can_manage && (
-                  <>
-                    <Fact label="Fisik">
-                      {quantity(p.on_hand)} {p.unit}
-                    </Fact>
-                    <Fact label="Reservasi">
-                      {quantity(p.reserved)} {p.unit}
-                    </Fact>
-                  </>
-                )}
-                <Fact label="Tersedia">
-                  <Heading level={2}>
-                    {quantity(p.available)} {p.unit}
-                  </Heading>
-                </Fact>
-                <Fact label="Kondisi">
-                  <StockCondition product={p} />
-                </Fact>
-              </HStack>
-              <Text type="supporting">
-                Tersedia = fisik − reservasi · Saldo diperbarui{" "}
-                {dateLabel(p.updated_at, true)} WIB
-              </Text>
-              {p.stock_state === "conflict" && (
-                <Banner
-                  status="warning"
-                  title="Fisik lebih kecil daripada reservasi"
-                  description={
-                    d.can_manage
-                      ? "Catat jumlah fisik yang benar, lalu periksa pesanan pada tab Reservasi. Konfirmasi baru diblokir selama stok bebas negatif."
-                      : "Koordinasikan dengan gudang. Konfirmasi baru diblokir selama stok bebas negatif."
-                  }
-                />
-              )}
-            </VStack>
-            {d.can_manage && (
-              <>
-                <TabList
-                  aria-label="Riwayat dan reservasi produk"
-                  value={d.selected_section}
-                  onChange={(section) => update({ section, page: "1" })}
-                >
-                  <Tab value="movements" label="Riwayat mutasi" />
-                  <Tab
-                    value="reservations"
-                    label={`Reservasi (${d.reservations.length})`}
+                  <Button
+                    label="Edit produk"
+                    href={stockContext(`/products/${p.id}/edit/`, page.url)}
                   />
-                </TabList>
-                {d.selected_section === "movements" ? (
-                  <MovementView data={d} update={update} singleProduct />
-                ) : (
-                  <VStack gap={4}>
-                    <Text color="secondary">
-                      Pesanan dikonfirmasi yang belum dikirim. Total alokasi:{" "}
-                      {quantity(d.reservation_total)} {p.unit}.
-                    </Text>
-                    {d.reservation_total !== p.reserved && (
+                )}
+              </VStack>
+            </MotionPanel>
+          ) : undefined
+        }
+        content={
+          <LayoutContent padding={6} data-oneflow-scroll>
+            <VStack gap={6}>
+              <VStack gap={4} data-tour="product-overview">
+                <HStack hAlign="between" vAlign="center">
+                  <Heading level={2}>Stok saat ini</Heading>
+                  {!panel && (
+                    <Button
+                      label="Informasi produk"
+                      variant="ghost"
+                      onClick={() => setPanel(true)}
+                    />
+                  )}
+                </HStack>
+                <HStack gap={6} wrap="wrap">
+                  {d.can_manage && (
+                    <>
+                      <Fact label="Fisik">
+                        {quantity(p.on_hand)} {p.unit}
+                      </Fact>
+                      <Fact label="Reservasi">
+                        {quantity(p.reserved)} {p.unit}
+                      </Fact>
+                    </>
+                  )}
+                  <Fact label="Tersedia">
+                    <Heading level={2}>
+                      {quantity(p.available)} {p.unit}
+                    </Heading>
+                  </Fact>
+                  <Fact label="Kondisi">
+                    <StockCondition product={p} />
+                  </Fact>
+                </HStack>
+                <Text type="supporting">
+                  Tersedia = fisik − reservasi · Saldo diperbarui{" "}
+                  {dateLabel(p.updated_at, true)} WIB
+                </Text>
+                {p.stock_state === "conflict" && (
+                  <Banner
+                    status="warning"
+                    title="Fisik lebih kecil daripada reservasi"
+                    description={
+                      d.can_manage
+                        ? "Catat jumlah fisik yang benar, lalu periksa pesanan pada tab Reservasi. Konfirmasi baru diblokir selama stok bebas negatif."
+                        : "Koordinasikan dengan gudang. Konfirmasi baru diblokir selama stok bebas negatif."
+                    }
+                  />
+                )}
+              </VStack>
+              {d.can_manage && (
+                <>
+                  <VStack gap={4} data-tour="product-batches">
+                    <VStack gap={1}>
+                      <Heading level={2}>Batch & masa simpan</Heading>
+                      <Text type="supporting">
+                        FEFO mengambil batch dengan tanggal kedaluwarsa terdekat
+                        lebih dahulu. Stok ditahan atau kedaluwarsa tetap
+                        tercatat fisik tetapi tidak dapat dialokasikan.
+                      </Text>
+                    </VStack>
+                    <HStack gap={6} wrap="wrap">
+                      <Fact label="Fisik">
+                        {quantity(d.batch_summary.on_hand)} {p.unit}
+                      </Fact>
+                      <Fact label="Dicadangkan">
+                        {quantity(d.batch_summary.reserved)} {p.unit}
+                      </Fact>
+                      <Fact label="Tersedia">
+                        {quantity(d.batch_summary.available)} {p.unit}
+                      </Fact>
+                      <Fact label="Tidak layak jual">
+                        {quantity(d.batch_summary.ineligible)} {p.unit}
+                      </Fact>
+                      <Fact label="Minimum sisa masa simpan">
+                        {d.shelf_life_days === null ||
+                        d.shelf_life_days === undefined
+                          ? "Perlu konfigurasi"
+                          : `${quantity(d.shelf_life_days)} hari`}
+                      </Fact>
+                    </HStack>
+                    {(d.shelf_life_days === null ||
+                      d.shelf_life_days === undefined) && (
                       <Banner
                         status="warning"
-                        title="Saldo reservasi berbeda dari alokasi pesanan"
-                        description="Periksa pencatatan bersama tim. Koreksi fisik tidak mengubah reservasi."
+                        title="Masa simpan minimum belum dikonfigurasi"
+                        description="FEFO berjalan tanpa syarat masa simpan. Isi minimum sisa masa simpan pada Edit produk sesuai kebijakan yang berlaku."
                       />
                     )}
                     <DataTable
-                      rows={d.reservations}
+                      rows={d.batches}
                       empty={
                         <Empty
-                          title="Tidak ada pesanan yang mereservasi produk ini"
-                          description="Reservasi dibuat setelah pesanan dikonfirmasi."
+                          title="Belum ada batch"
+                          description="Catat barang masuk dengan kode batch dan tanggal kedaluwarsa."
                         />
                       }
                       columns={[
                         {
-                          key: "number",
-                          header: "Pesanan",
+                          key: "code",
+                          header: "Kode batch",
                           renderCell: (r) => (
-                            <Link
-                              href={withReturn(
-                                `/orders/${r.order.id}/`,
-                                page.url,
+                            <VStack gap={1}>
+                              <Text weight="medium">{r.code}</Text>
+                              {!r.is_complete && (
+                                <Text type="supporting">Belum lengkap</Text>
                               )}
-                            >
-                              {r.order.number}
-                            </Link>
+                            </VStack>
                           ),
                         },
                         {
-                          key: "customer",
-                          header: "Pelanggan",
+                          key: "received_date",
+                          header: "Diterima",
                           renderCell: (r) => (
-                            <Text>{r.order.customer.name}</Text>
+                            <Text>{dateLabel(r.received_date)}</Text>
                           ),
                         },
                         {
-                          key: "date",
-                          header: "Dikonfirmasi",
+                          key: "expiry_date",
+                          header: "Kedaluwarsa",
                           renderCell: (r) => (
-                            <Text>{dateLabel(r.order.confirmed_at)}</Text>
+                            <Text>{dateLabel(r.expiry_date)}</Text>
                           ),
                         },
                         {
-                          key: "quantity",
-                          header: "Dialokasikan",
+                          key: "days_left",
+                          header: "Sisa masa simpan",
                           align: "end",
                           renderCell: (r) => (
                             <Text hasTabularNumbers>
-                              {quantity(r.quantity)} {p.unit}
+                              {r.days_left === null || r.days_left === undefined
+                                ? "—"
+                                : `${quantity(r.days_left)} hari`}
                             </Text>
+                          ),
+                        },
+                        {
+                          key: "on_hand",
+                          header: "Fisik",
+                          align: "end",
+                          renderCell: (r) => (
+                            <Text hasTabularNumbers>{quantity(r.on_hand)}</Text>
+                          ),
+                        },
+                        {
+                          key: "reserved",
+                          header: "Dicadangkan",
+                          align: "end",
+                          renderCell: (r) => (
+                            <Text hasTabularNumbers>
+                              {quantity(r.reserved)}
+                            </Text>
+                          ),
+                        },
+                        {
+                          key: "available",
+                          header: "Tersedia",
+                          align: "end",
+                          renderCell: (r) => (
+                            <Text hasTabularNumbers>
+                              {quantity(r.available)}
+                            </Text>
+                          ),
+                        },
+                        {
+                          key: "status",
+                          header: "Status",
+                          renderCell: (r) => (
+                            <Status
+                              value={
+                                r.status === "HELD"
+                                  ? "WAITING_STOCK"
+                                  : r.is_expired
+                                    ? "OVERDUE"
+                                    : r.is_complete
+                                      ? "STOCK_READY"
+                                      : "STOCK_LOW"
+                              }
+                              label={r.status_label}
+                            />
+                          ),
+                        },
+                        {
+                          key: "batch_action",
+                          header: "Tindakan",
+                          renderCell: (r) => (
+                            <ServerForm
+                              action={`/products/${p.id}/batches/${r.id}/status/`}
+                            >
+                              <input
+                                type="hidden"
+                                name="status"
+                                value={r.status === "HELD" ? "ACTIVE" : "HELD"}
+                              />
+                              <Button
+                                size="sm"
+                                type="submit"
+                                variant="secondary"
+                                label={
+                                  r.status === "HELD" ? "Aktifkan" : "Tahan"
+                                }
+                              />
+                            </ServerForm>
                           ),
                         },
                       ]}
                     />
                   </VStack>
-                )}
-              </>
-            )}
-          </VStack>
-        </LayoutContent>
-      }
-    />
+                  <VStack gap={4} data-tour="product-supply">
+                    <VStack gap={1}>
+                      <HStack hAlign="between" vAlign="center">
+                        <Heading level={2}>Perencanaan pasokan</Heading>
+                        {page.role === "MANAGER" && (
+                          <Button
+                            label="Catat pengadaan"
+                            variant="secondary"
+                            onClick={() =>
+                              setSupplyDialog({ open: "purchase", po: "" })
+                            }
+                          />
+                        )}
+                      </HStack>
+                      <Text type="supporting">
+                        Rata-rata harian memakai unit terkirim pada hari
+                        kalender penuh; stok layak mengikuti aturan FEFO.
+                        Rekomendasi hanya saran — keputusan tetap pada Anda.
+                      </Text>
+                    </VStack>
+                    {d.error && (
+                      <Banner
+                        status="error"
+                        title="Tindakan belum berhasil"
+                        description={d.error.message}
+                      />
+                    )}
+                    <HStack gap={6} wrap="wrap">
+                      <Fact label="Risiko">
+                        <Status value={d.supply.risk} />
+                      </Fact>
+                      <Fact label="Kecepatan penjualan">
+                        {d.supply.velocity
+                          ? `${d.supply.velocity.rate} ${p.unit}/hari · ${d.supply.velocity.period_days} hari`
+                          : "Perlu konfigurasi"}
+                      </Fact>
+                      <Fact label="Stok layak">
+                        {d.supply.eligible === null
+                          ? "—"
+                          : `${quantity(d.supply.eligible)} ${p.unit}`}
+                      </Fact>
+                      <Fact label="Cakupan stok saat ini">
+                        {d.supply.coverage_days
+                          ? `${d.supply.coverage_days} hari`
+                          : "Belum tercatat"}
+                      </Fact>
+                      <Fact label="Batas pemicu">
+                        {d.supply.trigger === null ||
+                        d.supply.trigger === undefined
+                          ? "—"
+                          : `${d.supply.trigger} ${p.unit}`}
+                      </Fact>
+                      <Fact label="Saran jumlah pengadaan">
+                        {d.supply.recommend_quantity === null ||
+                        d.supply.recommend_quantity === undefined
+                          ? "—"
+                          : `${quantity(d.supply.recommend_quantity)} ${p.unit}`}
+                      </Fact>
+                      <Fact label="Saran waktu pengadaan">
+                        {!d.supply.config
+                          ? "Perlu konfigurasi"
+                          : Number(d.supply.recommend_quantity) > 0
+                            ? `Pesan sekarang; lead time ${d.supply.config.lead_time_days} hari, estimasi stok saat tiba ${quantity(d.supply.arrival_stock)} ${p.unit}`
+                            : d.supply.stockout_date
+                              ? `Percepat pengadaan berjalan; proyeksi habis ${dateLabel(d.supply.stockout_date)}`
+                              : "Belum diperlukan"}
+                      </Fact>
+                      <Fact label="Pengadaan berjalan">
+                        {quantity(d.supply.outstanding_units)} {p.unit}
+                      </Fact>
+                    </HStack>
+                    {(d.supply.reasons || []).length > 0 && (
+                      <Collapsible
+                        trigger="Alasan perhitungan"
+                        defaultIsOpen={false}
+                      >
+                        <VStack gap={2}>
+                          {d.supply.reasons.map((reason: string) => (
+                            <Text key={reason}>{reason}</Text>
+                          ))}
+                          {d.supply.caveats.map((caveat: string) => (
+                            <Text key={caveat} type="supporting">
+                              ⚠ {caveat}
+                            </Text>
+                          ))}
+                        </VStack>
+                      </Collapsible>
+                    )}
+                    {page.role === "MANAGER" && d.supply_form && (
+                      <Collapsible
+                        trigger="Pengaturan per produk"
+                        defaultIsOpen={!d.supply.configured}
+                      >
+                        <SimpleForm
+                          spec={d.supply_form}
+                          action={`/products/${p.id}/supply/settings/`}
+                          label="Simpan pengaturan"
+                          fullWidth
+                        />
+                      </Collapsible>
+                    )}
+                    <DataTable
+                      rows={d.purchase_orders}
+                      empty={
+                        <Empty
+                          title="Belum ada catatan pengadaan"
+                          description="Catat pengadaan terkonfirmasi agar ikut dihitung dalam proyeksi."
+                        />
+                      }
+                      columns={[
+                        { key: "number", header: "Ref" },
+                        {
+                          key: "ordered",
+                          header: "Dipesan",
+                          align: "end",
+                          renderCell: (r) => (
+                            <Text hasTabularNumbers>{quantity(r.ordered)}</Text>
+                          ),
+                        },
+                        {
+                          key: "received",
+                          header: "Diterima",
+                          align: "end",
+                          renderCell: (r) => (
+                            <Text hasTabularNumbers>
+                              {quantity(r.received)} / sisa{" "}
+                              {quantity(r.remaining)}
+                            </Text>
+                          ),
+                        },
+                        {
+                          key: "expected_date",
+                          header: "Estimasi tiba",
+                          renderCell: (r) => (
+                            <Text>
+                              {r.expected_date
+                                ? dateLabel(r.expected_date)
+                                : "Belum tercatat"}
+                            </Text>
+                          ),
+                        },
+                        {
+                          key: "status",
+                          header: "Status",
+                          renderCell: (r) => (
+                            <Status value={r.status} label={r.status_label} />
+                          ),
+                        },
+                        {
+                          key: "note",
+                          header: "Referensi",
+                          renderCell: (r) => <Text>{r.note || "—"}</Text>,
+                        },
+                        {
+                          key: "action",
+                          header: "Tindakan",
+                          renderCell: (r) => (
+                            <HStack gap={2}>
+                              {r.status === "CONFIRMED" &&
+                                Number(r.remaining) > 0 && (
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    label="Terima"
+                                    onClick={() =>
+                                      setSupplyDialog({
+                                        open: "receive",
+                                        po: r.id,
+                                      })
+                                    }
+                                  />
+                                )}
+                              {page.role === "MANAGER" &&
+                                r.status === "CONFIRMED" &&
+                                Number(r.received) === 0 && (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    label="Batalkan"
+                                    onClick={() =>
+                                      setSupplyDialog({
+                                        open: "cancel",
+                                        po: r.id,
+                                      })
+                                    }
+                                  />
+                                )}
+                            </HStack>
+                          ),
+                        },
+                      ]}
+                    />
+                  </VStack>
+                  <TabList
+                    aria-label="Riwayat dan reservasi produk"
+                    value={d.selected_section}
+                    onChange={(section) => update({ section, page: "1" })}
+                  >
+                    <Tab value="movements" label="Riwayat mutasi" />
+                    <Tab
+                      value="reservations"
+                      label={`Reservasi (${d.reservations.length})`}
+                    />
+                  </TabList>
+                  {d.selected_section === "movements" ? (
+                    <MovementView data={d} update={update} singleProduct />
+                  ) : (
+                    <VStack gap={4}>
+                      <Text color="secondary">
+                        Pesanan dikonfirmasi yang belum dikirim. Total alokasi:{" "}
+                        {quantity(d.reservation_total)} {p.unit}.
+                      </Text>
+                      {d.reservation_total !== p.reserved && (
+                        <Banner
+                          status="warning"
+                          title="Saldo reservasi berbeda dari alokasi pesanan"
+                          description="Periksa pencatatan bersama tim. Koreksi fisik tidak mengubah reservasi."
+                        />
+                      )}
+                      <DataTable
+                        rows={d.reservations}
+                        empty={
+                          <Empty
+                            title="Tidak ada pesanan yang mereservasi produk ini"
+                            description="Reservasi dibuat setelah pesanan dikonfirmasi."
+                          />
+                        }
+                        columns={[
+                          {
+                            key: "number",
+                            header: "Pesanan",
+                            renderCell: (r) => (
+                              <Link
+                                href={withReturn(
+                                  `/orders/${r.order.id}/`,
+                                  page.url,
+                                )}
+                              >
+                                {r.order.number}
+                              </Link>
+                            ),
+                          },
+                          {
+                            key: "customer",
+                            header: "Pelanggan",
+                            renderCell: (r) => (
+                              <Text>{r.order.customer.name}</Text>
+                            ),
+                          },
+                          {
+                            key: "date",
+                            header: "Dikonfirmasi",
+                            renderCell: (r) => (
+                              <Text>{dateLabel(r.order.confirmed_at)}</Text>
+                            ),
+                          },
+                          {
+                            key: "quantity",
+                            header: "Dialokasikan",
+                            align: "end",
+                            renderCell: (r) => (
+                              <Text hasTabularNumbers>
+                                {quantity(r.quantity)} {p.unit}
+                              </Text>
+                            ),
+                          },
+                        ]}
+                      />
+                    </VStack>
+                  )}
+                </>
+              )}
+            </VStack>
+          </LayoutContent>
+        }
+      />
+      <FormDialog
+        isOpen={!!supplyDialog.open}
+        onOpenChange={closeSupplyDialog}
+        title={
+          supplyDialog.open === "purchase"
+            ? "Catat pengadaan terkonfirmasi"
+            : supplyDialog.open === "receive"
+              ? "Terima sebagian/penuh pengadaan"
+              : "Batalkan pengadaan"
+        }
+      >
+        <VStack padding={6} gap={4}>
+          {supplyForm()}
+        </VStack>
+      </FormDialog>
+    </>
   );
 }
