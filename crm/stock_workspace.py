@@ -5,10 +5,12 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from crm.access import orders_for, role_of
-from crm.models import Product, StockMovement
+from crm.models import Product, StockBatch, StockMovement
+from crm.services.batches import fefo_key
 
 
 def stock_state(product):
@@ -113,4 +115,56 @@ def product_workspace(actor, product, params):
         reservations = product.order_lines.filter(order__in=orders_for(actor).filter(status='CONFIRMED')).select_related('order__customer__owner', 'order__sales', 'order__confirmed_by', 'order__shipped_by', 'order__cancelled_by').order_by('order__confirmed_at', 'order_id')
         data['reservations'] = [{'id': line.pk, 'order': line.order, 'quantity': line.quantity} for line in reservations]
         data['reservation_total'] = sum(line['quantity'] for line in data['reservations'])
+        today, rows, ineligible = timezone.localdate(), [], 0
+        for batch in sorted(product.batches.all(), key=fefo_key):
+            expired = batch.expiry_date is not None and batch.expiry_date < today
+            if batch.status == StockBatch.Status.HELD or expired:
+                ineligible += batch.on_hand
+            rows.append({'id': str(batch.pk), 'code': batch.code, 'received_date': batch.received_date,
+                         'expiry_date': batch.expiry_date, 'on_hand': str(batch.on_hand), 'reserved': str(batch.reserved),
+                         'available': str(batch.available), 'status': batch.status, 'status_label': batch.get_status_display(),
+                         'is_complete': batch.is_complete, 'is_expired': expired, 'is_legacy': batch.code == StockBatch.LEGACY_CODE,
+                         'days_left': (batch.expiry_date - today).days if batch.expiry_date else None})
+        data['batches'] = rows
+        data['batch_summary'] = {'on_hand': str(product.balance.on_hand), 'reserved': str(product.balance.reserved),
+                                 'available': str(product.balance.available), 'ineligible': str(ineligible)}
+        data['shelf_life_days'] = product.min_shelf_life_days
+        data.update(supply_workspace(actor, product))
+    return data
+
+
+def supply_workspace(actor, product):
+    from uuid import uuid4
+
+    from crm.forms import CancelOrderForm, PurchaseOrderForm, ReceivePurchaseForm, SupplySettingForm
+    from crm.models import PurchaseOrder
+    from crm.services.supply import forecast
+
+    role = role_of(actor)
+    setting = getattr(product, 'supply_setting', None)
+    data = {'supply': forecast(product)}
+    if role == 'MANAGER':
+        data['supply_form'] = SupplySettingForm(actor=actor, initial={
+            'analysis_period_days': setting.analysis_period_days if setting else None,
+            'lead_time_days': setting.lead_time_days if setting else None,
+            'coverage_target_days': setting.coverage_target_days if setting else None,
+            'safety_stock_days': setting.safety_stock_days if setting else None,
+        })
+        data['purchase_form'] = PurchaseOrderForm(actor=actor)
+    orders = list(product.purchase_orders.select_related('created_by')[:20])
+    data['purchase_orders'] = [{
+        'id': str(order.pk), 'number': order.number, 'ordered': str(order.quantity_ordered),
+        'received': str(order.quantity_received), 'remaining': str(order.remaining),
+        'expected_date': order.expected_date, 'status': order.status, 'status_label': order.get_status_display(),
+        'note': order.note, 'cancel_reason': order.cancel_reason,
+        'created_by': order.created_by.get_full_name() or order.created_by.username,
+        'created_at': order.created_at, 'received_at': order.received_at,
+    } for order in orders]
+    if role in {'WAREHOUSE', 'MANAGER'}:
+        data['receive_forms'] = [
+            {'id': str(order.pk), 'form': ReceivePurchaseForm(initial={'operation_id': uuid4()})}
+            for order in orders if order.status == PurchaseOrder.Status.CONFIRMED and order.remaining
+        ]
+    if role == 'MANAGER':
+        data['cancel_purchase_form'] = CancelOrderForm()
     return data

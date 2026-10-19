@@ -140,6 +140,21 @@ export default function StockForm() {
                     {field("reason")}
                     {field("operation_id")}
                   </VStack>
+                  {!count && (
+                    <VStack gap={3}>
+                      <VStack gap={1}>
+                        <Heading level={2}>Data batch</Heading>
+                        <Text type="supporting">
+                          Isi kode batch dan tanggal agar barang dapat dipilih
+                          FEFO. Tanpa data batch, barang masuk ke lot “Belum
+                          lengkap” dan diperlakukan paling akhir.
+                        </Text>
+                      </VStack>
+                      {field("batch_code")}
+                      {field("received_date")}
+                      {field("expiry_date")}
+                    </VStack>
+                  )}
                   {physical !== null && (
                     <VStack gap={3}>
                       <Heading level={2}>Pratinjau stok</Heading>

@@ -876,6 +876,135 @@ export default function Today() {
               {analytics}
               {metrics}
               {workQueue}
+              {(d.sample_tasks || []).length > 0 && (
+                <VStack gap={3}>
+                  <HStack hAlign="between" vAlign="center">
+                    <Heading level={2}>Tugas sampel</Heading>
+                    <Button
+                      href={withReturn("/samples/", page.url)}
+                      size="sm"
+                      variant="secondary"
+                      label="Lihat semua pengajuan"
+                    />
+                  </HStack>
+                  <Text type="supporting">
+                    Tugas mengikuti peran: peninjauan manajer, persiapan gudang,
+                    atau tindak lanjut sales.
+                  </Text>
+                  <DataTable
+                    rows={d.sample_tasks}
+                    columns={[
+                      {
+                        key: "number",
+                        header: "Pengajuan",
+                        renderCell: (item) => (
+                          <Link
+                            href={withReturn(`/samples/${item.id}/`, page.url)}
+                            weight="semibold"
+                          >
+                            {item.number}
+                          </Link>
+                        ),
+                      },
+                      { key: "customer_name", header: "Pelanggan" },
+                      { key: "sales_name", header: "Sales" },
+                      { key: "task", header: "Tugas" },
+                      {
+                        key: "created_at",
+                        header: "Dibuat",
+                        renderCell: (item) => (
+                          <Text>{dateLabel(item.created_at)}</Text>
+                        ),
+                      },
+                    ]}
+                  />
+                </VStack>
+              )}
+              {(d.supply_alerts || []).length > 0 && (
+                <VStack gap={3}>
+                  <HStack hAlign="between" vAlign="center">
+                    <Heading level={2}>Peringatan pasokan</Heading>
+                    <Button
+                      href={withReturn("/stock/", page.url)}
+                      size="sm"
+                      variant="secondary"
+                      label="Buka gudang"
+                    />
+                  </HStack>
+                  <Text type="supporting">
+                    Dihitung ulang setiap halaman dimuat; tidak ada notifikasi
+                    latar saat aplikasi tertutup. Keputusan pengadaan tetap pada
+                    Anda.
+                  </Text>
+                  <DataTable
+                    rows={d.supply_alerts}
+                    columns={[
+                      {
+                        key: "product",
+                        header: "Produk",
+                        renderCell: (alert) => (
+                          <VStack gap={1}>
+                            <Link
+                              href={withReturn(
+                                `/products/${alert.product.id}/`,
+                                page.url,
+                              )}
+                              weight="semibold"
+                            >
+                              {alert.product.name}
+                            </Link>
+                            <Text type="supporting">{alert.product.sku}</Text>
+                          </VStack>
+                        ),
+                      },
+                      {
+                        key: "risk",
+                        header: "Risiko",
+                        renderCell: (alert) => <Status value={alert.risk} />,
+                      },
+                      {
+                        key: "eligible",
+                        header: "Stok layak",
+                        align: "end",
+                        renderCell: (alert) => (
+                          <Text hasTabularNumbers>
+                            {alert.eligible === null ||
+                            alert.eligible === undefined
+                              ? "—"
+                              : `${quantity(alert.eligible)} ${alert.product.unit}`}
+                          </Text>
+                        ),
+                      },
+                      {
+                        key: "recommend_quantity",
+                        header: "Saran pengadaan",
+                        align: "end",
+                        renderCell: (alert) => (
+                          <Text hasTabularNumbers>
+                            {alert.recommend_quantity === null ||
+                            alert.recommend_quantity === undefined
+                              ? "—"
+                              : `${quantity(alert.recommend_quantity)} ${alert.product.unit}`}
+                          </Text>
+                        ),
+                      },
+                      {
+                        key: "reasons",
+                        header: "Dasar",
+                        renderCell: (alert) => (
+                          <VStack gap={1}>
+                            {alert.reasons.map((reason: string) => (
+                              <Text key={reason} type="supporting">
+                                {reason}
+                              </Text>
+                            ))}
+                          </VStack>
+                        ),
+                      },
+                    ]}
+                  />
+                </VStack>
+              )}
               {targets}
               {warehouse && (
                 <VStack gap={3}>
@@ -1040,9 +1169,24 @@ export default function Today() {
                         {selected.reasons.unit}
                       </Fact>
                       <Text color="secondary">
+                        Perkiraan {dateLabel(selected.due_date)} ·{" "}
                         {selected.reasons.purchase_date_count} tanggal pembelian
-                        · interval median {selected.reasons.interval_days} hari.
+                        · interval{" "}
+                        {(selected.reasons.intervals_days || []).join(", ")}{" "}
+                        hari (median {selected.reasons.interval_days}).
                       </Text>
+                      {(selected.reasons.inbound || []).length > 0 && (
+                        <Text color="secondary">
+                          Pengadaan berjalan (bukan stok siap kirim):{" "}
+                          {(selected.reasons.inbound || [])
+                            .map(
+                              (po: Row) =>
+                                `${po.number} · ${po.remaining} unit · ${po.expected_date ? "estimasi " + dateLabel(po.expected_date) : "estimasi belum ada"}`,
+                            )
+                            .join("; ")}
+                          .
+                        </Text>
+                      )}
                     </>
                   )}
                 </VStack>

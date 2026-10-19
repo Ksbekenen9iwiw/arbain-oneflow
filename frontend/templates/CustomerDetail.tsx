@@ -24,6 +24,7 @@ import {
   Empty,
   dateLabel,
   money,
+  quantity,
   Banner,
 } from "../ui";
 import { useApp, useQueryState } from "../router";
@@ -231,6 +232,67 @@ export default function CustomerDetail() {
                   )}
                 </VStack>
               </Grid>
+            </VStack>
+            <VStack gap={3} id="customer-reorder">
+              <VStack gap={1}>
+                <Heading level={2}>Perkiraan pembelian ulang</Heading>
+                <Text type="supporting">
+                  Maksimal 6 tanggal terakhir · per pasangan pelanggan–produk.
+                </Text>
+              </VStack>
+              {(d.reorder_patterns || []).length ||
+              (d.thin_history || []).length ? (
+                <List hasDividers density="balanced">
+                  {(d.reorder_patterns || []).map((p: Row) => (
+                    <ListItem
+                      key={p.product_sku}
+                      label={`${p.product_name} · Perkiraan ${dateLabel(p.next_due)}`}
+                      description={
+                        <VStack gap={2}>
+                          <Text type="supporting">
+                            Terakhir {dateLabel(p.last_purchase_date)} ·{" "}
+                            {p.purchase_date_count} tanggal · interval{" "}
+                            {(p.intervals_days || []).join(", ")} hari (median{" "}
+                            {p.interval_days}). Acuan {quantity(p.typical_quantity)}{" "}
+                            {p.unit} · tersedia {quantity(p.available_quantity)}.
+                            {!p.consistent &&
+                              " Pola belum konsisten — tinjau manual."}
+                          </Text>
+                          {(p.inbound || []).length > 0 && (
+                            <Text type="supporting">
+                              Pengadaan berjalan (bukan stok siap kirim):{" "}
+                              {(p.inbound || [])
+                                .map(
+                                  (po: Row) =>
+                                    `${po.number} · ${po.remaining} unit · ${po.expected_date ? "estimasi " + dateLabel(po.expected_date) : "estimasi belum ada"}`,
+                                )
+                                .join("; ")}
+                              .
+                            </Text>
+                          )}
+                        </VStack>
+                      }
+                    />
+                  ))}
+                  {(d.thin_history || []).map((row: Row) => (
+                    <ListItem
+                      key={row.product_sku}
+                      label={row.product_name}
+                      description={
+                        <Text type="supporting">
+                          Riwayat belum cukup ({row.dates.length} dari minimal 3
+                          tanggal berbeda).
+                        </Text>
+                      }
+                    />
+                  ))}
+                </List>
+              ) : (
+                <Empty
+                  title="Belum ada riwayat pembelian"
+                  description="Pembelian terkirim akan membentuk pola perkiraan di sini."
+                />
+              )}
             </VStack>
             <VStack
               gap={3}

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { withReturn, stockTabUrl } from "./navigation.ts";
+import { withReturn, backLabel, stockTabUrl } from "./navigation.ts";
 test("prefilled wizard keeps customer and complete parent tab/filter context", () => {
   const back =
     "/customers/1/?tab=orders&return_to=%2Fcustomers%2F%3Fq%3DApotek";
@@ -9,6 +9,10 @@ test("prefilled wizard keeps customer and complete parent tab/filter context", (
   );
   assert.equal(params.get("customer"), "1");
   assert.equal(params.get("return_to"), back);
+});
+test("sample workspace has accurate back labels", () => {
+  assert.equal(backLabel("/samples/"), "Sampel");
+  assert.equal(backLabel("/samples/12/?return_to=%2Fsamples%2F"), "Detail pengajuan sampel");
 });
 test("stock tabs retain separate filter, sort and pagination contexts", () => {
   const products = "/stock/?status=inactive&filter=low&sort=-available";

@@ -21,6 +21,9 @@ import StockForm from "./templates/StockForm";
 import Detail from "./templates/Detail";
 import ActivityDetail from "./templates/ActivityDetail";
 import Today from "./templates/Today";
+import Samples from "./templates/Samples";
+import SampleForm from "./templates/SampleForm";
+import SampleDetail from "./templates/SampleDetail";
 import FormPage from "./templates/Form";
 import OrderWizard from "./templates/OrderWizard";
 import type { Page } from "./types";
@@ -96,6 +99,18 @@ function App() {
       break;
     case "order_form":
       content = <OrderWizard />;
+      break;
+    case "samples":
+      content = <Samples />;
+      break;
+    case "sample_form":
+      content = <SampleForm />;
+      break;
+    case "sample_detail":
+      content = <SampleDetail />;
+      break;
+    case "sample_policy":
+      content = <FormPage />;
       break;
     default:
       content = (

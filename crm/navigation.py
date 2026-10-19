@@ -2,7 +2,7 @@
 import re
 from urllib.parse import urlsplit, parse_qs
 
-WORKSPACE = re.compile(r"/(?:customers/|orders/|stock/|(?:customers|orders|products)/[1-9][0-9]{0,17}/)?$")
+WORKSPACE = re.compile(r"/(?:customers/|orders/|samples/|stock/|(?:customers|orders|samples|products)/[1-9][0-9]{0,17}/)?$")
 
 def safe_return(value, fallback, depth=0):
     if not value or len(value) > 4096 or depth > 5:

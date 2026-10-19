@@ -279,6 +279,11 @@ export function MovementView({
                     Lihat OF-{r.order_id.padStart(4, "0")}
                   </Link>
                 )}
+                {r.sample_request_id && (
+                  <Link href={withReturn(`/samples/${r.sample_request_id}/`, page.url)}>
+                    Lihat SP-{r.sample_request_id.padStart(4, "0")}
+                  </Link>
+                )}
               </VStack>
             ),
           },

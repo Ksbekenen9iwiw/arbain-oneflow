@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.test import TestCase
 from django.utils import timezone
-from crm.models import Activity, Order, StockMovement
+from crm.models import Activity, Order, SampleRequest, SampleRequestLine, StockMovement
 from crm.tests.factories import make_user, make_customer, make_product, make_order
 
 
@@ -18,6 +18,8 @@ class DesktopWorkflowTests(TestCase):
         cls.low = make_product('LOW', on_hand=0)
         cls.order = make_order(cls.sales, cls.customer, cls.product, 2)
         cls.other_order = make_order(cls.other, cls.foreign, cls.product, 1)
+        cls.sample = SampleRequest.objects.create(customer=cls.customer, sales=cls.sales, status='APPROVED')
+        SampleRequestLine.objects.create(request=cls.sample, product=cls.product, quantity=1)
 
     def setUp(self):
         self.client.force_login(self.sales)
@@ -80,10 +82,12 @@ class DesktopWorkflowTests(TestCase):
         self.assertEqual(response.context['form'].initial['stage'], 'INTERESTED')
 
     def test_desktop_screen_templates_render_for_each_role(self):
-        shared = ['/', '/stock/', '/orders/', f'/orders/{self.order.id}/']
+        shared = ['/', '/stock/', '/orders/', f'/orders/{self.order.id}/', '/samples/', f'/samples/{self.sample.id}/']
         editor = ['/products/new/', f'/products/{self.product.id}/edit/', f'/stock/{self.product.id}/receive/', f'/stock/{self.product.id}/reconcile/']
-        customer = ['/customers/', '/customers/new/', f'/customers/{self.customer.id}/', f'/customers/{self.customer.id}/activities/new/', '/orders/new/']
-        for actor, paths in [(self.sales, shared + customer), (self.manager, shared + customer + editor), (self.warehouse, ['/', '/stock/', '/orders/'] + editor)]:
+        customer = ['/customers/', '/customers/new/', f'/customers/{self.customer.id}/', f'/customers/{self.customer.id}/activities/new/', '/orders/new/', '/samples/new/']
+        manager_only = ['/samples/policy/']
+        warehouse = ['/', '/stock/', '/orders/', '/samples/', f'/samples/{self.sample.id}/']
+        for actor, paths in [(self.sales, shared + customer), (self.manager, shared + customer + editor + manager_only), (self.warehouse, warehouse + editor)]:
             self.client.force_login(actor)
             for path in paths:
                 with self.subTest(role=actor.username, path=path):

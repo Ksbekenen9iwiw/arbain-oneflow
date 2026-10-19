@@ -121,14 +121,24 @@ export function Status({ value, label }: { value: string; label?: string }) {
     STOCK_EMPTY: "Stok bebas habis",
     STOCK_LOW: "Menipis",
     STOCK_READY: "Cukup",
+    PASOKAN_AMAN: "Aman",
+    PERLU_PENGADAAN: "Perlu pengadaan",
+    RISIKO_KOSONG_TERLAMBAT: "Risiko kosong, percepat",
+    PERLU_KONFIGURASI: "Perlu konfigurasi",
+    PERLU_DITINJAU: "Perlu ditinjau",
   };
   const critical = [
     "OVERDUE",
     "STOCK_CONFLICT",
     "STOCK_EMPTY",
     "WAITING_STOCK",
+    "RISIKO_KOSONG_TERLAMBAT",
   ].includes(value);
-  const warning = value === "STOCK_LOW";
+  const warning = [
+    "STOCK_LOW",
+    "PERLU_PENGADAAN",
+    "PERLU_KONFIGURASI",
+  ].includes(value);
   return (
     <HStack hAlign="start">
       <Token
@@ -146,9 +156,16 @@ export function Status({ value, label }: { value: string; label?: string }) {
             ? "red"
             : warning
               ? "orange"
-              : ["SHIPPED", "DONE", "STOCK_READY"].includes(value)
+              : ["SHIPPED", "DONE", "STOCK_READY", "PASOKAN_AMAN"].includes(
+                    value,
+                  )
                 ? "green"
-                : ["CONFIRMED", "READY", "DUE_TODAY"].includes(value)
+                : [
+                      "CONFIRMED",
+                      "READY",
+                      "DUE_TODAY",
+                      "PERLU_DITINJAU",
+                    ].includes(value)
                   ? "blue"
                   : "gray"
         }

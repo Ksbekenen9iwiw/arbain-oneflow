@@ -82,6 +82,16 @@ export default function Detail() {
   ]
     .filter((event) => event.at)
     .sort((a, b) => a.at.localeCompare(b.at));
+  const allocationRows: Row[] = d.allocations
+    ? d.lines.flatMap((line: Row) =>
+        ((d.allocations[line.id] as Row[]) || []).map((allocation: Row) => ({
+          ...allocation,
+          id: `${line.id}-${allocation.id}`,
+          sku: line.product.sku,
+          unit: line.product.unit,
+        })),
+      )
+    : [];
   return (
     <>
       <Layout
@@ -142,6 +152,14 @@ export default function Detail() {
                       label="Tandai terkirim"
                       isDisabled={busy || d.blockers.length > 0}
                       onClick={() => setDialog("ship")}
+                    />
+                  )}
+                  {d.can_swap && (
+                    <Button
+                      variant="secondary"
+                      label="Ganti batch"
+                      isDisabled={busy}
+                      onClick={() => setDialog("swap")}
                     />
                   )}
                   <IconButton
@@ -372,6 +390,94 @@ export default function Detail() {
                   Harga satuan tersimpan saat produk ditambahkan ke draft.
                 </Text>
               </VStack>
+              {allocationRows.length > 0 && (
+                <VStack gap={4} data-tour="order-allocations">
+                  <VStack gap={1}>
+                    <Heading level={2}>Alokasi batch</Heading>
+                    <Text type="supporting">
+                      Batch diambil berurutan dari tanggal kedaluwarsa terdekat
+                      (FEFO).
+                    </Text>
+                  </VStack>
+                  <DataTable
+                    rows={allocationRows}
+                    columns={[
+                      {
+                        key: "sku",
+                        header: "Produk",
+                        renderCell: (r) => <Text>{r.sku}</Text>,
+                      },
+                      {
+                        key: "batch_code",
+                        header: "Batch",
+                        renderCell: (r) => (
+                          <Text weight="medium">{r.batch_code}</Text>
+                        ),
+                      },
+                      {
+                        key: "expiry_date",
+                        header: "Kedaluwarsa",
+                        renderCell: (r) => (
+                          <Text>{dateLabel(r.expiry_date)}</Text>
+                        ),
+                      },
+                      {
+                        key: "quantity",
+                        header: "Dialokasikan",
+                        align: "end",
+                        renderCell: (r) => (
+                          <Text hasTabularNumbers>
+                            {quantity(r.quantity)} {r.unit}
+                          </Text>
+                        ),
+                      },
+                      {
+                        key: "status",
+                        header: "Status batch",
+                        renderCell: (r) => (
+                          <Status
+                            value={
+                              r.status === "HELD"
+                                ? "WAITING_STOCK"
+                                : "STOCK_READY"
+                            }
+                            label={r.status_label}
+                          />
+                        ),
+                      },
+                    ]}
+                  />
+                </VStack>
+              )}
+              {d.batch_swaps.length > 0 && (
+                <VStack gap={4} data-tour="order-batch-swaps">
+                  <VStack gap={1}>
+                    <Heading level={2}>Riwayat penggantian batch</Heading>
+                    <Text type="supporting">
+                      Perubahan batch oleh gudang beserta alasannya.
+                    </Text>
+                  </VStack>
+                  <List hasDividers>
+                    {d.batch_swaps.map((swap: Row) => (
+                      <ListItem
+                        key={swap.id}
+                        label={`${swap.product_sku}: ${swap.from_code} ke ${swap.to_code}`}
+                        description={
+                          <VStack gap={1}>
+                            <Text>
+                              {quantity(swap.quantity)} unit · {swap.reason}
+                            </Text>
+                            <Text type="supporting">
+                              {swap.actor} · {dateLabel(swap.created_at, true)}{" "}
+                              WIB
+                            </Text>
+                          </VStack>
+                        }
+                      />
+                    ))}
+                  </List>
+                </VStack>
+              )}
               <Divider />
               <VStack gap={4} data-tour="order-history-overview">
                 <Heading level={2}>Riwayat pesanan</Heading>
@@ -422,7 +528,7 @@ export default function Detail() {
         isOpen={!!dialog}
         onOpenChange={close}
         width="36rem"
-        title={`${dialog === "cancel" ? "Batalkan" : dialog === "ship" ? "Tandai terkirim" : "Konfirmasi"} ${order.number}`}
+        title={`${dialog === "cancel" ? "Batalkan" : dialog === "ship" ? "Tandai terkirim" : dialog === "swap" ? "Ganti batch" : "Konfirmasi"} ${order.number}`}
       >
         <VStack padding={6} gap={4}>
           <Fact label="Pelanggan / total">
@@ -433,7 +539,9 @@ export default function Detail() {
               ? `${order.status === "CONFIRMED" ? "Reservasi stok akan dilepas. " : "Draft ini belum mereservasi stok. "}Alasan pembatalan akan tersimpan dalam riwayat.`
               : dialog === "ship"
                 ? "Pastikan seluruh barang sudah diserahkan untuk pengiriman. Tindakan ini mencatat pengiriman dan mengurangi stok fisik serta reservasi."
-                : "Seluruh jumlah pesanan akan direservasi. Stok fisik belum berkurang. Ketersediaan diperiksa kembali saat konfirmasi."}
+                : dialog === "swap"
+                  ? "Pilih baris pesanan, batch asal, batch tujuan, dan isi alasan. Alokasi awal tetap utuh bila penggantian gagal."
+                  : "Seluruh jumlah pesanan akan direservasi. Stok fisik belum berkurang. Ketersediaan diperiksa kembali saat konfirmasi."}
           </Text>
           {dialog === "cancel" ? (
             <SimpleForm
@@ -441,6 +549,20 @@ export default function Detail() {
               action={actionUrl("cancel")}
               label="Batalkan pesanan"
               variant="destructive"
+            />
+          ) : dialog === "confirm" ? (
+            <SimpleForm
+              spec={d.confirm_form}
+              action={actionUrl("confirm")}
+              label="Ya, konfirmasi"
+              variant="primary"
+            />
+          ) : dialog === "swap" ? (
+            <SimpleForm
+              spec={d.swap_form}
+              action={actionUrl("swap")}
+              label="Simpan penggantian"
+              variant="primary"
             />
           ) : (
             <ServerForm action={actionUrl(dialog)}>
@@ -452,9 +574,7 @@ export default function Detail() {
                   isDisabled={busy}
                 />
                 <Button
-                  label={
-                    dialog === "ship" ? "Ya, tandai terkirim" : "Ya, konfirmasi"
-                  }
+                  label="Ya, tandai terkirim"
                   type="submit"
                   variant="primary"
                   isLoading={busy}

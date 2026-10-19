@@ -14,12 +14,14 @@ from django.db.models import Sum
 from django.test import TestCase
 
 from crm.management.commands import evaluate_actions, seed_demo
-from crm.models import Activity, Customer, InventoryBalance, Order, Product, StockMovement
+from crm.models import Activity, Customer, InventoryBalance, Order, Product, SamplePolicy, SampleRequest, StockMovement
 from crm.errors import BusinessError
 from crm.selectors import dashboard_metrics
 from crm.services.actions import list_actions
 from crm.services.inventory import receive_stock
 from crm.services.orders import confirm_order, create_draft, ship_order
+from crm.services.samples import recommend
+from crm.services.supply import forecast
 from crm.tests.factories import make_customer, make_user
 
 
@@ -98,6 +100,51 @@ class DemoTests(TestCase):
         self.assertEqual(dashboard_metrics(manager, as_of)['shipped_value_rupiah'] - before, 400000)
         self.assertTrue(customer_a.orders.filter(pk=a.id, status='SHIPPED').exists())
         self.assertEqual(StockMovement.objects.filter(source_ref=f'SHIP:{a.id}:{product.id}').count(), 1)
+
+    def test_fefo_demo_scenario_splits_by_earliest_expiry(self):
+        call_command('seed_demo', as_of='2026-10-11', fefo_demo=True, stdout=StringIO())
+        product = Product.objects.get(sku='HERBAL03')
+        product.balance.refresh_from_db()
+        self.assertEqual(product.min_shelf_life_days, 14)
+        self.assertEqual((product.balance.on_hand, product.balance.reserved, product.balance.available), (70, 25, 45))
+        order = Order.objects.get(status='CONFIRMED', lines__product=product)
+        line = order.lines.get(product=product)
+        self.assertEqual({a.batch.code: a.quantity for a in line.allocations.all()}, {'DEMO-A': 20, 'DEMO-B': 5})
+        ship_order(User.objects.get(username='gudang'), order.id)
+        product.balance.refresh_from_db()
+        self.assertEqual((product.balance.on_hand, product.balance.reserved, product.balance.available), (45, 0, 45))
+        self.assertEqual({batch.code: batch.on_hand for batch in product.batches.all()},
+                         {'BELUM-LENGKAP': 0, 'DEMO-A': 0, 'DEMO-B': 45})
+
+    def test_samples_demo_has_three_explainable_scenarios(self):
+        output = StringIO()
+        call_command('seed_demo', as_of='2026-10-11', samples_demo=True, stdout=output)
+        policy = SamplePolicy.objects.get(pk=1)
+        self.assertEqual((policy.repeat_threshold, policy.review_period_days, policy.evaluation_days), (2, 180, 14))
+        self.assertEqual(SampleRequest.objects.count(), 5)
+        self.assertEqual(SampleRequest.objects.filter(fulfillment_status='RECEIVED').count(), 3)
+        self.assertEqual(SampleRequest.objects.filter(order__isnull=False, outcome='PURCHASED').count(), 1)
+        pending = SampleRequest.objects.filter(status='SUBMITTED', customer__code='CUS003').get()
+        self.assertEqual(recommend(pending, date(2026, 10, 11))['result'], SampleRequest.Recommendation.REJECT)
+        product = Product.objects.get(sku='COSM03')
+        product.balance.refresh_from_db()
+        self.assertEqual((product.balance.on_hand, product.balance.reserved), (17, 0))
+        self.assertEqual(StockMovement.objects.filter(product=product, kind='SAMPLE').count(), 3)
+        self.assertIn('Skenario sampel simulasi', output.getvalue())
+
+    def test_supply_demo_has_three_explainable_risk_states(self):
+        output = StringIO()
+        call_command('seed_demo', as_of='2026-10-11', supply_demo=True, stdout=output)
+        as_of = date(2026, 10, 11)
+        madu = forecast(Product.objects.get(sku='MADU01'), as_of)
+        self.assertEqual((madu['risk'], madu['velocity']['rate'], madu['eligible'], madu['recommend_quantity']),
+                         ('PERLU_PENGADAAN', '5', 76, 19))
+        herbal = forecast(Product.objects.get(sku='HERBAL01'), as_of)
+        self.assertEqual(herbal['risk'], 'RISIKO_KOSONG_TERLAMBAT')
+        self.assertEqual(herbal['recommend_quantity'], 0)
+        cosm = forecast(Product.objects.get(sku='COSM03'), as_of)
+        self.assertEqual(cosm['risk'], 'PERLU_DITINJAU')
+        self.assertIn('Skenario pasokan simulasi', output.getvalue())
 
     def test_evaluation_reports_actual_case_results(self):
         self.assertTrue(hasattr(evaluate_actions, 'Command'), 'evaluate_actions not implemented')

@@ -8,17 +8,20 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from crm.access import customers_for, orders_for, require_role, role_of
+from crm.access import customers_for, orders_for, require_role, role_of, sample_requests_for
 from crm.stock_workspace import stock_records, stock_return_url, product_workspace
+from crm.sample_workspace import sample_context, sample_records, sample_tasks
 from crm.errors import BusinessError
 from crm.navigation import return_url
-from crm.forms import ActionDecisionForm, ActivityCompletionForm, ActivityForm, CancelOrderForm, CustomerForm, OrderForm, OrderLineFormSet, ProductEditForm, ProductForm, StockCountForm, StockReceiptForm
-from crm.models import Activity, InventoryBalance, Product, SalesTarget, StockMovement
+from crm.forms import ActionDecisionForm, ActivityCompletionForm, ActivityForm, BatchStatusForm, BatchSwapForm, CancelOrderForm, CancelSampleForm, ConfirmOrderForm, CustomerForm, OrderForm, OrderLineFormSet, ProductEditForm, ProductForm, PurchaseOrderForm, ReceivePurchaseForm, SampleDecisionForm, SampleLineFormSet, SampleOutcomeForm, SamplePolicyForm, SampleRequestForm, SampleScheduleForm, StockCountForm, StockReceiptForm, SupplySettingForm
+from crm.models import Activity, InventoryBalance, Product, PurchaseOrder, SalesTarget, SamplePolicy, SampleRequest, StockMovement
 from crm.selectors import order_records, customer_records, customer_history, dashboard_metrics, dashboard_sales, dashboard_activities
 from crm.forms import SalesTargetForm
-from crm.services.inventory import receive_stock, reconcile_stock
-from crm.services.orders import cancel_order, confirm_order, create_draft, ship_order, update_draft, draft_version
+from crm.services.inventory import receive_stock, reconcile_stock, set_batch_status
+from crm.services.orders import cancel_order, confirm_order, create_draft, ship_order, swap_batch, update_draft, draft_version
 from crm.services.actions import list_actions, record_action
+from crm.services.samples import cancel_request as cancel_sample_request, create_draft as create_sample_draft, decide as decide_sample, mark_received as receive_sample, record_followup as record_sample_followup, sample_version, save_policy as save_sample_policy, schedule_followup as schedule_sample_followup, ship_request as ship_sample_request, submit_request as submit_sample_request, update_draft as update_sample_draft
+from crm.services.supply import cancel_purchase_order, create_purchase_order, receive_purchase_order, save_settings, supply_alerts
 
 
 def page(request, template, context=None, status=200):
@@ -74,6 +77,8 @@ def _today_page(request, overrides=None, status=200):
             activity.due = min(dates) if dates else None
         context['agenda'] = sorted(agenda, key=lambda item: (item.due is None, item.due or as_of, item.pk))
     context['action_orders'] = list(orders_for(request.user).exclude(status='CANCELLED')) if role != 'WAREHOUSE' else []
+    context['sample_tasks'] = sample_tasks(request.user)
+    context['supply_alerts'] = supply_alerts(request.user)
     if role == 'MANAGER':
         context['saved_targets'] = [{'sales': str(t.sales_id), 'month': t.month.strftime('%Y-%m'), 'amount': str(t.target_rupiah)} for t in SalesTarget.objects.filter(sales__in=sales_options)]
     if role == 'MANAGER':
@@ -348,12 +353,32 @@ def _order_context(request, order):
         elif order.status == 'CONFIRMED' and role in {'MANAGER', 'WAREHOUSE'}:
             if balance.on_hand < line.quantity or balance.reserved < line.quantity:
                 blockers.append(f'{line.product.name}: dibutuhkan {line.quantity}, fisik {balance.on_hand}, reservasi {balance.reserved} {line.product.unit}. Kekurangan fisik {max(0, line.quantity - balance.on_hand)}, kekurangan reservasi {max(0, line.quantity - balance.reserved)}. Periksa stok dan alokasi pesanan.')
+    allocations, swaps = {}, []
+    if role != 'SALES':
+        for line in lines:
+            allocations[str(line.pk)] = [
+                {'id': str(allocation.pk), 'batch_code': allocation.batch.code, 'quantity': str(allocation.quantity),
+                 'expiry_date': allocation.batch.expiry_date, 'status': allocation.batch.status,
+                 'status_label': allocation.batch.get_status_display()}
+                for allocation in line.allocations.select_related('batch')
+            ]
+            swaps.extend(
+                {'id': str(swap.pk), 'product_sku': line.product.sku, 'from_code': swap.from_batch.code,
+                 'to_code': swap.to_batch.code, 'quantity': str(swap.quantity), 'reason': swap.reason,
+                 'actor': swap.actor.get_full_name() or swap.actor.username, 'created_at': swap.created_at}
+                for swap in line.batch_swaps.select_related('from_batch', 'to_batch', 'actor')
+            )
+    swaps.sort(key=lambda swap: (swap['created_at'], swap['id']), reverse=True)
+    can_swap = role in {'WAREHOUSE', 'MANAGER'} and order.status == 'CONFIRMED' and bool(lines)
     return {'order': order, 'lines': lines, 'line_checks': checks, 'blockers': blockers,
             'back_url': order_return_url(request), 'detail_url': order_detail_url(request, order.pk),
             'can_confirm': role in {'SALES', 'MANAGER'} and order.status == 'DRAFT',
             'can_ship': role in {'WAREHOUSE', 'MANAGER'} and order.status == 'CONFIRMED',
             'can_cancel': order.status in {'DRAFT', 'CONFIRMED'} and (role != 'WAREHOUSE' or order.status == 'CONFIRMED'),
-            'cancel_form': CancelOrderForm()}
+            'cancel_form': CancelOrderForm(),
+            'confirm_form': ConfirmOrderForm(initial={'expected_receipt_date': order.expected_receipt_date}),
+            'allocations': allocations, 'batch_swaps': swaps, 'can_swap': can_swap,
+            'swap_form': BatchSwapForm(order=order) if can_swap else None}
 
 
 @login_required
@@ -363,7 +388,7 @@ def order_detail(request, order_id):
     return page(request, 'crm/order_detail.html', _order_context(request, order))
 
 
-def _transition(request, order_id, operation, *args):
+def _transition(request, order_id, operation, *args, extra=None):
     try:
         order = operation(request.user, order_id, *args)
     except BusinessError as error:
@@ -372,6 +397,8 @@ def _transition(request, order_id, operation, *args):
             return page(request, 'crm/error.html', {'error': error, 'back_url': order_return_url(request)}, status=error.status_code)
         context = _order_context(request, order)
         context['error'] = error
+        if extra:
+            context.update(extra)
         return page(request, 'crm/order_detail.html', context, status=error.status_code)
     messages.success(request, f'Pesanan OF-{order.id:04d}: {'Menunggu pengiriman' if order.status == 'CONFIRMED' else order.get_status_display()}.')
     if role_of(request.user) == 'WAREHOUSE' and order.status == 'CANCELLED':
@@ -382,13 +409,52 @@ def _transition(request, order_id, operation, *args):
 @login_required
 @require_POST
 def order_confirm(request, order_id):
-    return _transition(request, order_id, confirm_order)
+    form = ConfirmOrderForm(request.POST)
+    if not form.is_valid():
+        order = get_object_or_404(orders_for(request.user), pk=order_id)
+        context = _order_context(request, order)
+        context.update(confirm_form=form, dialog='confirm')
+        return page(request, 'crm/order_detail.html', context, status=400)
+    extra = {'confirm_form': form, 'dialog': 'confirm'}
+    return _transition(request, order_id, confirm_order, form.cleaned_data['expected_receipt_date'], extra=extra)
 
 
 @login_required
 @require_POST
 def order_ship(request, order_id):
     return _transition(request, order_id, ship_order)
+
+
+@login_required
+@require_POST
+def order_swap(request, order_id):
+    require_role(request.user, {'WAREHOUSE', 'MANAGER'})
+    order = get_object_or_404(orders_for(request.user), pk=order_id)
+    form = BatchSwapForm(request.POST, order=order)
+    if not form.is_valid():
+        context = _order_context(request, order)
+        context.update(swap_form=form, dialog='swap')
+        return page(request, 'crm/order_detail.html', context, status=400)
+    fields = form.cleaned_data
+    extra = {'swap_form': form, 'dialog': 'swap'}
+    return _transition(request, order_id, swap_batch, fields['line_id'], fields['from_batch_id'],
+                       fields['to_batch_id'], fields['quantity'], fields['reason'], extra=extra)
+
+
+@login_required
+@require_POST
+def batch_status(request, product_id, batch_id):
+    form = BatchStatusForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, 'Status batch tidak dikenal.')
+        return redirect(f'/products/{product_id}/')
+    try:
+        set_batch_status(request.user, product_id, batch_id, form.cleaned_data['status'])
+    except BusinessError as error:
+        messages.error(request, error.message)
+    else:
+        messages.success(request, 'Status batch tersimpan. Batch ditahan tidak lagi dipilih FEFO.')
+    return redirect(f'/products/{product_id}/')
 
 
 @login_required
@@ -441,3 +507,258 @@ def target_save(request):
         messages.success(request, 'Target bulanan tersimpan.')
         return redirect(_dashboard_return(request))
     return _dashboard_error(request, {'target_form': form, 'target_dialog': True})
+
+
+def sample_return_url(request):
+    return return_url(request, '/samples/')
+
+
+def sample_detail_url(request, sample_id):
+    back = sample_return_url(request)
+    return f'/samples/{sample_id}/' + ('?' + urlencode({'return_to': back}) if back != '/samples/' else '')
+
+
+@login_required
+@require_GET
+def samples(request):
+    return page(request, 'crm/samples.html', sample_records(request.user, request.GET))
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def sample_create(request, sample_id=None):
+    require_role(request.user, {'SALES', 'MANAGER'})
+    sample = None
+    if sample_id is not None:
+        sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id, status=SampleRequest.Status.DRAFT)
+    initial = {
+        'customer': sample.customer_id if sample else request.GET.get('customer'),
+        'purpose': sample.purpose if sample else '',
+        'customer_need': sample.customer_need if sample else '',
+        'potential_orders': sample.potential_orders if sample else '',
+        'business_profile': sample.business_profile if sample else '',
+        'notes': sample.notes if sample else '',
+    }
+    form = SampleRequestForm(request.POST or None, actor=request.user, initial=initial)
+    initial_lines = [{'product': line.product_id, 'quantity': line.quantity} for line in sample.lines.all()] if sample else None
+    formset = SampleLineFormSet(request.POST or None, prefix='lines', initial=initial_lines)
+    status = 400 if request.method == 'POST' else 200
+    if request.method == 'POST' and form.is_valid() and formset.is_valid():
+        lines = [{'product_id': line['product'].id, 'quantity': line['quantity']}
+                 for line in formset.cleaned_data if line and not line.get('DELETE')]
+        fields = {name: form.cleaned_data[name] for name in ('purpose', 'customer_need', 'potential_orders', 'business_profile', 'notes')}
+        try:
+            saved = update_sample_draft(request.user, sample.pk, form.cleaned_data['customer'].id, lines,
+                                        request.POST.get('draft_version'), **fields) if sample else create_sample_draft(
+                                            request.user, form.cleaned_data['customer'].id, lines, **fields)
+        except BusinessError as error:
+            form.add_error(None, error.message)
+            status = error.status_code
+        else:
+            messages.success(request, 'Draf pengajuan sampel tersimpan.')
+            return redirect(sample_detail_url(request, saved.pk))
+    catalog = [{'id': str(product.pk), 'name': product.name, 'sku': product.sku,
+                'available': str(product.balance.available), 'unit': product.unit}
+               for product in Product.objects.filter(is_active=True).select_related('balance')]
+    return page(request, 'crm/sample_form.html', {
+        'form': form, 'formset': formset, 'catalog': catalog,
+        'editing': sample.number if sample else '',
+        'draft_version': (request.POST.get('draft_version', '') if request.method == 'POST' else sample_version(sample)) if sample else '',
+        'back_url': sample_detail_url(request, sample.pk) if sample else sample_return_url(request),
+        'customer_details': list(customers_for(request.user).filter(is_active=True)),
+    }, status=status)
+
+
+def _sample_context(request, sample):
+    context = sample_context(request.user, sample)
+    context.update(
+        back_url=sample_return_url(request),
+        detail_url=sample_detail_url(request, sample.pk),
+        decision_form=SampleDecisionForm(),
+        cancel_form=CancelSampleForm(),
+        schedule_form=SampleScheduleForm(),
+        outcome_form=SampleOutcomeForm(actor=request.user, request=sample) if role_of(request.user) in {'SALES', 'MANAGER'} else None,
+    )
+    return context
+
+
+@login_required
+@require_GET
+def sample_detail(request, sample_id):
+    sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
+    return page(request, 'crm/sample_detail.html', _sample_context(request, sample))
+
+
+def _sample_transition(request, sample_id, operation, *args, extra=None):
+    try:
+        sample = operation(request.user, sample_id, *args)
+    except BusinessError as error:
+        sample = sample_requests_for(request.user).filter(pk=sample_id).first()
+        if not sample:
+            return page(request, 'crm/error.html', {'error': error, 'back_url': '/samples/'}, status=error.status_code)
+        context = _sample_context(request, sample)
+        context['error'] = error
+        if extra:
+            context.update(extra)
+        return page(request, 'crm/sample_detail.html', context, status=error.status_code)
+    messages.success(request, f'Pengajuan {sample.number} diperbarui: {sample.get_status_display()} · {sample.get_fulfillment_status_display()}.')
+    return redirect(sample_detail_url(request, sample_id))
+
+
+@login_required
+@require_POST
+def sample_submit(request, sample_id):
+    return _sample_transition(request, sample_id, submit_sample_request)
+
+
+@login_required
+@require_POST
+def sample_cancel(request, sample_id):
+    form = CancelSampleForm(request.POST)
+    if not form.is_valid():
+        sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
+        context = _sample_context(request, sample)
+        context.update(cancel_form=form, dialog='cancel')
+        return page(request, 'crm/sample_detail.html', context, status=400)
+    return _sample_transition(request, sample_id, cancel_sample_request, form.cleaned_data['reason'])
+
+
+@login_required
+@require_POST
+def sample_decide(request, sample_id):
+    form = SampleDecisionForm(request.POST)
+    if not form.is_valid():
+        sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
+        context = _sample_context(request, sample)
+        context.update(decision_form=form, dialog='decision')
+        return page(request, 'crm/sample_detail.html', context, status=400)
+    return _sample_transition(request, sample_id, decide_sample, form.cleaned_data['decision'], form.cleaned_data['note'])
+
+
+@login_required
+@require_POST
+def sample_ship(request, sample_id):
+    return _sample_transition(request, sample_id, ship_sample_request)
+
+
+@login_required
+@require_POST
+def sample_receive(request, sample_id):
+    return _sample_transition(request, sample_id, receive_sample)
+
+
+@login_required
+@require_POST
+def sample_schedule(request, sample_id):
+    sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
+    form = SampleScheduleForm(request.POST)
+    if not form.is_valid():
+        context = _sample_context(request, sample)
+        context.update(schedule_form=form, dialog='schedule')
+        return page(request, 'crm/sample_detail.html', context, status=400)
+    return _sample_transition(request, sample_id, schedule_sample_followup, form.cleaned_data['followup_date'], form.cleaned_data['note'])
+
+
+@login_required
+@require_POST
+def sample_outcome(request, sample_id):
+    sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
+    form = SampleOutcomeForm(request.POST, actor=request.user, request=sample)
+    if not form.is_valid():
+        context = _sample_context(request, sample)
+        context.update(outcome_form=form, dialog='outcome')
+        return page(request, 'crm/sample_detail.html', context, status=400)
+    order = form.cleaned_data['order_id']
+    return _sample_transition(request, sample_id, record_sample_followup, form.cleaned_data['response'],
+                              form.cleaned_data['outcome'], form.cleaned_data['note'], order.pk if order else None)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def sample_policy(request):
+    require_role(request.user, {'MANAGER'})
+    policy = SamplePolicy.objects.filter(pk=1).first()
+    initial = {
+        'repeat_threshold': policy.repeat_threshold if policy else None,
+        'review_period_days': policy.review_period_days if policy else None,
+        'evaluation_days': policy.evaluation_days if policy else None,
+    }
+    form = SamplePolicyForm(request.POST or None, actor=request.user, initial=initial)
+    if request.method == 'POST' and form.is_valid():
+        save_sample_policy(request.user, **form.cleaned_data)
+        messages.success(request, 'Kebijakan pengajuan sampel tersimpan.')
+        return redirect('/samples/')
+    return page(request, 'crm/sample_policy.html', {
+        'form': form, 'back_url': '/samples/', 'heading': 'Kebijakan pengajuan sampel',
+        'submit_label': 'Simpan kebijakan', 'policy_configured': bool(policy and policy.is_configured),
+    }, status=400 if request.method == 'POST' else 200)
+
+
+def _product_detail_url(request, product_id):
+    back = stock_return_url(request)
+    base = f'/products/{product_id}/'
+    return base + ('?' + urlencode({'return_to': back}) if back != '/stock/' else '')
+
+
+def _supply_failure(request, product_id, error=None, status=400, **overrides):
+    product = get_object_or_404(Product.objects.select_related('balance'), pk=product_id)
+    context = product_workspace(request.user, product, request.GET)
+    context['back_url'] = stock_return_url(request)
+    if error is not None:
+        context['error'] = error
+    context.update(overrides)
+    return page(request, 'crm/product_detail.html', context, status=status)
+
+
+@login_required
+@require_POST
+def supply_settings_save(request, product_id):
+    form = SupplySettingForm(request.POST, actor=request.user)
+    if not form.is_valid():
+        return _supply_failure(request, product_id, supply_form=form)
+    try:
+        save_settings(request.user, product_id, **form.cleaned_data)
+    except BusinessError as error:
+        return _supply_failure(request, product_id, error=error)
+    messages.success(request, 'Pengaturan pasokan tersimpan.')
+    return redirect(_product_detail_url(request, product_id))
+
+
+@login_required
+@require_POST
+def supply_order_create(request, product_id):
+    form = PurchaseOrderForm(request.POST, actor=request.user)
+    if not form.is_valid():
+        return _supply_failure(request, product_id, purchase_form=form)
+    try:
+        order = create_purchase_order(request.user, product_id, **form.cleaned_data)
+    except BusinessError as error:
+        return _supply_failure(request, product_id, error=error)
+    messages.success(request, f'Pengadaan {order.number} dicatat. Stok fisik belum berubah.')
+    return redirect(_product_detail_url(request, product_id))
+
+
+def _supply_order_action(request, purchase_order_id, operation, form_class):
+    order = get_object_or_404(PurchaseOrder.objects.select_related('product'), pk=purchase_order_id)
+    kind = 'receive' if form_class is ReceivePurchaseForm else 'cancel'
+    form = form_class(request.POST)
+    if not form.is_valid():
+        return _supply_failure(request, order.product_id, **{f'{kind}_form': form, 'dialog': kind, 'dialog_po': str(order.pk)})
+    try:
+        order = operation(request.user, order.pk, **form.cleaned_data)
+    except BusinessError as error:
+        return _supply_failure(request, order.product_id, error=error, dialog=kind, dialog_po=str(order.pk))
+    messages.success(request, f'Pengadaan {order.number} diperbarui: {order.get_status_display()}.')
+    return redirect(_product_detail_url(request, order.product_id))
+
+
+@login_required
+@require_POST
+def supply_order_receive(request, purchase_order_id):
+    return _supply_order_action(request, purchase_order_id, receive_purchase_order, ReceivePurchaseForm)
+
+
+@login_required
+@require_POST
+def supply_order_cancel(request, purchase_order_id):
+    return _supply_order_action(request, purchase_order_id, cancel_purchase_order, CancelOrderForm)
