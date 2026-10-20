@@ -53,12 +53,24 @@ export function sampleJourney(
       description:
         "Sales melanjutkan evaluasi dan tindak lanjut pelanggan. Jejak pengiriman tetap tersedia di halaman ini.",
     };
+  if (sample.outcome === "PURCHASED")
+    return {
+      title: "Evaluasi selesai · pelanggan membeli",
+      description:
+        "Pembelian ditautkan ke pesanan terkirim. Sampel tetap tercatat sebagai pengeluaran stok tanpa omzet; nilai penjualan berasal dari pesanan.",
+    };
+  if (sample.outcome === "NOT_INTERESTED")
+    return {
+      title: "Evaluasi selesai · belum berminat",
+      description:
+        "Tanggapan pelanggan tersimpan sebagai dasar penawaran berikutnya. Perbarui evaluasi jika kebutuhannya berubah.",
+    };
   return {
     title:
       sample.outcome === "NOT_FOLLOWED_UP"
         ? "Sampel diterima · waktunya tindak lanjut"
         : "Evaluasi pelanggan",
     description:
-      "Catat tanggapan pelanggan dan jadwal tindak lanjut. Tautkan pesanan jika pelanggan melanjutkan pembelian.",
+      "Catat tanggapan dan sepakati jadwal berikutnya. Jika pelanggan memesan, buat pesanan terlebih dahulu lalu tautkan setelah barang terkirim.",
   };
 }

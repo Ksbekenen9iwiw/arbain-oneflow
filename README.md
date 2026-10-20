@@ -273,3 +273,12 @@ Validasi: 161 tes Django, 9 tes frontend, TypeScript, dan build Vite. Browser QA
 - Pengingat pembelian ulang tetap muncul saat stok kurang, disertai peringatan untuk mengonfirmasi kesiapan barang. Shortcut membawa konteks produk dan dasar perkiraan ke catatan formulir; sales tetap memilih tanggal dan menyimpan sendiri. Tidak ada transaksi atau penjadwalan otomatis saat membuka halaman. Pelanggan nonaktif tetap dapat dicatat interaksinya tanpa penawaran baru.
 
 Validasi: suite 261 tes Django lulus, diikuti 40 tes terarah pada perubahan akhir, 23 tes frontend, typecheck dan build. Browser memeriksa detail pelanggan → formulir tindak lanjut → batal/kembali, serta daftar/detail/jejak sampel gudang dengan sesi dan database QA terpisah. Tidak ada migrasi baru; pengujian browser tidak mengubah transaksi utama.
+
+### Sampel → evaluasi → pembelian lanjutan
+
+- Sampel yang diterima membuka tab **Evaluasi & pembelian** untuk sales/manajer: jadwal, tanggapan, hasil, dan pesanan yang ditautkan. Gudang tetap hanya menerima informasi pemenuhan.
+- Jadwal evaluasi menggunakan aktivitas yang terhubung. Mengubah jadwal memperbarui aktivitas terbuka, bukan membuat duplikat. Membuka aktivitas sampel mengarahkan pengguna ke evaluasinya; menyimpan evaluasi menyelesaikan aktivitas tersebut. Tanggal hasil mencatat hari evaluasi, sedangkan tanggal rencana tetap pada aktivitas.
+- Tombol **Buat pesanan** membawa pelanggan dan konteks kembali ke wizard. Pesanan baru tidak otomatis dianggap konversi sampel. Hasil **Membeli** wajib ditautkan secara eksplisit ke pesanan terkirim milik pelanggan yang sama dan dalam cakupan akun. Penautan tidak mengubah stok maupun menghitung omzet tambahan. Pilihan pesanan hanya muncul pada hasil Membeli.
+- Evaluasi Membeli/Tidak berminat memiliki penjelasan selesai dan tidak menawarkan jadwal baru sampai hasil diperbarui. Riwayat hasil tetap tersedia. Tab **Sampel** pada detail pelanggan menghubungkan produk, pengiriman, jadwal, tanggapan, dan pesanan hasil evaluasi.
+
+Validasi: 268 tes Django, 24 tes frontend, typecheck/build lulus; 28 tes terarah dijalankan kembali setelah perbaikan tanggal dan pesan sukses. Browser QA memeriksa hasil Membeli, pilihan pesanan terkirim, penyimpanan penautan dan kemunculannya pada detail pelanggan. Transaksi pengujian memakai database QA terpisah. Tidak ada migrasi baru. Peringatan ukuran bundle Vite yang sudah ada tetap berlaku.

@@ -2,6 +2,26 @@
 from crm.models import ActionDecision
 
 
+def customer_samples(actor, customer):
+    from crm.access import sample_requests_for, orders_for
+    visible_orders = set(orders_for(actor).filter(customer=customer).values_list('pk', flat=True))
+    rows = []
+    for sample in sample_requests_for(actor).filter(customer=customer).prefetch_related('lines__product', 'followups__activity').order_by('-created_at', '-pk'):
+        followups = list(sample.followups.all())
+        scheduled = next((f for f in followups if f.activity and f.activity.status == 'PLANNED'), None)
+        result = next((f for f in followups if f.outcome != 'NOT_FOLLOWED_UP'), None)
+        rows.append({
+            'id': sample.pk, 'number': sample.number, 'status': sample.status,
+            'fulfillment': sample.fulfillment_status, 'fulfillment_label': sample.get_fulfillment_status_display(),
+            'outcome': sample.get_outcome_display(), 'received_at': sample.received_at,
+            'products': ', '.join(f'{line.product.name} · {line.quantity} {line.product.unit}' for line in sample.lines.all()),
+            'next_date': scheduled.followup_date if scheduled else None,
+            'last_response': (result.response or result.note) if result else '',
+            'order_id': sample.order_id if sample.order_id in visible_orders else None,
+        })
+    return rows
+
+
 def customer_next_actions(actor, customer, opened, patterns, orders, today):
     """Explain existing work; never create activities or promise availability."""
     from crm.access import sample_requests_for

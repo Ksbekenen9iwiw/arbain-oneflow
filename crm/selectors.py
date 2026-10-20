@@ -78,7 +78,7 @@ def customer_history(actor, customer_id):
         activity.due = activity_due(activity)
     opened = sorted((a for a in activities if a.status == 'PLANNED'), key=lambda a: (a.due is None, a.due or timezone.localdate(), a.pk))
     orders = list(orders_for(actor).filter(customer=customer).prefetch_related('lines__product'))
-    from crm.customer_workspace import customer_context, customer_next_actions
+    from crm.customer_workspace import customer_context, customer_next_actions, customer_samples
     context = customer_context(customer, activities, orders)
     from crm.services.actions import compute_candidates
     patterns = []
@@ -109,6 +109,7 @@ def customer_history(actor, customer_id):
     context['thin_history'] = thin
     context['next_actions'] = customer_next_actions(
         actor, customer, opened, context['reorder_patterns'], orders, timezone.localdate())
+    context['samples'] = customer_samples(actor, customer)
     return dict(context, customer=customer, activities=activities, open_activities=opened,
                 completed_activities=sorted((a for a in activities if a.status == 'DONE'), key=lambda a: (a.completed_at or a.created_at, a.pk), reverse=True), orders=orders)
 

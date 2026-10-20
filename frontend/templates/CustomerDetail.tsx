@@ -1,4 +1,5 @@
 import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { useEffect } from "react";
 import { ProductThumbnail } from "../ProductIdentity";
 import { MotionPanel } from "../motion";
 import { MotionStack } from "../motion";
@@ -38,7 +39,23 @@ export default function CustomerDetail() {
   const d = page.data,
     customer = d.customer;
   const [requestedTab, setTab] = useQueryState("tab", "history");
-  const tab = requestedTab === "orders" ? "orders" : "history";
+  const tab = ["orders", "samples"].includes(requestedTab)
+    ? requestedTab
+    : "history";
+  useEffect(() => {
+    if (requestedTab !== "samples") return;
+    const frame = requestAnimationFrame(() => {
+      document
+        .getElementById("customer-history")
+        ?.scrollIntoView({ block: "start" });
+      document
+        .querySelector<HTMLElement>(
+          '#customer-history [role="tab"][aria-selected="true"]',
+        )
+        ?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [customer.id, requestedTab]);
   const [requestedFilter, setFilter] = useQueryState("history", "all");
   const filter = ["all", "interactions", "orders"].includes(requestedFilter)
     ? requestedFilter
@@ -521,8 +538,102 @@ export default function CustomerDetail() {
                   label={`Pesanan (${d.orders.length})`}
                   panelId="customer-orders-panel"
                 />
+                <Tab
+                  value="samples"
+                  label={`Sampel (${(d.samples || []).length})`}
+                  panelId="customer-samples-panel"
+                />
               </TabList>
-              {tab === "orders" ? (
+              {tab === "samples" ? (
+                <MotionStack
+                  motionKey={tab}
+                  id="customer-samples-panel"
+                  role="tabpanel"
+                  aria-label="Sampel pelanggan"
+                  gap={3}
+                >
+                  <Text type="supporting">
+                    Ikuti pengiriman, evaluasi, dan pembelian yang ditautkan
+                    untuk pelanggan ini.
+                  </Text>
+                  {(d.samples || []).length ? (
+                    <List hasDividers density="balanced">
+                      {d.samples.map((sample: Row) => (
+                        <ListItem
+                          key={sample.id}
+                          label={sample.number}
+                          description={
+                            <VStack gap={2}>
+                              <Text>{sample.products}</Text>
+                              <HStack gap={2} wrap="wrap">
+                                <Status value={sample.status} />
+                                <Status
+                                  value={sample.fulfillment}
+                                  label={sample.fulfillment_label}
+                                />
+                              </HStack>
+                              {sample.fulfillment === "RECEIVED" && (
+                                <Text>
+                                  {sample.outcome}
+                                  {sample.next_date
+                                    ? ` · Tindak lanjut ${dateLabel(sample.next_date)}`
+                                    : ""}
+                                </Text>
+                              )}
+                              {sample.last_response && (
+                                <Text type="supporting" maxLines={2}>
+                                  {sample.last_response}
+                                </Text>
+                              )}
+                              {sample.order_id && (
+                                <HStack>
+                                  <Button
+                                    size="sm"
+                                    label={`Pesanan OF-${String(sample.order_id).padStart(4, "0")}`}
+                                    href={withReturn(
+                                      `/orders/${sample.order_id}/`,
+                                      page.url,
+                                    )}
+                                  />
+                                </HStack>
+                              )}
+                            </VStack>
+                          }
+                          endContent={
+                            <Button
+                              label={
+                                sample.fulfillment === "RECEIVED"
+                                  ? "Buka evaluasi"
+                                  : "Lihat sampel"
+                              }
+                              href={withReturn(
+                                `/samples/${sample.id}/`,
+                                page.url,
+                              )}
+                            />
+                          }
+                        />
+                      ))}
+                    </List>
+                  ) : (
+                    <Empty
+                      title="Belum ada sampel"
+                      description="Ajukan sampel jika ada kebutuhan pelanggan yang perlu diuji. Riwayat dan hasilnya akan tampil di sini."
+                      action={
+                        customer.is_active ? (
+                          <Button
+                            label="Ajukan sampel"
+                            href={withReturn(
+                              `/samples/new/?customer=${customer.id}`,
+                              page.url,
+                            )}
+                          />
+                        ) : undefined
+                      }
+                    />
+                  )}
+                </MotionStack>
+              ) : tab === "orders" ? (
                 <MotionStack
                   motionKey={`${tab}:${filter}`}
                   id="customer-orders-panel"

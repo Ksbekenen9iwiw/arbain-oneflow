@@ -440,6 +440,17 @@ def schedule_followup(actor, request_id, followup_date, note=''):
         raise BusinessError('INVALID_STATE', 'Tindak lanjut dijadwalkan setelah sampel diterima.')
     if not followup_date or followup_date < timezone.localdate():
         raise BusinessError('INVALID_INPUT', 'Tanggal tindak lanjut tidak boleh sebelum hari ini.')
+    if request.outcome in {SampleRequest.Outcome.PURCHASED, SampleRequest.Outcome.NOT_INTERESTED}:
+        raise BusinessError('INVALID_STATE', 'Evaluasi sudah selesai. Perbarui hasil evaluasi sebelum menjadwalkan tindak lanjut.')
+    pending = request.followups.filter(activity__status=Activity.Status.PLANNED).select_related('activity').first()
+    if pending:
+        pending.followup_date = followup_date
+        pending.note = _text(note)
+        pending.save(update_fields=['followup_date', 'note'])
+        pending.activity.followup_date = followup_date
+        pending.activity.note = _text(note) or f'Tindak lanjut sampel {request.number}.'
+        pending.activity.save(update_fields=['followup_date', 'note'])
+        return request
     latest = request.customer.activities.order_by('-created_at', '-pk').first()
     activity = Activity.objects.create(
         customer=request.customer,
@@ -485,6 +496,8 @@ def record_followup(actor, request_id, response, outcome, note='', order_id=None
     if followup is None:
         followup = SampleFollowUp(request=request, followup_date=timezone.localdate(), actor=actor)
     followup.response = response
+    # Preserve the planned date on Activity; this row now records the evaluation day.
+    followup.followup_date = timezone.localdate()
     followup.outcome = outcome
     followup.note = note
     followup.actor = actor

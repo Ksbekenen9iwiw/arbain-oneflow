@@ -185,6 +185,10 @@ def activity_create(request, customer_id):
 def activity_complete(request, activity_id):
     activity = get_object_or_404(Activity.objects.filter(customer__in=customers_for(request.user)), pk=activity_id)
     back_url = return_url(request, f'/customers/{activity.customer_id}/')
+    if request.method == 'GET' and activity.status == 'PLANNED':
+        related = activity.sample_followups.filter(request__in=sample_requests_for(request.user)).first()
+        if related:
+            return redirect(f'/samples/{related.request_id}/?' + urlencode({'tab': 'evaluation', 'return_to': back_url}))
     form = ActivityCompletionForm(request.POST or None, initial={'stage': activity.stage})
     if request.method == 'POST' and form.is_valid():
         with transaction.atomic():
@@ -592,7 +596,10 @@ def _sample_context(request, sample):
     if context.get('can_cancel'):
         context['cancel_form'] = CancelSampleForm()
     if context.get('can_followup'):
-        context['schedule_form'] = SampleScheduleForm()
+        scheduled = context['evaluation']['scheduled']
+        context['schedule_form'] = SampleScheduleForm(initial={
+            'followup_date': scheduled['date'], 'note': scheduled['note'],
+        } if scheduled else None)
         context['outcome_form'] = SampleOutcomeForm(actor=request.user, request=sample)
     return context
 
@@ -616,7 +623,15 @@ def _sample_transition(request, sample_id, operation, *args, extra=None):
         if extra:
             context.update(extra)
         return page(request, 'crm/sample_detail.html', context, status=error.status_code)
-    messages.success(request, f'Pengajuan {sample.number} diperbarui: {sample.get_status_display()} · {sample.get_fulfillment_status_display()}.')
+    if operation == schedule_sample_followup:
+        message = f'Jadwal evaluasi {sample.number} tersimpan pada aktivitas pelanggan.'
+    elif operation == record_sample_followup:
+        message = (f'Evaluasi {sample.number} tersimpan. Pesanan terkirim telah ditautkan.'
+                   if sample.outcome == SampleRequest.Outcome.PURCHASED else
+                   f'Evaluasi {sample.number} tersimpan. Jadwalkan tindak lanjut berikutnya jika masih diperlukan.')
+    else:
+        message = f'Pengajuan {sample.number} diperbarui: {sample.get_status_display()} · {sample.get_fulfillment_status_display()}.'
+    messages.success(request, message)
     return redirect(sample_detail_url(request, sample_id))
 
 

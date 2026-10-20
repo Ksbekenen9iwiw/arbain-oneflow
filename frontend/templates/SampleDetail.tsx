@@ -22,6 +22,8 @@ import {
   Empty,
   FormDialog,
   SimpleForm,
+  Fields,
+  useFields,
   ServerForm,
   dateLabel,
   money,
@@ -37,9 +39,19 @@ export default function SampleDetail() {
   const sample = d.sample;
   const commercial = d.can_view_commercial === true;
   const journey = sampleJourney(sample, page.role || "");
-  const [requestedTab, setTab] = useQueryState("tab", "products");
+  const [requestedTab, setTab] = useQueryState(
+    "tab",
+    commercial && sample.fulfillment_status === "RECEIVED"
+      ? "evaluation"
+      : "products",
+  );
   const tab = (commercial
-    ? ["products", "evidence", "history"]
+    ? [
+        "products",
+        ...(sample.fulfillment_status === "RECEIVED" ? ["evaluation"] : []),
+        "evidence",
+        "history",
+      ]
     : ["products", "history"]
   ).includes(requestedTab)
     ? requestedTab
@@ -107,15 +119,20 @@ export default function SampleDetail() {
                     onClick={() => setDialog("receive")}
                   />
                 )}
-                {d.can_followup && (
+                {d.can_schedule && (
                   <Button
-                    label="Jadwalkan tindak lanjut"
+                    label={
+                      d.evaluation?.scheduled
+                        ? "Ubah jadwal"
+                        : "Jadwalkan tindak lanjut"
+                    }
                     onClick={() => setDialog("schedule")}
                   />
                 )}
                 {d.can_followup && (
                   <Button
-                    label="Catat hasil"
+                    label="Catat evaluasi"
+                    variant="primary"
                     onClick={() => setDialog("outcome")}
                   />
                 )}
@@ -180,7 +197,7 @@ export default function SampleDetail() {
                   <VStack gap={3}>
                     <Heading level={2}>
                       {sample.decided_at
-                        ? "Dasar rekomendasi"
+                        ? "Rekomendasi saat peninjauan"
                         : "Rekomendasi sistem"}
                     </Heading>
                     {!d.policy.configured && (
@@ -257,6 +274,18 @@ export default function SampleDetail() {
                 )}
                 <Fact label="Dibuat">{dateLabel(sample.created_at)}</Fact>
               </HStack>
+              {commercial &&
+                sample.fulfillment_status === "RECEIVED" &&
+                d.evaluation.scheduled && (
+                  <Banner
+                    status="info"
+                    title={`Tindak lanjut ${dateLabel(d.evaluation.scheduled.date)}`}
+                    description={
+                      d.evaluation.scheduled.note ||
+                      "Jadwal ini juga tercatat pada aktivitas pelanggan. Catat evaluasi di sini untuk menyelesaikannya."
+                    }
+                  />
+                )}
               <TabList
                 aria-label="Detail sampel"
                 role="tablist"
@@ -269,6 +298,13 @@ export default function SampleDetail() {
                   label={commercial ? "Pengajuan & produk" : "Produk & batch"}
                   panelId="sample-products"
                 />
+                {commercial && sample.fulfillment_status === "RECEIVED" && (
+                  <Tab
+                    value="evaluation"
+                    label="Evaluasi & pembelian"
+                    panelId="sample-evaluation"
+                  />
+                )}
                 {commercial && (
                   <Tab
                     value="evidence"
@@ -402,6 +438,135 @@ export default function SampleDetail() {
                   )}
                 </MotionStack>
               )}
+              {tab === "evaluation" &&
+                commercial &&
+                sample.fulfillment_status === "RECEIVED" && (
+                  <MotionStack
+                    gap={6}
+                    motionKey={tab}
+                    id="sample-evaluation"
+                    role="tabpanel"
+                    aria-label="Evaluasi & pembelian"
+                  >
+                    <VStack gap={3}>
+                      <Heading level={2}>Hasil evaluasi</Heading>
+                      <Text>{sample.outcome_label}</Text>
+                      {d.evaluation.events.length ? (
+                        <List hasDividers density="balanced">
+                          {d.evaluation.events.map((event: Row) => (
+                            <ListItem
+                              key={event.id}
+                              label={`${event.outcome === "NOT_FOLLOWED_UP" ? "Jadwal tindak lanjut" : event.outcome_label} · ${dateLabel(event.date)}`}
+                              description={
+                                <VStack gap={1}>
+                                  <Text>
+                                    {event.response ||
+                                      event.note ||
+                                      "Jadwal tercatat pada aktivitas pelanggan."}
+                                  </Text>
+                                  {event.response && event.note && (
+                                    <Text type="supporting">{event.note}</Text>
+                                  )}
+                                  <Text type="supporting">
+                                    {event.actor?.name}
+                                  </Text>
+                                </VStack>
+                              }
+                            />
+                          ))}
+                        </List>
+                      ) : (
+                        <Text type="supporting">
+                          Belum ada tanggapan pelanggan. Catat evaluasi setelah
+                          berkomunikasi, atau jadwalkan tindak lanjut.
+                        </Text>
+                      )}
+                    </VStack>
+                    <VStack gap={3}>
+                      <HStack hAlign="between" vAlign="center" gap={3}>
+                        <Heading level={2}>Pembelian lanjutan</Heading>
+                        {d.can_create_order && (
+                          <Button
+                            label="Buat pesanan"
+                            href={withReturn(
+                              `/orders/new/?customer=${sample.customer.id}`,
+                              page.url,
+                            )}
+                          />
+                        )}
+                      </HStack>
+                      {sample.order ? (
+                        <VStack gap={2}>
+                          <Text>
+                            Pesanan terkirim ini ditautkan sebagai hasil
+                            pemberian sampel.
+                          </Text>
+                          <HStack>
+                            <Button
+                              label={`Buka ${sample.order.number}`}
+                              href={withReturn(
+                                `/orders/${sample.order.id}/`,
+                                page.url,
+                              )}
+                            />
+                          </HStack>
+                        </VStack>
+                      ) : (
+                        <Text type="supporting">
+                          Belum ada pembelian yang ditautkan. Setelah pesanan
+                          terkirim, pilih “Membeli” pada Catat evaluasi dan
+                          pilih pesanannya. Pembuatan draf tidak otomatis
+                          berarti pelanggan sudah membeli.
+                        </Text>
+                      )}
+                      {d.evaluation.orders.length > 0 && (
+                        <>
+                          <Text weight="semibold">
+                            Pesanan pelanggan sejak penerimaan sampel
+                          </Text>
+                          <Text type="supporting">
+                            Belum ditautkan ke sampel ini. Periksa pesanan yang
+                            sesuai sebelum mencatat hasil membeli.
+                          </Text>
+                          <List hasDividers density="balanced">
+                            {d.evaluation.orders.map((order: Row) => (
+                              <ListItem
+                                key={order.id}
+                                label={order.number}
+                                description={
+                                  <HStack gap={2}>
+                                    <Status value={order.status} />
+                                    <Text type="supporting">
+                                      {money(order.total)}
+                                    </Text>
+                                  </HStack>
+                                }
+                                endContent={
+                                  <Button
+                                    label="Buka pesanan"
+                                    href={withReturn(
+                                      `/orders/${order.id}/`,
+                                      page.url,
+                                    )}
+                                  />
+                                }
+                              />
+                            ))}
+                          </List>
+                        </>
+                      )}
+                    </VStack>
+                    <HStack>
+                      <Button
+                        label="Lihat sampel pelanggan"
+                        href={withReturn(
+                          `/customers/${sample.customer.id}/?tab=samples`,
+                          page.url,
+                        )}
+                      />
+                    </HStack>
+                  </MotionStack>
+                )}
               {tab === "evidence" && (
                 <MotionStack
                   gap={6}
@@ -749,7 +914,7 @@ export default function SampleDetail() {
               label="Simpan jadwal"
             />
           ) : dialog === "outcome" ? (
-            <SimpleForm
+            <SampleEvaluationForm
               spec={d.outcome_form}
               action={actionUrl("outcome")}
               label="Simpan hasil"
@@ -784,5 +949,49 @@ export default function SampleDetail() {
         </VStack>
       </FormDialog>
     </>
+  );
+}
+
+function SampleEvaluationForm({
+  spec,
+  action,
+  label,
+}: {
+  spec: import("../types").FormSpec;
+  action: string;
+  label: string;
+}) {
+  const fields = useFields(spec);
+  const { busy } = useApp();
+  const buying = fields.values.outcome === "PURCHASED";
+  const visible = {
+    ...spec,
+    fields: spec.fields
+      .filter((f) => f.key !== "order_id" || buying)
+      .map((f) => (f.key === "order_id" ? { ...f, required: true } : f)),
+  };
+  return (
+    <ServerForm action={action}>
+      <VStack gap={4}>
+        <Fields
+          spec={visible}
+          values={fields.values}
+          onChange={fields.onChange}
+        />
+        <Text type="supporting">
+          {buying
+            ? "Hanya pesanan terkirim yang dapat ditautkan. Sampel tidak menambah omzet."
+            : "Hasil ini tersimpan pada sampel dan menyelesaikan aktivitas evaluasi yang terhubung. Jika masih perlu dihubungi, jadwalkan tindak lanjut berikutnya setelah menyimpan."}
+        </Text>
+        <HStack hAlign="end">
+          <Button
+            type="submit"
+            variant="primary"
+            label={label}
+            isLoading={busy}
+          />
+        </HStack>
+      </VStack>
+    </ServerForm>
   );
 }

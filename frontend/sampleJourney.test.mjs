@@ -16,3 +16,8 @@ test("warehouse completion points to sales instead of asking for an unavailable 
   assert.match(result.description, /Sales melanjutkan/);
   assert.doesNotMatch(result.description, /Catat tanggapan/);
 });
+test("completed evaluations distinguish a linked purchase from no interest", () => {
+  assert.match(sampleJourney({status:"APPROVED", fulfillment_status:"RECEIVED", outcome:"PURCHASED"}).title, /pelanggan membeli/);
+  assert.match(sampleJourney({status:"APPROVED", fulfillment_status:"RECEIVED", outcome:"NOT_INTERESTED"}).title, /belum berminat/);
+  assert.doesNotMatch(sampleJourney({status:"APPROVED", fulfillment_status:"RECEIVED", outcome:"PURCHASED"}, "WAREHOUSE").title, /membeli/);
+});

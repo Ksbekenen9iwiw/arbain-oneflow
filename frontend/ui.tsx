@@ -454,12 +454,12 @@ export function Fields({
         .filter((field) => {
           const outcome = values.outcome;
 
-          if (field.key === "next_date")
+          if (isDecision && field.key === "next_date")
             return (
               outcome === "SNOOZED" ||
               (!outcomeChanged && field.errors.length > 0)
             );
-          if (field.key === "order_id")
+          if (isDecision && field.key === "order_id")
             return (
               outcome === "DONE" || (!outcomeChanged && field.errors.length > 0)
             );

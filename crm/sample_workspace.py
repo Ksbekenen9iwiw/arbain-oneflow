@@ -184,8 +184,25 @@ def sample_context(actor, request):
         for followup in item.followups.all()
     ]
     policy = SamplePolicy.objects.filter(pk=1).first()
+    own_followups = list(request.followups.select_related('activity', 'actor').order_by('-created_at', '-pk'))
+    scheduled = next((f for f in own_followups if f.activity and f.activity.status == 'PLANNED'), None)
+    related_orders = orders_for(actor).filter(customer=request.customer, status__in=['DRAFT', 'CONFIRMED', 'SHIPPED'])
+    if request.received_at:
+        related_orders = related_orders.filter(Q(created_at__gte=request.received_at) | Q(shipped_at__gte=request.received_at))
+    else:
+        related_orders = related_orders.none()
     return {
         'can_view_commercial': True,
+        'evaluation': {
+            'scheduled': {'date': scheduled.followup_date, 'note': scheduled.note, 'activity_id': scheduled.activity_id} if scheduled else None,
+            'events': [{'id': f.pk, 'date': f.followup_date, 'outcome': f.outcome,
+                        'outcome_label': f.get_outcome_display(), 'response': f.response, 'note': f.note,
+                        'actor': person(f.actor)} for f in own_followups],
+            'orders': list(related_orders.exclude(pk=request.order_id).order_by('-created_at', '-pk')[:5]),
+        },
+        'can_create_order': request.customer.is_active and request.fulfillment_status == 'RECEIVED'
+                            and request.outcome not in {'PURCHASED', 'NOT_INTERESTED'},
+        'can_schedule': request.fulfillment_status == 'RECEIVED' and request.outcome not in {'PURCHASED', 'NOT_INTERESTED'},
         'sample': current,
         'recommendation': recommend(request) if request.status in {SampleRequest.Status.SUBMITTED, SampleRequest.Status.DRAFT} else {
             'result': request.recommendation_at_decision or SampleRequest.Recommendation.REVIEW,

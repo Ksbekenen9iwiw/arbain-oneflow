@@ -189,6 +189,18 @@ class SampleOutcomeForm(forms.Form):
             records = records.filter(customer=request.customer)
         self.fields['order_id'].queryset = records
         self.fields['order_id'].label_from_instance = lambda order: f'OF-{order.pk:04d} · {order.customer.name}'
+        self.fields['order_id'].help_text = 'Hanya pesanan terkirim milik pelanggan ini. Pilih jika pembelian benar-benar merupakan hasil pemberian sampel.'
+        if request is not None and not self.is_bound:
+            self.initial.update(outcome=request.outcome if request.outcome != SampleRequest.Outcome.NOT_FOLLOWED_UP else SampleRequest.Outcome.EVALUATING,
+                                order_id=request.order_id)
+
+    def clean(self):
+        data = super().clean()
+        if data.get('outcome') == SampleRequest.Outcome.PURCHASED and not data.get('order_id'):
+            self.add_error('order_id', 'Pilih pesanan terkirim untuk mencatat hasil membeli.')
+        if data.get('outcome') != SampleRequest.Outcome.PURCHASED:
+            data['order_id'] = None
+        return data
 
 
 class CancelOrderForm(forms.Form):
