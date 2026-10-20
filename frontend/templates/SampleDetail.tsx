@@ -35,9 +35,13 @@ export default function SampleDetail() {
   const { page, busy, clearDirty } = useApp();
   const d = page.data;
   const sample = d.sample;
+  const commercial = d.can_view_commercial === true;
   const journey = sampleJourney(sample, page.role || "");
   const [requestedTab, setTab] = useQueryState("tab", "products");
-  const tab = ["products", "evidence", "history"].includes(requestedTab)
+  const tab = (commercial
+    ? ["products", "evidence", "history"]
+    : ["products", "history"]
+  ).includes(requestedTab)
     ? requestedTab
     : "products";
   const [dialog, setDialog] = useState(d.dialog || "");
@@ -130,7 +134,9 @@ export default function SampleDetail() {
           <MotionPanel width="20rem" padding={5} role="complementary">
             <VStack gap={5}>
               <VStack gap={2}>
-                <Heading level={2}>Pelanggan</Heading>
+                <Heading level={2}>
+                  {commercial ? "Pelanggan" : "Penerima sampel"}
+                </Heading>
                 {page.role === "WAREHOUSE" ? (
                   <Text weight="semibold">{sample.customer.name}</Text>
                 ) : (
@@ -151,61 +157,72 @@ export default function SampleDetail() {
                   {sample.customer.address || "Alamat belum diisi"}
                 </Text>
               </VStack>
-              <Divider />
-              {sample.decided_at && (
-                <VStack gap={2}>
-                  <Heading level={2}>Keputusan manajer</Heading>
-                  <Status
-                    value={
-                      sample.status === "REJECTED" ? "REJECTED" : "APPROVED"
-                    }
-                  />
-                  <Text>
-                    {sample.decision_note || "Sesuai rekomendasi sistem."}
-                  </Text>
-                  <Text type="supporting">
-                    {sample.decided_by?.name} · {dateLabel(sample.decided_at)}
-                  </Text>
-                </VStack>
-              )}
-              <VStack gap={3}>
-                <Heading level={2}>
-                  {sample.decided_at
-                    ? "Dasar rekomendasi"
-                    : "Rekomendasi sistem"}
-                </Heading>
-                {!d.policy.configured && (
-                  <Banner
-                    status="warning"
-                    title="Kebijakan belum dikonfigurasi"
-                    description="Manajer tetap dapat meninjau manual atau membuka pengaturan kebijakan sampel."
-                  />
-                )}
-                <Status
-                  value={d.recommendation.result}
-                  label={d.recommendation.label}
-                />
-                {(d.recommendation.reasons || []).map((reason: string) => (
-                  <Text key={reason}>{reason}</Text>
-                ))}
-                <Text type="supporting">
-                  Dasar pengulangan memakai riwayat produk yang sama. Buka tab
-                  Riwayat pelanggan untuk memeriksa bukti pendukung.
-                </Text>
-                {page.role === "MANAGER" && (
-                  <Button
-                    href={withReturn("/samples/policy/", page.url)}
-                    label="Atur kebijakan"
-                    size="sm"
-                    variant="secondary"
-                  />
-                )}
-              </VStack>
+              {commercial && (
+                <>
+                  <Divider />
+                  {sample.decided_at && (
+                    <VStack gap={2}>
+                      <Heading level={2}>Keputusan manajer</Heading>
+                      <Status
+                        value={
+                          sample.status === "REJECTED" ? "REJECTED" : "APPROVED"
+                        }
+                      />
+                      <Text>
+                        {sample.decision_note || "Sesuai rekomendasi sistem."}
+                      </Text>
+                      <Text type="supporting">
+                        {sample.decided_by?.name} ·{" "}
+                        {dateLabel(sample.decided_at)}
+                      </Text>
+                    </VStack>
+                  )}
+                  <VStack gap={3}>
+                    <Heading level={2}>
+                      {sample.decided_at
+                        ? "Dasar rekomendasi"
+                        : "Rekomendasi sistem"}
+                    </Heading>
+                    {!d.policy.configured && (
+                      <Banner
+                        status="warning"
+                        title="Kebijakan belum dikonfigurasi"
+                        description="Manajer tetap dapat meninjau manual atau membuka pengaturan kebijakan sampel."
+                      />
+                    )}
+                    <Status
+                      value={d.recommendation.result}
+                      label={d.recommendation.label}
+                    />
+                    {(d.recommendation.reasons || []).map((reason: string) => (
+                      <Text key={reason}>{reason}</Text>
+                    ))}
+                    <Text type="supporting">
+                      Dasar pengulangan memakai riwayat produk yang sama. Buka
+                      tab Riwayat pelanggan untuk memeriksa bukti pendukung.
+                    </Text>
+                    {page.role === "MANAGER" && (
+                      <Button
+                        href={withReturn("/samples/policy/", page.url)}
+                        label="Atur kebijakan"
+                        size="sm"
+                        variant="secondary"
+                      />
+                    )}
+                  </VStack>
 
-              <Button
-                label="Lihat riwayat pendukung"
-                onClick={() => setTab("evidence")}
-              />
+                  <Button
+                    label="Lihat riwayat pendukung"
+                    onClick={() => setTab("evidence")}
+                  />
+                </>
+              )}
+              {!commercial && (
+                <Text type="supporting">
+                  Hubungi penerima untuk koordinasi pengiriman. Evaluasi
+                  pelanggan ditangani sales.
+                </Text>
+              )}
             </VStack>
           </MotionPanel>
         }
@@ -233,7 +250,11 @@ export default function SampleDetail() {
                     label={sample.fulfillment_label}
                   />
                 </Fact>
-                <Fact label="Hasil tindak lanjut">{sample.outcome_label}</Fact>
+                {commercial && (
+                  <Fact label="Hasil tindak lanjut">
+                    {sample.outcome_label}
+                  </Fact>
+                )}
                 <Fact label="Dibuat">{dateLabel(sample.created_at)}</Fact>
               </HStack>
               <TabList
@@ -245,14 +266,16 @@ export default function SampleDetail() {
               >
                 <Tab
                   value="products"
-                  label="Pengajuan & produk"
+                  label={commercial ? "Pengajuan & produk" : "Produk & batch"}
                   panelId="sample-products"
                 />
-                <Tab
-                  value="evidence"
-                  label="Riwayat pelanggan"
-                  panelId="sample-evidence"
-                />
+                {commercial && (
+                  <Tab
+                    value="evidence"
+                    label="Riwayat pelanggan"
+                    panelId="sample-evidence"
+                  />
+                )}
                 <Tab
                   value="history"
                   label="Jejak proses"
@@ -265,7 +288,9 @@ export default function SampleDetail() {
                   motionKey={tab}
                   id="sample-products"
                   role="tabpanel"
-                  aria-label="Pengajuan & produk"
+                  aria-label={
+                    commercial ? "Pengajuan & produk" : "Produk & batch"
+                  }
                 >
                   <VStack gap={4}>
                     <Heading level={2}>Produk sampel</Heading>
@@ -355,24 +380,26 @@ export default function SampleDetail() {
                       </VStack>
                     )}
                   </VStack>
-                  <VStack gap={4}>
-                    <Heading level={2}>Dasar pengajuan</Heading>
-                    <Fact label="Tujuan pemberian">
-                      {sample.purpose || "Belum tercatat"}
-                    </Fact>
-                    <Fact label="Kebutuhan pelanggan">
-                      {sample.customer_need || "Belum tercatat"}
-                    </Fact>
-                    <Fact label="Potensi pesanan">
-                      {sample.potential_orders || "Belum tercatat"}
-                    </Fact>
-                    <Fact label="Profil usaha">
-                      {sample.business_profile || "Belum tercatat"}
-                    </Fact>
-                    <Fact label="Catatan pendukung">
-                      {sample.notes || "Belum tercatat"}
-                    </Fact>
-                  </VStack>
+                  {commercial && (
+                    <VStack gap={4}>
+                      <Heading level={2}>Dasar pengajuan</Heading>
+                      <Fact label="Tujuan pemberian">
+                        {sample.purpose || "Belum tercatat"}
+                      </Fact>
+                      <Fact label="Kebutuhan pelanggan">
+                        {sample.customer_need || "Belum tercatat"}
+                      </Fact>
+                      <Fact label="Potensi pesanan">
+                        {sample.potential_orders || "Belum tercatat"}
+                      </Fact>
+                      <Fact label="Profil usaha">
+                        {sample.business_profile || "Belum tercatat"}
+                      </Fact>
+                      <Fact label="Catatan pendukung">
+                        {sample.notes || "Belum tercatat"}
+                      </Fact>
+                    </VStack>
+                  )}
                 </MotionStack>
               )}
               {tab === "evidence" && (
@@ -609,47 +636,50 @@ export default function SampleDetail() {
                       {sample.cancel_reason}
                     </Text>
                   )}
-                  <VStack gap={3} paddingBlockStart={4}>
-                    <Heading level={3}>Tindak lanjut pengajuan ini</Heading>
-                    {d.history.followups.some(
-                      (row: Row) => row.request_number === sample.number,
-                    ) ? (
-                      <List hasDividers density="balanced">
-                        {d.history.followups
-                          .filter(
-                            (row: Row) => row.request_number === sample.number,
-                          )
-                          .map((row: Row) => (
-                            <ListItem
-                              key={row.id}
-                              label={`${row.outcome_label} · ${dateLabel(row.followup_date)}`}
-                              description={
-                                <VStack gap={1}>
-                                  <Text>
-                                    {row.response ||
-                                      row.note ||
-                                      "Jadwal tindak lanjut tercatat."}
-                                  </Text>
-                                  {row.response && row.note && (
-                                    <Text>{row.note}</Text>
-                                  )}
-                                  <Text type="supporting">
-                                    {row.actor?.name} · Dicatat{" "}
-                                    {dateLabel(row.created_at, true)}
-                                  </Text>
-                                </VStack>
-                              }
-                            />
-                          ))}
-                      </List>
-                    ) : (
-                      <Text type="supporting">
-                        Jadwal dan hasil evaluasi pelanggan akan tercatat di
-                        sini.
-                      </Text>
-                    )}
-                  </VStack>
-                  {sample.order && (
+                  {commercial && (
+                    <VStack gap={3} paddingBlockStart={4}>
+                      <Heading level={3}>Tindak lanjut pengajuan ini</Heading>
+                      {d.history.followups.some(
+                        (row: Row) => row.request_number === sample.number,
+                      ) ? (
+                        <List hasDividers density="balanced">
+                          {d.history.followups
+                            .filter(
+                              (row: Row) =>
+                                row.request_number === sample.number,
+                            )
+                            .map((row: Row) => (
+                              <ListItem
+                                key={row.id}
+                                label={`${row.outcome_label} · ${dateLabel(row.followup_date)}`}
+                                description={
+                                  <VStack gap={1}>
+                                    <Text>
+                                      {row.response ||
+                                        row.note ||
+                                        "Jadwal tindak lanjut tercatat."}
+                                    </Text>
+                                    {row.response && row.note && (
+                                      <Text>{row.note}</Text>
+                                    )}
+                                    <Text type="supporting">
+                                      {row.actor?.name} · Dicatat{" "}
+                                      {dateLabel(row.created_at, true)}
+                                    </Text>
+                                  </VStack>
+                                }
+                              />
+                            ))}
+                        </List>
+                      ) : (
+                        <Text type="supporting">
+                          Jadwal dan hasil evaluasi pelanggan akan tercatat di
+                          sini.
+                        </Text>
+                      )}
+                    </VStack>
+                  )}
+                  {commercial && sample.order && (
                     <Link
                       href={withReturn(`/orders/${sample.order.id}/`, page.url)}
                     >

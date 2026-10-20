@@ -44,6 +44,7 @@ export default function CustomerDetail() {
     ? requestedFilter
     : "all";
   const [expanded, setExpanded] = useQueryState("activities", "limited");
+  const [nextSize, setNextSize] = useQueryState("next", "limited");
   const [historySize, setHistorySize] = useQueryState(
     "history_size",
     "limited",
@@ -54,6 +55,7 @@ export default function CustomerDetail() {
   const setPanel = (visible: boolean) =>
     setPanelState(visible ? "shown" : "hidden");
   const opened: Row[] = d.open_activities;
+  const nextActions: Row[] = d.next_actions || [];
   const history: Row[] = d.history;
   const visibleHistory = history.filter(
     (e) => filter === "all" || e.category === filter,
@@ -150,6 +152,64 @@ export default function CustomerDetail() {
                 description="Riwayat dan pencatatan aktivitas tetap tersedia. Pesanan baru hanya dapat dibuat untuk pelanggan aktif."
               />
             )}
+            <VStack gap={3} aria-label="Tindakan berikutnya">
+              <HStack hAlign="between" vAlign="center" gap={3}>
+                <VStack gap={1}>
+                  <Heading level={2}>Tindakan berikutnya</Heading>
+                  <Text type="supporting">
+                    Dahulukan jadwal yang jatuh tempo, lalu evaluasi sampel dan
+                    kebutuhan pembelian ulang.
+                  </Text>
+                </VStack>
+                {nextActions.length > 3 && (
+                  <Button
+                    size="sm"
+                    label={
+                      nextSize === "all"
+                        ? "Ringkas tindakan"
+                        : `Lihat semua (${nextActions.length})`
+                    }
+                    onClick={() =>
+                      setNextSize(nextSize === "all" ? "limited" : "all")
+                    }
+                  />
+                )}
+              </HStack>
+              <List hasDividers density="balanced">
+                {(nextSize === "all"
+                  ? nextActions
+                  : nextActions.slice(0, 3)
+                ).map((action) => (
+                  <ListItem
+                    key={action.key}
+                    label={action.title}
+                    description={
+                      <VStack gap={2}>
+                        <Text type="supporting">{action.reason}</Text>
+                        {action.urgency && (
+                          <HStack>
+                            <Status
+                              value={action.urgency}
+                              label={
+                                action.urgency === "STOCK_LOW"
+                                  ? "Stok perlu dikonfirmasi"
+                                  : undefined
+                              }
+                            />
+                          </HStack>
+                        )}
+                      </VStack>
+                    }
+                    endContent={
+                      <Button
+                        label={action.label}
+                        href={withReturn(action.href, page.url)}
+                      />
+                    }
+                  />
+                ))}
+              </List>
+            </VStack>
             <VStack gap={4} data-tour="customer-overview">
               <HStack hAlign="between" vAlign="center">
                 <Heading level={2}>Ringkasan pelanggan</Heading>
@@ -270,7 +330,7 @@ export default function CustomerDetail() {
                           size="sm"
                           label="Jadwalkan tindak lanjut"
                           href={withReturn(
-                            `/customers/${customer.id}/activities/new/?intent=followup`,
+                            `/customers/${customer.id}/activities/new/?intent=followup&source_product=${p.product_id}`,
                             page.url,
                           )}
                         />

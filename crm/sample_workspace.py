@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from crm.access import active_sales, role_of, sample_requests_for
+from crm.access import active_sales, orders_for, role_of, sample_requests_for
 from crm.models import Customer, Order, SamplePolicy, SampleRequest
 from crm.services.samples import recommend
 
@@ -15,7 +15,7 @@ def person(user):
     return {'id': user.pk, 'name': user.get_full_name() or user.username} if user else None
 
 
-def _request_row(request, include_allocations=False):
+def _request_row(request, include_allocations=False, fulfillment_only=False):
     lines = []
     for line in request.lines.all():
         item = {
@@ -31,7 +31,7 @@ def _request_row(request, include_allocations=False):
                 for allocation in line.allocations.all()
             ]
         lines.append(item)
-    return {
+    fulfillment = {
         'id': request.pk,
         'number': request.number,
         'customer': {'id': request.customer_id, 'code': request.customer.code, 'name': request.customer.name,
@@ -41,6 +41,18 @@ def _request_row(request, include_allocations=False):
         'status_label': request.get_status_display(),
         'fulfillment_status': request.fulfillment_status,
         'fulfillment_label': request.get_fulfillment_status_display(),
+        'shipped_by': person(request.shipped_by),
+        'shipped_at': request.shipped_at,
+        'received_by': person(request.received_by),
+        'received_at': request.received_at,
+        'created_at': request.created_at,
+        'updated_at': request.updated_at,
+        'lines': lines,
+    }
+    if fulfillment_only:
+        return fulfillment
+    return {
+        **fulfillment,
         'outcome': request.outcome,
         'outcome_label': request.get_outcome_display(),
         'purpose': request.purpose,
@@ -55,17 +67,10 @@ def _request_row(request, include_allocations=False):
         'evidence_snapshot': request.evidence_snapshot,
         'decided_by': person(request.decided_by),
         'decided_at': request.decided_at,
-        'shipped_by': person(request.shipped_by),
-        'shipped_at': request.shipped_at,
-        'received_by': person(request.received_by),
-        'received_at': request.received_at,
         'cancelled_by': person(request.cancelled_by),
         'cancelled_at': request.cancelled_at,
         'cancel_reason': request.cancel_reason,
         'order': {'id': request.order_id, 'number': f'OF-{request.order_id:04d}', 'total': request.order.total_rupiah} if request.order_id else None,
-        'created_at': request.created_at,
-        'updated_at': request.updated_at,
-        'lines': lines,
     }
 
 
@@ -121,7 +126,7 @@ def sample_records(actor, params):
     raw_page = params.get('page', '1')
     number = int(raw_page) if raw_page.isascii() and raw_page.isdecimal() and len(raw_page) <= 9 else 1
     page = paginator.get_page(number)
-    rows = [_request_row(request) for request in page.object_list]
+    rows = [_request_row(request, fulfillment_only=role == 'WAREHOUSE') for request in page.object_list]
     customer_options = Customer.objects.filter(sample_requests__in=sample_requests_for(actor)).distinct().order_by('name')
     return {
         'samples': rows, 'query': query, 'status_counts': status_counts,
@@ -145,11 +150,19 @@ def sample_records(actor, params):
 
 def sample_context(actor, request):
     role = role_of(actor)
+    # Whitelist fulfillment data before touching commercial history or policy.
+    if role == 'WAREHOUSE':
+        return {
+            'sample': _request_row(request, include_allocations=True, fulfillment_only=True),
+            'can_view_commercial': False,
+            'can_ship': request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING,
+            'can_receive': request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.SHIPPED,
+        }
     include_allocations = role in {'WAREHOUSE', 'MANAGER'}
     current = _request_row(request, include_allocations=include_allocations)
-    shipped = list(request.customer.orders.filter(status=Order.Status.SHIPPED).order_by('-shipped_at', '-pk'))
+    shipped = list(orders_for(actor).filter(customer=request.customer, status=Order.Status.SHIPPED).order_by('-shipped_at', '-pk'))
     previous = list(
-        request.customer.sample_requests.exclude(pk=request.pk)
+        sample_requests_for(actor).filter(customer=request.customer).exclude(pk=request.pk)
         .select_related('sales', 'decided_by', 'order')
         .prefetch_related('lines__product', 'followups')
         .order_by('-created_at', '-pk')
@@ -172,6 +185,7 @@ def sample_context(actor, request):
     ]
     policy = SamplePolicy.objects.filter(pk=1).first()
     return {
+        'can_view_commercial': True,
         'sample': current,
         'recommendation': recommend(request) if request.status in {SampleRequest.Status.SUBMITTED, SampleRequest.Status.DRAFT} else {
             'result': request.recommendation_at_decision or SampleRequest.Recommendation.REVIEW,

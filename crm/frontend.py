@@ -74,6 +74,9 @@ def encode(value, role):
     if isinstance(value, forms.BaseForm):
         return form_data(value)
     if isinstance(value, Customer):
+        if role == 'WAREHOUSE':
+            return dict(id=str(value.pk), code=value.code, name=value.name,
+                        phone=value.phone, address=value.address)
         return dict(id=str(value.pk), code=value.code, name=value.name, phone=value.phone,
                     address=value.address, owner=person(value.owner), is_active=value.is_active,
                     summary=encode(getattr(value, "summary", None), role))

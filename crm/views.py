@@ -154,6 +154,17 @@ def activity_create(request, customer_id):
     from django.db.models.functions import Coalesce
     latest = customer.activities.order_by(Coalesce('completed_at', 'created_at').desc(), '-pk').first()
     form = ActivityForm(request.POST or None, actor=request.user, initial={'stage': latest.stage if latest else 'NEW', 'status': 'DONE' if request.GET.get('intent') == 'done' else 'PLANNED', 'kind': 'INTERACTION' if request.GET.get('intent') == 'done' else ('FOLLOWUP' if request.GET.get('intent') == 'followup' else 'VISIT')})
+    if request.method == 'GET' and request.GET.get('intent') == 'followup' and request.GET.get('source_product'):
+        # Resolve the context from authorized Django records, never from query-string copy.
+        patterns = customer_history(request.user, customer.pk)['reorder_patterns']
+        pattern = next((p for p in patterns if str(p['product_id']) == request.GET['source_product']), None)
+        if pattern:
+            form.initial['note'] = (
+                f"Konfirmasi kebutuhan {pattern['product_name']} ({pattern['product_sku']}). "
+                f"Perkiraan pembelian ulang {pattern['next_due']:%d/%m/%Y}, berdasarkan "
+                f"{pattern['purchase_date_count']} tanggal pembelian. "
+                "Periksa kesiapan barang sebelum menjanjikan pengiriman."
+            )
     if request.method == 'POST' and form.is_valid():
         activity = form.save(commit=False)
         activity.customer = customer
@@ -575,11 +586,14 @@ def _sample_context(request, sample):
         back_url=sample_return_url(request),
         detail_url=sample_detail_url(request, sample.pk),
         canonical_url=sample_detail_url(request, sample.pk),
-        decision_form=SampleDecisionForm(),
-        cancel_form=CancelSampleForm(),
-        schedule_form=SampleScheduleForm(),
-        outcome_form=SampleOutcomeForm(actor=request.user, request=sample) if role_of(request.user) in {'SALES', 'MANAGER'} else None,
     )
+    if context.get('can_decide'):
+        context['decision_form'] = SampleDecisionForm()
+    if context.get('can_cancel'):
+        context['cancel_form'] = CancelSampleForm()
+    if context.get('can_followup'):
+        context['schedule_form'] = SampleScheduleForm()
+        context['outcome_form'] = SampleOutcomeForm(actor=request.user, request=sample)
     return context
 
 
@@ -615,6 +629,7 @@ def sample_submit(request, sample_id):
 @login_required
 @require_POST
 def sample_cancel(request, sample_id):
+    require_role(request.user, {'SALES', 'MANAGER'})
     form = CancelSampleForm(request.POST)
     if not form.is_valid():
         sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
@@ -627,6 +642,7 @@ def sample_cancel(request, sample_id):
 @login_required
 @require_POST
 def sample_decide(request, sample_id):
+    require_role(request.user, {'MANAGER'})
     form = SampleDecisionForm(request.POST)
     if not form.is_valid():
         sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
@@ -651,6 +667,7 @@ def sample_receive(request, sample_id):
 @login_required
 @require_POST
 def sample_schedule(request, sample_id):
+    require_role(request.user, {'SALES', 'MANAGER'})
     sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
     form = SampleScheduleForm(request.POST)
     if not form.is_valid():
@@ -663,6 +680,7 @@ def sample_schedule(request, sample_id):
 @login_required
 @require_POST
 def sample_outcome(request, sample_id):
+    require_role(request.user, {'SALES', 'MANAGER'})
     sample = get_object_or_404(sample_requests_for(request.user), pk=sample_id)
     form = SampleOutcomeForm(request.POST, actor=request.user, request=sample)
     if not form.is_valid():
