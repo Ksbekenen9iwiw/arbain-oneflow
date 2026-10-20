@@ -220,10 +220,11 @@ export function LoadingScreen({
       >
         <Banner
           status="warning"
+          role="alert"
           title="Halaman belum selesai dimuat"
           description="Periksa koneksi Anda, lalu muat ulang halaman."
+          endContent={<Button label="Muat ulang" href="" variant="secondary" />}
         />
-        <Button label="Muat ulang" href="" variant="primary" />
       </VStack>
     </VStack>
   );

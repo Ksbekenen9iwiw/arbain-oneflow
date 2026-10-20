@@ -4,6 +4,21 @@ export function withReturn(path: string, back: string) {
   params.set("return_to", back);
   return pathname + "?" + params;
 }
+// A list may be entered from a dashboard queue or another record. Keep that
+// explicit parent through filtering, without accepting external return links.
+export function listReturn(url: string): string | undefined {
+  const back = new URLSearchParams(url.split("?")[1]).get("return_to");
+  if (!back || /[\\\s#]/.test(back)) return undefined;
+  const pathname = back.split("?")[0];
+  if (
+    !/^\/(?:customers\/(?:\d+\/)?|orders\/(?:\d+\/)?|samples\/(?:\d+\/)?|products\/\d+\/|stock\/)?$/.test(
+      pathname,
+    )
+  )
+    return undefined;
+  if (pathname === url.split("?")[0]) return undefined;
+  return back;
+}
 export function backLabel(path: string) {
   const pathname = path.split("?")[0];
   if (pathname === "/") return "Dashboard";
@@ -20,7 +35,9 @@ export function backLabel(path: string) {
 // Keep each stock tab's filters separate, including its own sort and page.
 export function stockTabUrl(url: string, tab: string) {
   const params = new URLSearchParams(url.split("?")[1]);
-  const current = params.get("tab") === "movements" ? "movements" : "products";
+  const current = ["movements", "planning"].includes(params.get("tab") || "")
+    ? params.get("tab")!
+    : "products";
   const keys = [
     "q",
     "status",
@@ -31,6 +48,7 @@ export function stockTabUrl(url: string, tab: string) {
     "from",
     "to",
     "page",
+    "risk",
   ];
   for (const key of keys) {
     const value = params.get(key);
@@ -40,7 +58,7 @@ export function stockTabUrl(url: string, tab: string) {
     if (next) params.set(key, next);
     else params.delete(key);
   }
-  if (tab === "movements") params.set("tab", tab);
+  if (tab !== "products") params.set("tab", tab);
   else params.delete("tab");
   return "/stock/" + (params.size ? "?" + params : "");
 }

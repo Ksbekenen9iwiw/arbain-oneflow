@@ -1,11 +1,12 @@
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from crm.access import active_sales, role_of, sample_requests_for
+from crm.access import active_sales, orders_for, role_of, sample_requests_for
 from crm.models import Customer, Order, SamplePolicy, SampleRequest
 from crm.services.samples import recommend
 
@@ -14,7 +15,7 @@ def person(user):
     return {'id': user.pk, 'name': user.get_full_name() or user.username} if user else None
 
 
-def _request_row(request, include_allocations=False):
+def _request_row(request, include_allocations=False, fulfillment_only=False):
     lines = []
     for line in request.lines.all():
         item = {
@@ -30,7 +31,7 @@ def _request_row(request, include_allocations=False):
                 for allocation in line.allocations.all()
             ]
         lines.append(item)
-    return {
+    fulfillment = {
         'id': request.pk,
         'number': request.number,
         'customer': {'id': request.customer_id, 'code': request.customer.code, 'name': request.customer.name,
@@ -40,6 +41,18 @@ def _request_row(request, include_allocations=False):
         'status_label': request.get_status_display(),
         'fulfillment_status': request.fulfillment_status,
         'fulfillment_label': request.get_fulfillment_status_display(),
+        'shipped_by': person(request.shipped_by),
+        'shipped_at': request.shipped_at,
+        'received_by': person(request.received_by),
+        'received_at': request.received_at,
+        'created_at': request.created_at,
+        'updated_at': request.updated_at,
+        'lines': lines,
+    }
+    if fulfillment_only:
+        return fulfillment
+    return {
+        **fulfillment,
         'outcome': request.outcome,
         'outcome_label': request.get_outcome_display(),
         'purpose': request.purpose,
@@ -54,17 +67,10 @@ def _request_row(request, include_allocations=False):
         'evidence_snapshot': request.evidence_snapshot,
         'decided_by': person(request.decided_by),
         'decided_at': request.decided_at,
-        'shipped_by': person(request.shipped_by),
-        'shipped_at': request.shipped_at,
-        'received_by': person(request.received_by),
-        'received_at': request.received_at,
         'cancelled_by': person(request.cancelled_by),
         'cancelled_at': request.cancelled_at,
         'cancel_reason': request.cancel_reason,
         'order': {'id': request.order_id, 'number': f'OF-{request.order_id:04d}', 'total': request.order.total_rupiah} if request.order_id else None,
-        'created_at': request.created_at,
-        'updated_at': request.updated_at,
-        'lines': lines,
     }
 
 
@@ -90,8 +96,13 @@ def sample_records(actor, params):
             raise Http404
         sales = str(get_object_or_404(sales_options, pk=sales).pk)
         records = records.filter(sales_id=sales)
-    if status:
-        records = records.filter(status=status)
+    query = params.get('q', '').strip()
+    if query:
+        match = Q(customer__name__icontains=query) | Q(customer__code__icontains=query)
+        number = query.upper().removeprefix('SP-').removeprefix('SMP-')
+        if number.isascii() and number.isdecimal() and len(number) <= 18:
+            match |= Q(pk=int(number))
+        records = records.filter(match)
     if fulfillment:
         records = records.filter(fulfillment_status=fulfillment)
     raw_start, raw_end, date_error = params.get('from', ''), params.get('to', ''), ''
@@ -104,6 +115,9 @@ def sample_records(actor, params):
             date_error = 'Isi kedua tanggal dengan rentang yang valid. Hasil belum dibatasi periode.'
         else:
             records = records.filter(created_at__date__gte=start, created_at__date__lte=end)
+    status_counts = {value: records.filter(status=value).count() for value in SampleRequest.Status.values}
+    if status:
+        records = records.filter(status=status)
     sort = params.get('sort', '-created_at')
     if sort not in {'created_at', '-created_at', 'number', '-number'}:
         sort = '-created_at'
@@ -112,10 +126,10 @@ def sample_records(actor, params):
     raw_page = params.get('page', '1')
     number = int(raw_page) if raw_page.isascii() and raw_page.isdecimal() and len(raw_page) <= 9 else 1
     page = paginator.get_page(number)
-    rows = [_request_row(request) for request in page.object_list]
+    rows = [_request_row(request, fulfillment_only=role == 'WAREHOUSE') for request in page.object_list]
     customer_options = Customer.objects.filter(sample_requests__in=sample_requests_for(actor)).distinct().order_by('name')
     return {
-        'samples': rows,
+        'samples': rows, 'query': query, 'status_counts': status_counts,
         'status_options': [{'value': value, 'label': label} for value, label in SampleRequest.Status.choices],
         'fulfillment_options': [{'value': value, 'label': label} for value, label in SampleRequest.FulfillmentStatus.choices],
         'selected_status': status,
@@ -136,11 +150,19 @@ def sample_records(actor, params):
 
 def sample_context(actor, request):
     role = role_of(actor)
+    # Whitelist fulfillment data before touching commercial history or policy.
+    if role == 'WAREHOUSE':
+        return {
+            'sample': _request_row(request, include_allocations=True, fulfillment_only=True),
+            'can_view_commercial': False,
+            'can_ship': request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING,
+            'can_receive': request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.SHIPPED,
+        }
     include_allocations = role in {'WAREHOUSE', 'MANAGER'}
     current = _request_row(request, include_allocations=include_allocations)
-    shipped = list(request.customer.orders.filter(status=Order.Status.SHIPPED).order_by('-shipped_at', '-pk'))
+    shipped = list(orders_for(actor).filter(customer=request.customer, status=Order.Status.SHIPPED).order_by('-shipped_at', '-pk'))
     previous = list(
-        request.customer.sample_requests.exclude(pk=request.pk)
+        sample_requests_for(actor).filter(customer=request.customer).exclude(pk=request.pk)
         .select_related('sales', 'decided_by', 'order')
         .prefetch_related('lines__product', 'followups')
         .order_by('-created_at', '-pk')
@@ -162,7 +184,25 @@ def sample_context(actor, request):
         for followup in item.followups.all()
     ]
     policy = SamplePolicy.objects.filter(pk=1).first()
+    own_followups = list(request.followups.select_related('activity', 'actor').order_by('-created_at', '-pk'))
+    scheduled = next((f for f in own_followups if f.activity and f.activity.status == 'PLANNED'), None)
+    related_orders = orders_for(actor).filter(customer=request.customer, status__in=['DRAFT', 'CONFIRMED', 'SHIPPED'])
+    if request.received_at:
+        related_orders = related_orders.filter(Q(created_at__gte=request.received_at) | Q(shipped_at__gte=request.received_at))
+    else:
+        related_orders = related_orders.none()
     return {
+        'can_view_commercial': True,
+        'evaluation': {
+            'scheduled': {'date': scheduled.followup_date, 'note': scheduled.note, 'activity_id': scheduled.activity_id} if scheduled else None,
+            'events': [{'id': f.pk, 'date': f.followup_date, 'outcome': f.outcome,
+                        'outcome_label': f.get_outcome_display(), 'response': f.response, 'note': f.note,
+                        'actor': person(f.actor)} for f in own_followups],
+            'orders': list(related_orders.exclude(pk=request.order_id).order_by('-created_at', '-pk')[:5]),
+        },
+        'can_create_order': request.customer.is_active and request.fulfillment_status == 'RECEIVED'
+                            and request.outcome not in {'PURCHASED', 'NOT_INTERESTED'},
+        'can_schedule': request.fulfillment_status == 'RECEIVED' and request.outcome not in {'PURCHASED', 'NOT_INTERESTED'},
         'sample': current,
         'recommendation': recommend(request) if request.status in {SampleRequest.Status.SUBMITTED, SampleRequest.Status.DRAFT} else {
             'result': request.recommendation_at_decision or SampleRequest.Recommendation.REVIEW,
@@ -172,7 +212,7 @@ def sample_context(actor, request):
             'evidence': request.evidence_snapshot,
         },
         'history': {
-            'has_history': bool(shipped or previous),
+            'has_history': bool(shipped or previous or followups),
             'purchase_count': len(shipped),
             'purchase_total': sum(order.total_rupiah for order in shipped),
             'last_purchase_at': shipped[0].shipped_at if shipped else None,
@@ -190,7 +230,7 @@ def sample_context(actor, request):
         'can_edit': role in {'SALES', 'MANAGER'} and request.status == SampleRequest.Status.DRAFT,
         'can_submit': role in {'SALES', 'MANAGER'} and request.status == SampleRequest.Status.DRAFT,
         'can_decide': role == 'MANAGER' and request.status == SampleRequest.Status.SUBMITTED,
-        'can_cancel': role in {'SALES', 'MANAGER'} and request.status in {SampleRequest.Status.DRAFT, SampleRequest.Status.SUBMITTED, SampleRequest.Status.APPROVED} and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING,
+        'can_cancel': role in {'SALES', 'MANAGER'} and ((request.status in {SampleRequest.Status.DRAFT, SampleRequest.Status.SUBMITTED} and request.fulfillment_status == SampleRequest.FulfillmentStatus.PENDING) or (request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING)),
         'can_ship': role in {'WAREHOUSE', 'MANAGER'} and request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING,
         'can_receive': role in {'SALES', 'WAREHOUSE', 'MANAGER'} and request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.SHIPPED,
         'can_followup': role in {'SALES', 'MANAGER'} and request.fulfillment_status == SampleRequest.FulfillmentStatus.RECEIVED,

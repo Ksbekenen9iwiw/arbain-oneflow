@@ -35,13 +35,26 @@ class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   }
   render() {
     return this.state.failed ? (
-      <VStack padding={10} gap={4}>
+      <VStack
+        padding={10}
+        gap={4}
+        height="100%"
+        vAlign="center"
+        hAlign="center"
+      >
         <Banner
           status="error"
+          role="alert"
           title="Halaman tidak berhasil ditampilkan"
-          description="Muat ulang untuk mengambil data terbaru."
+          description="Muat ulang untuk mencoba kembali. Isian yang belum dikirim perlu diisi ulang."
+          endContent={
+            <Button
+              label="Muat ulang"
+              variant="secondary"
+              onClick={() => location.reload()}
+            />
+          }
         />
-        <Button label="Muat ulang" onClick={() => location.reload()} />
       </VStack>
     ) : (
       this.props.children
@@ -126,6 +139,7 @@ function App() {
               <VStack gap={6}>
                 <Banner
                   status="error"
+                  role="alert"
                   title={
                     d.error?.message ||
                     d.description ||

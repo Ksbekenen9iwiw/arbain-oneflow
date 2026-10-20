@@ -108,6 +108,26 @@ export function tourSteps(role: Page["role"]): TourStep[] {
       destination: "order_detail",
     },
     {
+      id: "samples",
+      target: "nav-samples",
+      title: "Ikuti proses pemberian sampel",
+      description:
+        role === "WAREHOUSE"
+          ? "Sampel yang disetujui perlu disiapkan dan dikirim melalui alur terpisah dari pesanan penjualan."
+          : "Sales mengajukan, manajer memutuskan, lalu gudang mengirim. Sampel tidak menambah omzet.",
+      action: "Klik Pengajuan sampel di sidebar.",
+      destination: "samples",
+    },
+    {
+      id: "samples-overview",
+      target: "samples-overview",
+      mode: "overview",
+      title: "Status pengajuan dan langkah berikutnya",
+      description:
+        "Baca status pengajuan dan pengirimannya. Buka nomor sampel untuk melihat produk, riwayat pendukung rekomendasi, alasan keputusan, dan tindakan sesuai peran Anda.",
+      destination: "samples",
+    },
+    {
       id: "stock",
       target: "nav-stock",
       title: "Cek ketersediaan produk",
@@ -126,7 +146,7 @@ export function tourSteps(role: Page["role"]): TourStep[] {
       description:
         role === "SALES"
           ? "Buka produk untuk memeriksa jumlah tersedia, kondisi stok, dan harga satuan sebelum menawarkan ke pelanggan."
-          : "Buka produk untuk melihat saldo, riwayat mutasi, dan reservasinya. Panduan ini tidak mengubah stok.",
+          : "Buka produk untuk memeriksa batch dan kedaluwarsa. Tab Pengadaan menjelaskan kapan dan berapa banyak perlu ditambahkan; Riwayat mutasi menelusuri perubahan stok.",
       action: "Klik nama produk yang disorot.",
       destination: "product_detail",
       empty:
@@ -140,8 +160,8 @@ export function tourSteps(role: Page["role"]): TourStep[] {
       title: "Baca ketersediaan produk",
       description:
         role === "SALES"
-          ? "Angka Tersedia menunjukkan jumlah yang masih bisa ditawarkan setelah reservasi diperhitungkan. Kondisi stok memberi tanda apakah persediaan cukup, menipis, atau habis. Periksa waktu pembaruan saldonya sebelum menindaklanjuti pelanggan."
-          : "Fisik adalah saldo barang tercatat, Reservasi adalah jumlah yang dialokasikan untuk pesanan, dan Tersedia adalah selisih keduanya. Kondisi stok serta waktu pembaruan membantu Anda menentukan apakah persediaan perlu diperiksa.",
+          ? "Stok bebas adalah fisik dikurangi reservasi. Kelayakan batch tetap diperiksa sebelum pengiriman. Kondisi stok memberi tanda apakah persediaan cukup, menipis, atau habis. Periksa waktu pembaruan saldonya sebelum menindaklanjuti pelanggan."
+          : "Fisik adalah saldo barang tercatat, Reservasi adalah jumlah yang dialokasikan untuk pesanan, dan Stok bebas adalah selisih keduanya. Kelayakan batch diperiksa terpisah. Kondisi stok serta waktu pembaruan membantu Anda menentukan apakah persediaan perlu diperiksa.",
       destination: "product_detail",
     },
     {

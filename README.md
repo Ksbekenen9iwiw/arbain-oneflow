@@ -20,7 +20,7 @@ py -3.12 -m venv .venv
 
 Buka http://127.0.0.1:8000/. Tidak perlu mengaktifkan virtualenv atau mengubah execution policy PowerShell.
 
-`seed_demo` memakai tanggal hari ini dalam WIB. Simpan empat password acak yang tampil saat seed, khusus untuk latihan lokal Anda. Password tidak disimpan dalam source atau laporan. Jika lupa, atur ulang akun dengan `.venv\Scripts\python.exe manage.py changepassword nadia`; ulangi untuk akun yang diperlukan. Seed tidak dapat dipakai untuk mengambil ulang password.
+`seed_demo` memakai tanggal hari ini dalam WIB. Simpan empat password acak yang tampil saat seed, khusus untuk latihan lokal Anda. Password acak dari seed tidak disimpan dalam source atau laporan. Mode penilaian opsional di bawah memakai kredensial demo publik yang disediakan tim. Jika lupa, atur ulang akun dengan `.venv\Scripts\python.exe manage.py changepassword nadia`; ulangi untuk akun yang diperlukan. Seed tidak dapat dipakai untuk mengambil ulang password.
 
 | Akun | Peran | Pekerjaan |
 |---|---|---|
@@ -56,6 +56,29 @@ Jalankan Django seperti biasa, lalu `npm run dev` di terminal kedua. Perintah in
 - `crm/static/crm/react/`: hasil build ber-hash beserta manifest Vite (tidak masuk Git). Jalankan build sebelum packaging atau `collectstatic`.
 
 Navigasi internal memakai respons JSON dari URL Django yang sama. Refresh, direct link, login, dan tombol Back tetap didukung. Error validasi mempertahankan input, formulir yang belum disimpan memberi konfirmasi sebelum berpindah, dan operasi stok tetap idempoten. Template HTML lama dipertahankan sebagai fallback tanpa JavaScript; tanpa hasil build, Django menampilkan fallback tersebut.
+
+## Akses penilaian dan fitur operasional baru
+
+Halaman masuk menyediakan **Akses demo untuk juri** saat `ONEFLOW_DEMO=1` dan kredensial demo cocok dengan akun aktif. Pilih peran, lihat atau salin username/sandi, lalu gunakan akun untuk mengisi formulir masuk. Autentikasi tetap melalui Django; tidak ada login otomatis atau pengubahan sandi saat halaman dibuka. Akun staff/superuser tidak ditawarkan.
+
+Untuk database **simulasi** yang sudah berisi empat akun demo, pengaturan berikut secara eksplisit mengganti sandinya dengan kredensial publik penilaian dari tim:
+
+```bash
+ONEFLOW_DEMO=1 .venv/bin/python manage.py configure_judging_accounts --confirm-demo-reset
+```
+
+Di Windows, gunakan `.venv\Scripts\python.exe` sebagai pengganti `.venv/bin/python`. Jangan menjalankan pengaturan akun juri pada database operasional. `ONEFLOW_DEMO=0` menghilangkan akses juri. Instalasi demo lain dapat menggunakan `ONEFLOW_DEMO_ACCOUNTS` berupa JSON array dengan `username`, `password`, `name`, `role`, dan `description`; akun hanya ditampilkan jika sandinya cocok.
+
+Untuk mencoba semua skenario pada **database baru yang kosong**, jalankan seed dengan `--fefo-demo --samples-demo --supply-demo --reorder-demo`. Jangan seed ulang database yang sudah berisi data.
+
+- **Produk & stok → Pengadaan:** urutan risiko, stok layak, pengadaan berjalan, saran tambahan, dan akses ke perhitungan setiap produk. Hanya manajer/gudang.
+- **Detail produk:** tab Batch & kedaluwarsa, Pengadaan, Riwayat mutasi, dan Reservasi. Stok bebas tetap dibedakan dari kelayakan kirim per batch.
+- **Pengajuan sampel:** status pengajuan, pencarian pelanggan/nomor, filter lanjutan, dan tindakan sesuai peran. Detail memisahkan produk, bukti riwayat pelanggan, serta jejak proses. Keputusan manajer ditampilkan terpisah dari rekomendasi sistem.
+- **Detail pelanggan:** perkiraan pembelian ulang menyertakan dasar perhitungan yang bisa dibuka, stok bebas, dan tindakan penjadwalan. Stok kurang tidak menyembunyikan pengingat.
+- **Dashboard:** pintasan tugas sampel dan kebutuhan pengadaan sesuai peran, selain aktivitas dan pesanan. Panduan aplikasi mencakup halaman sampel dan penjelasan setelah navigasi.
+- Kesalahan validasi pengadaan/sampel membuka kembali dialog dengan isian yang sama. URL kembali ke halaman detail yang dapat di-refresh.
+
+Riset desktop melalui Mobbin: [Shopify inventory](https://mobbin.com/screens/d9deb551-88bf-4c93-91b3-43ef6659ccef) untuk pemisahan saldo stok; [Shopify purchase orders](https://mobbin.com/flows/bdbc79e6-cbf8-45a8-b3a6-86ae24bf1827) untuk alur pencatatan sampai penerimaan; [Airwallex approvals](https://mobbin.com/screens/68f1a7f7-0e87-49a9-a9a9-6ec913167bf0) untuk bukti dan alasan keputusan; [Calendly contact activity](https://mobbin.com/screens/8158ffb0-f197-4691-8149-271f7a1ab997) untuk riwayat yang terhubung ke tindakan berikutnya. Implementasi mempertahankan frame `table-page`, `detail-page`, `form-two-column`, `login-split`, serta komponen asli Astryx; aturan bisnis tetap dari Django.
 
 ## Alur kerja
 
@@ -241,3 +264,21 @@ Detail pelanggan tetap memakai kerangka Astryx detail-page, List, TabList, Segme
 Migrasi `0006_activity_history_links` menambah `Activity.completed_at` dan `followup_of`, keduanya nullable. Waktu hasil disimpan dicatat pada penyelesaian aktivitas, pencatatan interaksi selesai, dan penyelesaian rekomendasi. Aktivitas berikutnya yang otomatis dibuat menyimpan hubungan ke aktivitas asal. Migrasi tidak mengarang waktu selesai atau hubungan historis. Catatan lama tetap menggunakan waktu pencatatan, disertai penjelasan bahwa waktu penyelesaian belum tersedia. Database utama telah dicadangkan sebelum migrasi di `runtime/customer-detail/before-migration.sqlite3` (diabaikan git).
 
 Validasi: 161 tes Django, 9 tes frontend, TypeScript, dan build Vite. Browser QA pada database dan cookie terpisah memeriksa error hasil kosong, pencatatan hasil + tindak lanjut, tautan dua arah antara hasil dan aktivitas berikutnya, fokus keyboard, pelanggan → pesanan → kembali, serta pembatalan wizard dengan pelanggan terpilih. Desktop 1440×900 dan 1280×800 diperiksa. Data transaksi utama tidak dipakai untuk pengujian. Peringatan ukuran bundle Vite masih ada. Uji kegunaan dengan pengguna mitra belum dilakukan.
+
+### Batas informasi per peran dan tindakan pelanggan
+
+- Daftar/detail sampel gudang hanya mengirim data pemenuhan: penerima, sales penanggung jawab, produk/jumlah, alokasi batch, status serta jejak kirim/terima. Tujuan bisnis, potensi pesanan, alasan keputusan, kebijakan, rekomendasi dan evaluasi pelanggan tidak dikirim dalam HTML maupun respons JSON, termasuk saat terjadi error. Form keputusan hanya untuk manajer; pembatalan dan evaluasi hanya untuk sales/manajer. Role diperiksa sebelum validasi formulir.
+- Profil pelanggan tetap terbatas pada sales pemilik dan manajer. Kontak pelanggan yang disertakan pada pesanan gudang tidak memuat penanggung jawab CRM, tahap atau ringkasan aktivitas. Riwayat pesanan dan sampel pada detail sampel mengikuti cakupan akun; manajer tetap dapat meninjau lintas sales.
+- Detail pelanggan diawali **Tindakan berikutnya**: aktivitas jatuh tempo, evaluasi sampel diterima, pengingat pembelian ulang, draf pesanan, lalu jadwal mendatang. Tiga tindakan ditampilkan lebih dahulu; daftar lengkap dapat dibuka. Setiap tindakan memiliki alasan dari Django dan tautan ke proses yang sesuai. Sampel yang sudah memiliki aktivitas terbuka tidak menyarankan evaluasi kedua kali.
+- Pengingat pembelian ulang tetap muncul saat stok kurang, disertai peringatan untuk mengonfirmasi kesiapan barang. Shortcut membawa konteks produk dan dasar perkiraan ke catatan formulir; sales tetap memilih tanggal dan menyimpan sendiri. Tidak ada transaksi atau penjadwalan otomatis saat membuka halaman. Pelanggan nonaktif tetap dapat dicatat interaksinya tanpa penawaran baru.
+
+Validasi: suite 261 tes Django lulus, diikuti 40 tes terarah pada perubahan akhir, 23 tes frontend, typecheck dan build. Browser memeriksa detail pelanggan → formulir tindak lanjut → batal/kembali, serta daftar/detail/jejak sampel gudang dengan sesi dan database QA terpisah. Tidak ada migrasi baru; pengujian browser tidak mengubah transaksi utama.
+
+### Sampel → evaluasi → pembelian lanjutan
+
+- Sampel yang diterima membuka tab **Evaluasi & pembelian** untuk sales/manajer: jadwal, tanggapan, hasil, dan pesanan yang ditautkan. Gudang tetap hanya menerima informasi pemenuhan.
+- Jadwal evaluasi menggunakan aktivitas yang terhubung. Mengubah jadwal memperbarui aktivitas terbuka, bukan membuat duplikat. Membuka aktivitas sampel mengarahkan pengguna ke evaluasinya; menyimpan evaluasi menyelesaikan aktivitas tersebut. Tanggal hasil mencatat hari evaluasi, sedangkan tanggal rencana tetap pada aktivitas.
+- Tombol **Buat pesanan** membawa pelanggan dan konteks kembali ke wizard. Pesanan baru tidak otomatis dianggap konversi sampel. Hasil **Membeli** wajib ditautkan secara eksplisit ke pesanan terkirim milik pelanggan yang sama dan dalam cakupan akun. Penautan tidak mengubah stok maupun menghitung omzet tambahan. Pilihan pesanan hanya muncul pada hasil Membeli.
+- Evaluasi Membeli/Tidak berminat memiliki penjelasan selesai dan tidak menawarkan jadwal baru sampai hasil diperbarui. Riwayat hasil tetap tersedia. Tab **Sampel** pada detail pelanggan menghubungkan produk, pengiriman, jadwal, tanggapan, dan pesanan hasil evaluasi.
+
+Validasi: 268 tes Django, 24 tes frontend, typecheck/build lulus; 28 tes terarah dijalankan kembali setelah perbaikan tanggal dan pesan sukses. Browser QA memeriksa hasil Membeli, pilihan pesanan terkirim, penyimpanan penautan dan kemunculannya pada detail pelanggan. Transaksi pengujian memakai database QA terpisah. Tidak ada migrasi baru. Peringatan ukuran bundle Vite yang sudah ada tetap berlaku.

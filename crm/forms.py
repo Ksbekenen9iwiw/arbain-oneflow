@@ -189,6 +189,18 @@ class SampleOutcomeForm(forms.Form):
             records = records.filter(customer=request.customer)
         self.fields['order_id'].queryset = records
         self.fields['order_id'].label_from_instance = lambda order: f'OF-{order.pk:04d} · {order.customer.name}'
+        self.fields['order_id'].help_text = 'Hanya pesanan terkirim milik pelanggan ini. Pilih jika pembelian benar-benar merupakan hasil pemberian sampel.'
+        if request is not None and not self.is_bound:
+            self.initial.update(outcome=request.outcome if request.outcome != SampleRequest.Outcome.NOT_FOLLOWED_UP else SampleRequest.Outcome.EVALUATING,
+                                order_id=request.order_id)
+
+    def clean(self):
+        data = super().clean()
+        if data.get('outcome') == SampleRequest.Outcome.PURCHASED and not data.get('order_id'):
+            self.add_error('order_id', 'Pilih pesanan terkirim untuk mencatat hasil membeli.')
+        if data.get('outcome') != SampleRequest.Outcome.PURCHASED:
+            data['order_id'] = None
+        return data
 
 
 class CancelOrderForm(forms.Form):
@@ -272,7 +284,7 @@ class SalesTargetForm(forms.Form):
 class SupplySettingForm(forms.Form):
     analysis_period_days = forms.TypedChoiceField(label='Periode analisis penjualan', choices=ProductSupplySetting.Period.choices, coerce=int, help_text='Hanya hari kalender penuh yang dihitung; penjualan hari ini belum ikut.')
     lead_time_days = StrictIntegerField(label='Waktu pengisian ulang (hari)', min_value=0, max_value=3650, help_text='Lama dari pemesanan sampai barang bisa dijual. 0 berarti datang di hari yang sama.')
-    coverage_target_days = StrictIntegerField(label='Target cakupan setelah barang datang (hari)', min_value=1, max_value=3650, help_text='Lama stok harus mencukupi SELENGGAH pengadaan tiba, di LUAR hari cadangan; jangan hitung cadangan dua kali.')
+    coverage_target_days = StrictIntegerField(label='Target cakupan setelah barang datang (hari)', min_value=1, max_value=3650, help_text='Berapa hari stok perlu mencukupi setelah pengadaan tiba. Cadangan dihitung terpisah.')
     safety_stock_days = StrictIntegerField(label='Cadangan (hari kebutuhan)', min_value=0, max_value=3650, help_text='Bantalan terpisah dari target cakupan. 0 berarti tanpa cadangan.')
 
     def __init__(self, *args, actor, **kwargs):

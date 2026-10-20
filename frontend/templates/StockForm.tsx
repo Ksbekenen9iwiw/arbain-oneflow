@@ -74,7 +74,7 @@ export default function StockForm() {
           },
           {
             id: "available",
-            label: "Tersedia",
+            label: "Stok bebas",
             before: p.available,
             after: String(free),
           },

@@ -1,14 +1,10 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 shell-side-nav: application frame and navigation.
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import { playMotion, useContentMotion } from "../motion";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { MotionStack, playMotion, useContentMotion } from "../motion";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+import { VisuallyHidden } from "@astryxdesign/core/VisuallyHidden";
+import { RequestFeedback, usePendingFeedback } from "../RequestFeedback";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Card } from "@astryxdesign/core/Card";
@@ -38,24 +34,26 @@ import { VStack, HStack, Text, Banner, ServerForm } from "../ui";
 import { useApp } from "../router";
 import Walkthrough, { canStartTour } from "../Walkthrough";
 export default function Shell({ children }: { children: ReactNode }) {
-  const { page, revision, busy, error, leaveAndSubmit } = useApp();
+  const { page, revision, busy, issue, requestKind, leaveAndSubmit } = useApp();
   const [tourRequest, setTourRequest] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
   const lastPath = useRef(page.url.split("?")[0]);
   const pathChanged = lastPath.current !== page.url.split("?")[0];
-  useContentMotion(contentRef, revision, pathChanged ? "page" : "fade");
+  useContentMotion(
+    contentRef,
+    `${revision}:${page.url}`,
+    pathChanged ? "page" : "fade",
+  );
   useLayoutEffect(() => {
     lastPath.current = page.url.split("?")[0];
   }, [revision, page.url]);
-  const [showProgress, setShowProgress] = useState(false);
-  useEffect(() => {
-    if (!busy) {
-      setShowProgress(false);
-      return;
-    }
-    const timer = window.setTimeout(() => setShowProgress(true), 180);
-    return () => window.clearTimeout(timer);
-  }, [busy]);
+  const pendingStage = usePendingFeedback(busy);
+  const pendingLabel =
+    requestKind === "write" ? "Menyimpan perubahan" : "Memuat halaman";
+  const slowLabel =
+    requestKind === "write"
+      ? "Masih menunggu konfirmasi. Jangan kirim ulang atau tutup halaman."
+      : "Memuat lebih lama dari biasanya. Halaman sebelumnya tetap tersedia.";
   const [isCollapsed, setIsCollapsed] = useState(false);
   const sidebarWidth = useRef<number | null>(null);
   const changeCollapsed = (collapsed: boolean) => {
@@ -218,6 +216,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               <SideNavItem
                 label="Pengajuan sampel"
                 icon={BeakerIcon}
+                data-tour="nav-samples"
                 href="/samples/"
                 isSelected={path.startsWith("/samples")}
               />
@@ -246,8 +245,17 @@ export default function Shell({ children }: { children: ReactNode }) {
           </SideNav>
         }
         banner={
-          error ? (
-            <Banner status="error" title={error} container="section" />
+          issue ? (
+            <RequestFeedback container="section" />
+          ) : pendingStage === "slow" ? (
+            <MotionStack gap={0} preset="expand" role="status">
+              <Banner
+                container="section"
+                status="info"
+                title={pendingLabel}
+                description={slowLabel}
+              />
+            </MotionStack>
           ) : undefined
         }
       >
@@ -258,7 +266,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           aria-busy={busy}
           style={{ position: "relative" }}
         >
-          {busy && showProgress && (
+          {pendingStage !== "idle" && (
             <VStack
               style={{
                 position: "absolute",
@@ -269,7 +277,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               }}
             >
               <ProgressBar
-                label="Memperbarui halaman"
+                label={pendingLabel}
                 isLabelHidden
                 isIndeterminate
                 variant="neutral"
@@ -278,15 +286,29 @@ export default function Shell({ children }: { children: ReactNode }) {
           )}
           {page.messages.map((m, i) => (
             <Banner
-              key={i}
-              status={m.type === "error" ? "error" : "success"}
+              key={`${revision}:${i}`}
+              status={
+                m.type === "error"
+                  ? "error"
+                  : m.type === "warning"
+                    ? "warning"
+                    : m.type === "info"
+                      ? "info"
+                      : "success"
+              }
               title={m.text}
               container="section"
+              role={m.type === "error" ? "alert" : "status"}
+              isDismissable={m.type !== "error"}
+              dismissLabel="Tutup pemberitahuan"
             />
           ))}
           {children}
         </VStack>
       </AppShell>
+      <VisuallyHidden role="status">
+        {pendingStage === "loading" ? pendingLabel : ""}
+      </VisuallyHidden>
       <Walkthrough
         key={`${page.user?.id}:${page.role}`}
         request={tourRequest}

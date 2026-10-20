@@ -87,9 +87,10 @@ export default function Today() {
     warehouse = page.role === "WAREHOUSE",
     sales = page.role === "SALES",
     manager = page.role === "MANAGER";
+  const hasApprovals = manager && (d.sample_tasks || []).length > 0;
   const [requestedQueue, setQueue] = useQueryState(
     "view",
-    warehouse ? "shipping" : "activities",
+    warehouse ? "shipping" : hasApprovals ? "samples" : "activities",
   );
   const queue = dashboardQueue(page.role, requestedQueue);
   const [requestedSchedule, setSchedule] = useQueryState(
@@ -149,7 +150,7 @@ export default function Today() {
       q.set("shipped_from", page.today.slice(0, 8) + "01");
       q.set("shipped_to", page.today);
     }
-    return "/orders/?" + q;
+    return withReturn("/orders/?" + q, page.url);
   };
   const agenda: Row[] = d.agenda || [];
   const matches = (a: Row, mode: string) =>
@@ -443,7 +444,9 @@ export default function Today() {
             key: "shipped_value_rupiah",
             header: "Nilai terkirim",
             align: "end",
-            renderCell: (r) => <Text>{money(r.shipped_value_rupiah)}</Text>,
+            renderCell: (r) => (
+              <Text hasTabularNumbers>{money(r.shipped_value_rupiah)}</Text>
+            ),
           },
           {
             key: "target_rupiah",
@@ -473,54 +476,65 @@ export default function Today() {
   );
   const workQueue = (
     <VStack gap={3} paddingBlockEnd={6} id="work-queue">
-      {!warehouse && (
-        <HStack hAlign="between" vAlign="center">
-          <VStack gap={1}>
-            <Heading level={2}>
-              {sales
+      <HStack hAlign="between" vAlign="center">
+        <VStack gap={1}>
+          <Heading level={2}>
+            {warehouse
+              ? "Persiapan pengiriman"
+              : sales
                 ? "Pekerjaan saya"
-                : d.selected_sales
+                : d.selected_sales && queue !== "samples"
                   ? "Pekerjaan sales"
                   : "Pekerjaan tim"}
-            </Heading>
-          </VStack>
+          </Heading>
+        </VStack>
+        {!warehouse && (
           <Button
-            href="/customers/"
+            href={withReturn("/customers/", page.url)}
             size="sm"
             variant="secondary"
-            label={sales ? "Jadwalkan aktivitas" : "Lihat pelanggan"}
+            label="Lihat pelanggan"
           />
-        </HStack>
-      )}
-      {!warehouse && (
-        <TabList
-          value={queue}
-          onChange={setQueue}
-          role="tablist"
-          aria-label="Antrean kerja"
-          hasDivider
-        >
-          {!warehouse && (
-            <Tab
-              value="activities"
-              label={`Aktivitas (${agenda.length})`}
-              panelId="queue-activities"
-            />
-          )}
-          {!warehouse && (
-            <Tab
-              value="recommendations"
-              label={`Rekomendasi (${d.action_count})`}
-              panelId="queue-recommendations"
-            />
-          )}
+        )}
+      </HStack>
+      <TabList
+        value={queue}
+        onChange={setQueue}
+        role="tablist"
+        aria-label="Antrean kerja"
+        hasDivider
+      >
+        {!warehouse && (
           <Tab
-            value="shipping"
-            label={`Pengiriman (${m.pending_shipment_count})`}
-            panelId="queue-shipping"
+            value="activities"
+            label={`Aktivitas (${agenda.length})`}
+            panelId="queue-activities"
           />
-        </TabList>
-      )}
+        )}
+        {!warehouse && (
+          <Tab
+            value="recommendations"
+            label={`Rekomendasi (${d.action_count})`}
+            panelId="queue-recommendations"
+          />
+        )}
+        <Tab
+          value="shipping"
+          label={`Pengiriman (${m.pending_shipment_count})`}
+          panelId="queue-shipping"
+        />
+        <Tab
+          value="samples"
+          label={
+            manager
+              ? "Persetujuan sampel"
+              : sales
+                ? "Evaluasi sampel"
+                : "Pengiriman sampel"
+          }
+          panelId="queue-samples"
+        />
+      </TabList>
       {!warehouse && queue === "activities" && (
         <MotionStack
           motionKey={queue}
@@ -569,6 +583,7 @@ export default function Today() {
             rows={allActivities ? filtered : filtered.slice(0, 5)}
             empty={
               <Empty
+                kind={schedule === "priority" ? "complete" : "search"}
                 title="Tidak ada aktivitas pada jadwal ini"
                 description={
                   schedule === "priority"
@@ -580,7 +595,11 @@ export default function Today() {
                     label={
                       agenda.length ? "Lihat semua jadwal" : "Lihat pelanggan"
                     }
-                    href={agenda.length ? undefined : "/customers/"}
+                    href={
+                      agenda.length
+                        ? undefined
+                        : withReturn("/customers/", page.url)
+                    }
                     onClick={
                       agenda.length ? () => setSchedule("all") : undefined
                     }
@@ -766,7 +785,7 @@ export default function Today() {
                         label={
                           a.state === "WAITING_STOCK"
                             ? "Periksa stok"
-                            : "Buat draft"
+                            : "Buat draf"
                         }
                       />
                     )}
@@ -792,7 +811,7 @@ export default function Today() {
           motionKey={queue}
           gap={4}
           id="queue-shipping"
-          role={warehouse ? "region" : "tabpanel"}
+          role="tabpanel"
           aria-label="Pengiriman"
         >
           <HStack hAlign="between">
@@ -806,12 +825,106 @@ export default function Today() {
           </HStack>
           <OrderTable
             rows={d.pending_orders}
+            actionLabel={warehouse ? "Siapkan pengiriman" : "Lihat pesanan"}
             empty={
               <Empty
+                kind="complete"
                 title="Tidak ada pesanan menunggu pengiriman"
                 description="Pesanan yang dikonfirmasi akan tampil di sini."
               />
             }
+          />
+        </MotionStack>
+      )}
+      {queue === "samples" && (
+        <MotionStack
+          motionKey={queue}
+          gap={3}
+          id="queue-samples"
+          role="tabpanel"
+          aria-label="Tugas sampel"
+        >
+          <HStack hAlign="between" gap={3} vAlign="center">
+            <Text type="supporting">
+              {manager
+                ? "Pengajuan seluruh tim yang menunggu keputusan Anda."
+                : warehouse
+                  ? "Sampel disetujui yang menunggu pengiriman."
+                  : "Sampel diterima pelanggan dan belum dievaluasi."}
+              {(d.sample_tasks || []).length === 5
+                ? " Ditampilkan 5 pengajuan."
+                : ""}
+            </Text>
+            <Button
+              size="sm"
+              variant="secondary"
+              label={sales ? "Semua sampel saya" : "Lihat semua"}
+              href={withReturn(
+                manager
+                  ? "/samples/?status=SUBMITTED"
+                  : warehouse
+                    ? "/samples/?status=APPROVED&fulfillment=WAITING"
+                    : "/samples/",
+                page.url,
+              )}
+            />
+          </HStack>
+          <DataTable
+            rows={d.sample_tasks || []}
+            empty={
+              <Empty
+                kind="complete"
+                title={
+                  manager
+                    ? "Tidak ada pengajuan menunggu persetujuan"
+                    : warehouse
+                      ? "Tidak ada sampel menunggu pengiriman"
+                      : "Tidak ada evaluasi baru"
+                }
+                description={
+                  sales
+                    ? "Evaluasi yang sudah dicatat dan jadwal tindak lanjut dapat dilihat di Semua sampel saya."
+                    : "Pengajuan akan muncul di sini ketika siap Anda tangani."
+                }
+              />
+            }
+            columns={[
+              {
+                key: "number",
+                header: "Sampel",
+                renderCell: (item) => (
+                  <Text weight="semibold">{item.number}</Text>
+                ),
+              },
+              { key: "customer_name", header: "Pelanggan" },
+              ...(sales ? [] : [{ key: "sales_name", header: "Sales" }]),
+              {
+                key: "created_at",
+                header: "Diajukan",
+                renderCell: (item) => <Text>{dateLabel(item.created_at)}</Text>,
+              },
+              {
+                key: "action",
+                header: "Tindakan",
+                renderCell: (item) => (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    label={
+                      manager
+                        ? "Tinjau pengajuan"
+                        : warehouse
+                          ? "Siapkan sampel"
+                          : "Buka evaluasi"
+                    }
+                    href={withReturn(
+                      `/samples/${item.id}/?tab=${sales ? "evaluation" : "products"}`,
+                      page.url,
+                    )}
+                  />
+                ),
+              },
+            ]}
           />
         </MotionStack>
       )}
@@ -858,12 +971,23 @@ export default function Today() {
                   />
                 )}
                 <Button
-                  label={warehouse ? "Lihat pengiriman" : "Buat pesanan"}
+                  label={
+                    warehouse
+                      ? "Lihat pengiriman"
+                      : hasApprovals
+                        ? "Tinjau sampel"
+                        : "Buat pesanan"
+                  }
                   variant="primary"
                   href={
-                    warehouse
-                      ? ordersUrl("CONFIRMED")
-                      : withReturn("/orders/new/", page.url)
+                    hasApprovals
+                      ? undefined
+                      : warehouse
+                        ? ordersUrl("CONFIRMED")
+                        : withReturn("/orders/new/", page.url)
+                  }
+                  onClick={
+                    hasApprovals ? () => focusQueue("samples") : undefined
                   }
                 />
               </HStack>
@@ -876,65 +1000,20 @@ export default function Today() {
               {analytics}
               {metrics}
               {workQueue}
-              {(d.sample_tasks || []).length > 0 && (
-                <VStack gap={3}>
-                  <HStack hAlign="between" vAlign="center">
-                    <Heading level={2}>Tugas sampel</Heading>
-                    <Button
-                      href={withReturn("/samples/", page.url)}
-                      size="sm"
-                      variant="secondary"
-                      label="Lihat semua pengajuan"
-                    />
-                  </HStack>
-                  <Text type="supporting">
-                    Tugas mengikuti peran: peninjauan manajer, persiapan gudang,
-                    atau tindak lanjut sales.
-                  </Text>
-                  <DataTable
-                    rows={d.sample_tasks}
-                    columns={[
-                      {
-                        key: "number",
-                        header: "Pengajuan",
-                        renderCell: (item) => (
-                          <Link
-                            href={withReturn(`/samples/${item.id}/`, page.url)}
-                            weight="semibold"
-                          >
-                            {item.number}
-                          </Link>
-                        ),
-                      },
-                      { key: "customer_name", header: "Pelanggan" },
-                      { key: "sales_name", header: "Sales" },
-                      { key: "task", header: "Tugas" },
-                      {
-                        key: "created_at",
-                        header: "Dibuat",
-                        renderCell: (item) => (
-                          <Text>{dateLabel(item.created_at)}</Text>
-                        ),
-                      },
-                    ]}
-                  />
-                </VStack>
-              )}
               {(d.supply_alerts || []).length > 0 && (
                 <VStack gap={3}>
                   <HStack hAlign="between" vAlign="center">
                     <Heading level={2}>Peringatan pasokan</Heading>
                     <Button
-                      href={withReturn("/stock/", page.url)}
+                      href={withReturn("/stock/?tab=planning", page.url)}
                       size="sm"
                       variant="secondary"
-                      label="Buka gudang"
+                      label="Semua pengadaan"
                     />
                   </HStack>
                   <Text type="supporting">
-                    Dihitung ulang setiap halaman dimuat; tidak ada notifikasi
-                    latar saat aplikasi tertutup. Keputusan pengadaan tetap pada
-                    Anda.
+                    Produk diurutkan dari risiko paling mendesak. Buka produk
+                    untuk meninjau alasan dan jumlah pengadaan.
                   </Text>
                   <DataTable
                     rows={d.supply_alerts}
@@ -946,7 +1025,7 @@ export default function Today() {
                           <VStack gap={1}>
                             <Link
                               href={withReturn(
-                                `/products/${alert.product.id}/`,
+                                `/products/${alert.product.id}/?section=supply`,
                                 page.url,
                               )}
                               weight="semibold"
@@ -977,7 +1056,7 @@ export default function Today() {
                       },
                       {
                         key: "recommend_quantity",
-                        header: "Saran pengadaan",
+                        header: "Saran tambahan",
                         align: "end",
                         renderCell: (alert) => (
                           <Text hasTabularNumbers>
@@ -1025,6 +1104,7 @@ export default function Today() {
                     rows={d.stock_attention || []}
                     empty={
                       <Empty
+                        kind="complete"
                         title="Tidak ada konflik atau stok menipis"
                         description="Stok tersedia memenuhi batas minimum yang ditetapkan."
                       />

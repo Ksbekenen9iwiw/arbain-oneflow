@@ -14,7 +14,10 @@ import { Selector } from "@astryxdesign/core/Selector";
 import { DateInput } from "@astryxdesign/core/DateInput";
 import type { ISODateString } from "@astryxdesign/core/Calendar";
 import {
+  FilterRow,
+  ResultsSummary,
   HStack,
+  tablePresentation,
   VStack,
   StackItem,
   Text,
@@ -34,7 +37,7 @@ export function StockCondition({ product }: { product: Row }) {
     conflict: "Konflik stok",
     empty: "Stok bebas habis",
     low: "Menipis",
-    ready: "Cukup",
+    ready: "Memenuhi minimum",
   };
   return (
     <Status
@@ -84,17 +87,16 @@ export function ServerTable({
   });
   return rows.length ? (
     <Table
+      {...tablePresentation}
       data={rows}
       columns={columns}
       idKey="id"
       plugins={{ sort: sorting }}
-      hasHover
-      density="compact"
-      textOverflow="wrap"
     />
   ) : (
     empty || (
       <Empty
+        kind="search"
         title="Tidak ada mutasi yang cocok"
         description="Ubah filter untuk menelusuri riwayat lain."
       />
@@ -110,7 +112,7 @@ export function MovementView({
   update: (changes: Record<string, string>) => void;
   singleProduct?: boolean;
 }) {
-  const { page, busy } = useApp();
+  const { page, busy, refreshing } = useApp();
   const [from, setFrom] = useState(d.date_from || ""),
     [to, setTo] = useState(d.date_to || "");
   const filtered =
@@ -128,7 +130,7 @@ export function MovementView({
         }}
       >
         <VStack gap={3}>
-          <HStack gap={3} vAlign="end" wrap="wrap">
+          <FilterRow>
             {!singleProduct && (
               <StackItem size="fill">
                 <Selector
@@ -145,15 +147,15 @@ export function MovementView({
             )}
             <Selector
               label="Jenis mutasi"
-              width="14rem"
+              width="12rem"
               value={d.selected_kind}
               options={[{ value: "", label: "Semua jenis" }, ...d.kind_options]}
               onChange={(kind) => update({ kind, page: "1" })}
             />
-          </HStack>
-          <HStack gap={3} vAlign="end" wrap="wrap">
+          </FilterRow>
+          <FilterRow>
             <DateInput
-              label="Dari tanggal"
+              label="Mulai tanggal"
               placeholder="Pilih tanggal"
               value={(from || undefined) as ISODateString | undefined}
               onChange={(v) => setFrom(v || "")}
@@ -168,12 +170,22 @@ export function MovementView({
               format="system_date"
               hasClear
             />
-            <Button label="Terapkan tanggal" type="submit" isLoading={busy} />
-            {filtered && (
-              <Button
-                label="Reset riwayat"
-                variant="secondary"
-                onClick={() =>
+            <Button
+              variant="secondary"
+              label="Terapkan periode"
+              type="submit"
+              isLoading={refreshing}
+              isDisabled={busy}
+            />
+          </FilterRow>
+        </VStack>
+      </form>
+      {d.date_error && <Banner status="warning" title={d.date_error} />}
+      <ResultsSummary
+        reset={
+          filtered
+            ? {
+                onClick: () =>
                   update({
                     from: "",
                     to: "",
@@ -182,24 +194,21 @@ export function MovementView({
                     q: "",
                     page: "1",
                     sort: "-created_at",
-                  })
-                }
-              />
-            )}
-          </HStack>
-        </VStack>
-      </form>
-      {d.date_error && <Banner status="warning" title={d.date_error} />}
-      <Text type="supporting">
+                  }),
+              }
+            : undefined
+        }
+      >
         {d.movement_total} mutasi · Waktu Indonesia Barat (WIB)
         {singleProduct ? " · Produk ini saja" : ""}
-      </Text>
+      </ResultsSummary>
       <ServerTable
         rows={d.movements}
         sort={d.selected_sort}
         update={update}
         empty={
           <Empty
+            kind={filtered ? "search" : "empty"}
             title={
               filtered ? "Tidak ada mutasi yang cocok" : "Belum ada mutasi"
             }
@@ -280,7 +289,12 @@ export function MovementView({
                   </Link>
                 )}
                 {r.sample_request_id && (
-                  <Link href={withReturn(`/samples/${r.sample_request_id}/`, page.url)}>
+                  <Link
+                    href={withReturn(
+                      `/samples/${r.sample_request_id}/`,
+                      page.url,
+                    )}
+                  >
                     Lihat SP-{r.sample_request_id.padStart(4, "0")}
                   </Link>
                 )}

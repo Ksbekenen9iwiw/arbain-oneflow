@@ -1,3 +1,4 @@
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { MotionPanel } from "../motion";
 import { ProductIdentity } from "../ProductIdentity";
 import { withReturn, backLabel } from "../navigation";
@@ -33,6 +34,7 @@ import {
   Link,
   DataTable,
   Status,
+  BatchStatus,
   Fact,
   money,
   quantity,
@@ -60,7 +62,7 @@ export default function Detail() {
   const actionUrl = (action: string) =>
     orderContext(`/orders/${order.id}/${action}/`, d.back_url);
   const events = [
-    { id: "created", label: "Draft dibuat", at: order.created_at, actor: null },
+    { id: "created", label: "Draf dibuat", at: order.created_at, actor: null },
     {
       id: "confirmed",
       label: "Dikonfirmasi · stok direservasi",
@@ -121,16 +123,9 @@ export default function Detail() {
                   </VStack>
                 </StackItem>
                 <HStack gap={2} wrap="wrap">
-                  {d.can_cancel && (
-                    <Button
-                      variant="secondary"
-                      label="Batalkan"
-                      onClick={() => setDialog("cancel")}
-                    />
-                  )}
                   {d.can_confirm && (
                     <Button
-                      label="Edit draft"
+                      label="Edit draf"
                       variant="secondary"
                       href={orderContext(
                         `/orders/${order.id}/edit/`,
@@ -154,12 +149,18 @@ export default function Detail() {
                       onClick={() => setDialog("ship")}
                     />
                   )}
-                  {d.can_swap && (
-                    <Button
-                      variant="secondary"
-                      label="Ganti batch"
-                      isDisabled={busy}
-                      onClick={() => setDialog("swap")}
+                  {d.can_cancel && (
+                    <DropdownMenu
+                      presentation="popover"
+                      button={{ label: "Lainnya", variant: "secondary" }}
+                      alignment="end"
+                      items={[
+                        {
+                          label: "Batalkan pesanan",
+                          variant: "destructive",
+                          onClick: () => setDialog("cancel"),
+                        },
+                      ]}
                     />
                   )}
                   <IconButton
@@ -222,10 +223,10 @@ export default function Detail() {
                   </HStack>
                   {page.role !== "WAREHOUSE" && (
                     <Button
-                      label="Riwayat pelanggan"
+                      label="Pesanan pelanggan"
                       variant="secondary"
                       href={withReturn(
-                        `/customers/${order.customer.id}/`,
+                        `/customers/${order.customer.id}/?tab=orders`,
                         page.url,
                       )}
                     />
@@ -302,7 +303,7 @@ export default function Detail() {
                 </HStack>
                 <Text type="supporting">
                   {order.status === "DRAFT"
-                    ? "Draft belum mereservasi stok. Konfirmasi setelah produk dan jumlah sesuai."
+                    ? "Draf belum mereservasi stok. Konfirmasi setelah produk dan jumlah sesuai."
                     : order.status === "CONFIRMED"
                       ? page.role === "SALES"
                         ? "Seluruh jumlah pesanan sudah direservasi. Menunggu gudang mencatat pengiriman."
@@ -387,18 +388,28 @@ export default function Detail() {
                 />
 
                 <Text type="supporting">
-                  Harga satuan tersimpan saat produk ditambahkan ke draft.
+                  Harga satuan tersimpan saat produk ditambahkan ke draf.
                 </Text>
               </VStack>
-              {allocationRows.length > 0 && (
+              {(allocationRows.length > 0 || d.can_swap) && (
                 <VStack gap={4} data-tour="order-allocations">
-                  <VStack gap={1}>
-                    <Heading level={2}>Alokasi batch</Heading>
-                    <Text type="supporting">
-                      Batch diambil berurutan dari tanggal kedaluwarsa terdekat
-                      (FEFO).
-                    </Text>
-                  </VStack>
+                  <HStack gap={3} hAlign="between" vAlign="center">
+                    <VStack gap={1}>
+                      <Heading level={2}>Alokasi batch</Heading>
+                      <Text type="supporting">
+                        Urutan pengambilan berdasarkan kedaluwarsa terdekat
+                        (FEFO).
+                      </Text>
+                    </VStack>
+                    {d.can_swap && (
+                      <Button
+                        variant="secondary"
+                        label="Ganti batch"
+                        isDisabled={busy}
+                        onClick={() => setDialog("swap")}
+                      />
+                    )}
+                  </HStack>
                   <DataTable
                     rows={allocationRows}
                     columns={[
@@ -433,16 +444,10 @@ export default function Detail() {
                       },
                       {
                         key: "status",
-                        header: "Status batch",
+                        width: proportional(2, { minWidth: 240 }),
+                        header: "Kondisi batch saat ini",
                         renderCell: (r) => (
-                          <Status
-                            value={
-                              r.status === "HELD"
-                                ? "WAITING_STOCK"
-                                : "STOCK_READY"
-                            }
-                            label={r.status_label}
-                          />
+                          <BatchStatus batch={r} today={page.today} />
                         ),
                       },
                     ]}
@@ -536,7 +541,7 @@ export default function Detail() {
           </Fact>
           <Text color="secondary">
             {dialog === "cancel"
-              ? `${order.status === "CONFIRMED" ? "Reservasi stok akan dilepas. " : "Draft ini belum mereservasi stok. "}Alasan pembatalan akan tersimpan dalam riwayat.`
+              ? `${order.status === "CONFIRMED" ? "Reservasi stok akan dilepas. " : "Draf ini belum mereservasi stok. "}Alasan pembatalan akan tersimpan dalam riwayat.`
               : dialog === "ship"
                 ? "Pastikan seluruh barang sudah diserahkan untuk pengiriman. Tindakan ini mencatat pengiriman dan mengurangi stok fisik serta reservasi."
                 : dialog === "swap"

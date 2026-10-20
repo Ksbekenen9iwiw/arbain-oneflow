@@ -64,7 +64,7 @@ export default function ActivityDetail() {
       defaultHasDividers
       header={
         <LayoutHeader padding={6}>
-          <VStack gap={4}>
+          <VStack gap={3}>
             <HStack gap={4} vAlign="center" justify="between">
               <Link href={d.back_url} color="secondary">
                 ← {backLabel(d.back_url)}

@@ -1,6 +1,9 @@
 export function dashboardQueue(role: string | null, requested: string): string {
-  if (role === "WAREHOUSE") return "shipping";
-  return ["activities", "recommendations", "shipping"].includes(requested)
+  if (role === "WAREHOUSE")
+    return requested === "samples" ? "samples" : "shipping";
+  return ["activities", "recommendations", "shipping", "samples"].includes(
+    requested,
+  )
     ? requested
     : "activities";
 }

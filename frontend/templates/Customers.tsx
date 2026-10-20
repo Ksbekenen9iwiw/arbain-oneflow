@@ -1,5 +1,5 @@
 import { RecordIdentity } from "../RecordIdentity";
-import { withReturn } from "../navigation";
+import { withReturn, listReturn, backLabel } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 table-page: unified toolbar, scoped tabs, full-width table.
 import { useState } from "react";
@@ -15,6 +15,9 @@ import {
   type TableColumn,
 } from "@astryxdesign/core/Table";
 import {
+  tablePresentation,
+  ResultsSummary,
+  FilterRow,
   VStack,
   HStack,
   StackItem,
@@ -30,12 +33,15 @@ import { useApp } from "../router";
 import type { Row } from "../types";
 export const customerContext = withReturn;
 export default function Customers() {
-  const { page, navigate, busy } = useApp();
+  const { page, navigate, busy, refreshing } = useApp();
   const d = page.data;
+  const back = listReturn(page.url);
+  const resetUrl = back ? withReturn("/customers/", back) : "/customers/";
   const [query, setQuery] = useState(d.query);
   const manager = page.role === "MANAGER";
   const update = (changes: Record<string, string>) => {
     const params = new URLSearchParams({
+      return_to: back || "",
       q: query,
       sales: d.selected_sales,
       status: d.selected_status,
@@ -166,6 +172,7 @@ export default function Customers() {
       height="fill"
       header={
         <PageHeader
+          back={back ? { href: back, label: backLabel(back) } : undefined}
           title="Pelanggan"
           description={
             manager
@@ -184,40 +191,28 @@ export default function Customers() {
       content={
         <LayoutContent padding={6} data-oneflow-scroll>
           <VStack gap={4}>
-            <HStack hAlign="between" vAlign="center" gap={3}>
-              <TabList
-                aria-label="Prioritas pelanggan"
-                value={d.selected_view || "all"}
-                onChange={(v) => update({ view: v === "all" ? "" : v })}
-              >
-                <Tab value="all" label={`Semua (${d.view_counts.all})`} />
-                <Tab
-                  value="overdue"
-                  label={`Terlambat (${d.view_counts.overdue})`}
-                />
-                <Tab
-                  value="today"
-                  label={`Hari ini (${d.view_counts.today})`}
-                />
-              </TabList>
-              {(filtered || d.selected_sort !== "name") && (
-                <Button
-                  variant="secondary"
-                  label="Reset filter"
-                  href="/customers/"
-                />
-              )}
-            </HStack>
+            <TabList
+              hasDivider
+              aria-label="Prioritas pelanggan"
+              value={d.selected_view || "all"}
+              onChange={(v) => update({ view: v === "all" ? "" : v })}
+            >
+              <Tab value="all" label={`Semua (${d.view_counts.all})`} />
+              <Tab
+                value="overdue"
+                label={`Terlambat (${d.view_counts.overdue})`}
+              />
+              <Tab value="today" label={`Hari ini (${d.view_counts.today})`} />
+            </TabList>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 update({});
               }}
             >
-              <HStack gap={3} vAlign="end">
+              <FilterRow>
                 <StackItem size="fill">
                   <TextInput
-                    isLabelHidden
                     label="Cari pelanggan"
                     value={query}
                     onChange={setQuery}
@@ -240,7 +235,7 @@ export default function Customers() {
                 )}
                 <Selector
                   label="Status pelanggan"
-                  width="11rem"
+                  width="12rem"
                   value={d.selected_status}
                   options={[
                     { value: "", label: "Semua status" },
@@ -249,30 +244,41 @@ export default function Customers() {
                   ]}
                   onChange={(v) => update({ status: v })}
                 />
-                <Button type="submit" label="Cari" isLoading={busy} />
-              </HStack>
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  label="Cari"
+                  isLoading={refreshing}
+                  isDisabled={busy}
+                />
+              </FilterRow>
             </form>
 
-            <Text type="supporting">
+            <ResultsSummary
+              reset={
+                filtered || d.selected_sort !== "name"
+                  ? { href: resetUrl }
+                  : undefined
+              }
+            >
               {d.customers.length} pelanggan
               {d.selected_view === "overdue"
                 ? " dengan aktivitas melewati jadwal"
                 : d.selected_view === "today"
                   ? " dengan aktivitas terjadwal hari ini"
                   : ""}
-            </Text>
+            </ResultsSummary>
             {d.customers.length ? (
               <Table
+                {...tablePresentation}
                 data={d.customers}
                 columns={columns}
                 plugins={{ sort: sorting }}
                 idKey="id"
-                hasHover
-                density="compact"
-                textOverflow="wrap"
               />
             ) : (
               <Empty
+                kind={filtered ? "search" : "empty"}
                 title={
                   filtered
                     ? "Tidak ada pelanggan yang cocok"
@@ -284,14 +290,12 @@ export default function Customers() {
                     : "Tambahkan pelanggan pertama untuk mulai mencatat aktivitas dan pesanan."
                 }
                 action={
-                  <Button
-                    href={
-                      filtered
-                        ? "/customers/"
-                        : customerContext("/customers/new/", page.url)
-                    }
-                    label={filtered ? "Reset filter" : "Tambah pelanggan"}
-                  />
+                  !filtered ? (
+                    <Button
+                      href={customerContext("/customers/new/", page.url)}
+                      label="Tambah pelanggan"
+                    />
+                  ) : undefined
                 }
               />
             )}

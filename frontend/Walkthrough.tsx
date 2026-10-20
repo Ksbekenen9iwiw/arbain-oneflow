@@ -13,6 +13,8 @@ const readScreens = new Set([
   "today",
   "customers",
   "customer_detail",
+  "samples",
+  "sample_detail",
   "orders",
   "order_detail",
   "stock",

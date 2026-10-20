@@ -22,7 +22,9 @@ import {
 import { useApp } from "../router";
 import type { Field } from "../types";
 import coverUrl from "../assets/arbain-honey-herbal.jpg";
+import { DemoAccess } from "../DemoAccess";
 import { useContentMotion } from "../motion";
+import { RequestFeedback, usePendingFeedback } from "../RequestFeedback";
 
 const coverStyle: CSSProperties = {
   position: "absolute",
@@ -33,7 +35,7 @@ const coverStyle: CSSProperties = {
 };
 
 export default function Login() {
-  const { page, error, busy, submit, clearDirty } = useApp();
+  const { page, busy, submit, clearDirty } = useApp();
   const initialUsername = String(
     page.data.form.fields.find((field: Field) => field.name === "username")
       ?.value || "",
@@ -54,6 +56,7 @@ export default function Login() {
   useContentMotion(panel, step === "username" ? 0 : 1, "step");
   const inFlight = useRef(false);
   const pending = busy || checking;
+  const pendingStage = usePendingFeedback(pending);
 
   useLayoutEffect(() => {
     const element = panel.current;
@@ -248,7 +251,12 @@ export default function Login() {
                     {showServerErrors && serverErrors.length > 0 && (
                       <Banner status="error" title={serverErrors.join(" ")} />
                     )}
-                    {error && <Banner status="error" title={error} />}
+                    <RequestFeedback />
+                    {pendingStage === "slow" && (
+                      <Text type="supporting" role="status">
+                        Masih menghubungkan ke OneFlow. Tunggu sebentar.
+                      </Text>
+                    )}
                     <HStack justify="end">
                       <Button
                         type="submit"
@@ -262,6 +270,21 @@ export default function Login() {
                   </VStack>
                 </ServerForm>
               </VStack>
+              {page.demo && page.data.demo_accounts?.length > 0 && (
+                <DemoAccess
+                  accounts={page.data.demo_accounts}
+                  disabled={pending}
+                  onSelect={(account) => {
+                    setUsername(account.username);
+                    setPassword(account.password);
+                    setStep("password");
+                    setMessage("");
+                    setShowServerErrors(false);
+                    setShowPassword(false);
+                    clearDirty();
+                  }}
+                />
+              )}
             </VStack>
           </Center>
         </StackItem>
