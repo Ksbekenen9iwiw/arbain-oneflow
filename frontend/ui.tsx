@@ -32,6 +32,9 @@ import { Icon } from "@astryxdesign/core/Icon";
 import {
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
+  InboxIcon,
+  MagnifyingGlassIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import {
   Table,
@@ -43,6 +46,8 @@ import {
 import { useApp } from "./router";
 import type { Field, FormSpec, Row } from "./types";
 import { QuantityInput } from "./QuantityInput";
+import { MotionStack } from "./motion";
+import { RequestFeedback } from "./RequestFeedback";
 export {
   VStack,
   HStack,
@@ -96,7 +101,7 @@ export function PageHeader({
             {leading}
             <VStack gap={2}>
               <Heading level={1}>{title}</Heading>
-              {description && <Text color="secondary">{description}</Text>}
+              {description && <Text type="supporting">{description}</Text>}
             </VStack>
           </HStack>
           {actions && <StackItem>{actions}</StackItem>}
@@ -107,7 +112,7 @@ export function PageHeader({
 }
 export function Status({ value, label }: { value: string; label?: string }) {
   const labels: Row = {
-    DRAFT: "Draft",
+    DRAFT: "Draf",
     SUBMITTED: "Menunggu keputusan",
     APPROVED: "Disetujui",
     REJECTED: "Ditolak",
@@ -115,6 +120,7 @@ export function Status({ value, label }: { value: string; label?: string }) {
     RECEIVED: "Diterima",
     ACTIVE: "Aktif",
     HELD: "Ditahan",
+    DATA_INCOMPLETE: "Data belum lengkap",
     REVIEW: "Perlu ditinjau",
     RECOMMENDED: "Direkomendasikan",
     CONFIRMED: "Menunggu pengiriman",
@@ -148,6 +154,7 @@ export function Status({ value, label }: { value: string; label?: string }) {
     "PERLU_PENGADAAN",
     "PERLU_KONFIGURASI",
     "HELD",
+    "DATA_INCOMPLETE",
     "REVIEW",
     "NEEDS_REVIEW",
     "REJECT_SUGGESTED",
@@ -196,21 +203,100 @@ export function Status({ value, label }: { value: string; label?: string }) {
     </HStack>
   );
 }
+// Describes batch data, not authorization to ship; Django validates dispatch.
+export function BatchStatus({ batch, today }: { batch: Row; today: string }) {
+  if (batch.expiry_date && batch.expiry_date < today)
+    return <Status value="OVERDUE" label="Kedaluwarsa" />;
+  if (batch.status === "HELD") return <Status value="HELD" label="Ditahan" />;
+  if (!batch.expiry_date || batch.is_complete === false)
+    return (
+      <Status
+        value="DATA_INCOMPLETE"
+        label={
+          !batch.expiry_date
+            ? "Kedaluwarsa belum tercatat"
+            : "Data batch belum lengkap"
+        }
+      />
+    );
+  return <Status value={batch.status} label={batch.status_label || "Aktif"} />;
+}
+
 export function Empty({
   title = "Belum ada data",
-  description = "Data akan muncul di sini setelah ditambahkan.",
+  description,
   action,
+  kind = "empty",
 }: {
   title?: string;
   description?: string;
   action?: ReactNode;
+  kind?: "empty" | "search" | "complete";
 }) {
   return (
-    <VStack gap={3} hAlign="center" padding={10}>
-      <Heading level={3}>{title}</Heading>
-      <Text color="secondary">{description}</Text>
-      {action}
-    </VStack>
+    <MotionStack gap={3} hAlign="center" padding={8} motionKey={title}>
+      <Icon
+        icon={
+          kind === "search"
+            ? MagnifyingGlassIcon
+            : kind === "complete"
+              ? CheckCircleIcon
+              : InboxIcon
+        }
+        color="secondary"
+        size="lg"
+      />
+      <VStack maxWidth="36rem" gap={2} hAlign="center" role="status">
+        <Heading level={3} justify="center">
+          {title}
+        </Heading>
+        {description && (
+          <Text type="supporting" justify="center">
+            {description}
+          </Text>
+        )}
+      </VStack>
+      {action && (
+        <HStack gap={2} hAlign="center" wrap="wrap">
+          {action}
+        </HStack>
+      )}
+    </MotionStack>
+  );
+}
+// Native Astryx presentation shared by server- and client-sorted tables.
+export const tablePresentation = {
+  density: "balanced",
+  dividers: "rows",
+  verticalAlign: "middle",
+  textOverflow: "wrap",
+  hasHover: true,
+} as const;
+
+export function FilterRow({ children }: { children: ReactNode }) {
+  return (
+    <HStack gap={3} vAlign="end" wrap="wrap">
+      {children}
+    </HStack>
+  );
+}
+
+export function ResultsSummary({
+  children,
+  reset,
+}: {
+  children: ReactNode;
+  reset?: { href?: string; onClick?: () => void };
+}) {
+  return (
+    <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
+      <Text type="supporting" aria-live="polite">
+        {children}
+      </Text>
+      {reset && (
+        <Button label="Reset filter" size="sm" variant="secondary" {...reset} />
+      )}
+    </HStack>
   );
 }
 export function DataTable({
@@ -249,6 +335,7 @@ export function DataTable({
     : rows;
   return rows.length ? (
     <Table
+      {...tablePresentation}
       data={ordered}
       plugins={{ sort: sorting }}
       columns={columns.map((column) => ({
@@ -256,9 +343,6 @@ export function DataTable({
         width: column.width || proportional(1, { minWidth: 96 }),
       }))}
       idKey="id"
-      hasHover
-      density="compact"
-      textOverflow="wrap"
     />
   ) : (
     empty || <Empty />
@@ -446,6 +530,7 @@ export function Fields({
           key={i}
           status="error"
           title={e}
+          role="alert"
           data-form-errors
           tabIndex={-1}
         />
@@ -527,14 +612,16 @@ export function ServerForm({
   children: ReactNode;
   onSubmit?: (data: FormData) => void;
 }) {
-  const { page, submit } = useApp();
+  const { page, submit, busy } = useApp();
   return (
     <form
       id={id}
       method="post"
+      aria-busy={busy}
       action={action || page.url}
       onSubmit={(e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (busy) return;
         const data = new FormData(e.currentTarget);
         if (onSubmit) onSubmit(data);
         else void submit(action || page.url, data);
@@ -642,7 +729,7 @@ export function FormDialog({
   width?: string;
   footer?: ReactNode;
 }) {
-  const { busy, clearDirty, error, page } = useApp();
+  const { busy, clearDirty, page } = useApp();
   const [changed, setChanged] = useState(
     !!(page.data.action_dialog || page.data.target_dialog || page.data.dialog),
   );
@@ -688,7 +775,7 @@ export function FormDialog({
             style={{ maxHeight: "60dvh", overflowY: "auto" }}
           >
             <section hidden={discard}>
-              {error && <Banner status="error" title={error} />}
+              <RequestFeedback />
               <FormChangeContext value={() => setChanged(true)}>
                 {children}
               </FormChangeContext>

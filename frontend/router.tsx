@@ -13,10 +13,14 @@ import { VStack, HStack } from "@astryxdesign/core/Layout";
 import { Text } from "@astryxdesign/core/Text";
 import { Button } from "@astryxdesign/core/Button";
 import type { Page } from "./types";
+import { requestIssue, type RequestIssue } from "./requestState";
 type AppContext = {
   page: Page;
   busy: boolean;
   error: string;
+  issue: RequestIssue | null;
+  requestKind: "read" | "write";
+  refreshing: boolean;
   revision: number;
   updateQuery: (values: Record<string, string>) => void;
   markDirty: () => void;
@@ -36,7 +40,9 @@ export function Router({
 }) {
   const [page, setPage] = useState(initial),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
+    [issue, setIssue] = useState<RequestIssue | null>(null),
+    [requestKind, setRequestKind] = useState<"read" | "write">("read"),
+    [refreshing, setRefreshing] = useState(false),
     [revision, setRevision] = useState(0);
   const dirty = useRef(false);
   const currentPage = useRef(initial);
@@ -81,7 +87,9 @@ export function Router({
           ),
         );
       setBusy(true);
-      setError("");
+      setRequestKind(data ? "write" : "read");
+      setRefreshing(!data && url.split("?")[0] === previous.url.split("?")[0]);
+      setIssue(null);
       try {
         const response = await fetch(url, {
           method: data ? "POST" : "GET",
@@ -93,7 +101,7 @@ export function Router({
         if (
           !response.headers.get("content-type")?.includes("application/json")
         ) {
-          if (!data) {
+          if (!data && response.ok) {
             window.location.assign(response.url);
             return;
           }
@@ -150,12 +158,11 @@ export function Router({
           }
         });
       } catch (e) {
-        if (!(e instanceof DOMException && e.name === "AbortError"))
-          setError(
-            data
-              ? "Koneksi terputus. Periksa apakah perubahan sudah tersimpan sebelum mengirim ulang."
-              : "Halaman gagal dimuat. Periksa koneksi lalu coba lagi.",
-          );
+        if (
+          id === sequence.current &&
+          !(e instanceof DOMException && e.name === "AbortError")
+        )
+          setIssue(requestIssue(url, !!data, replace));
       } finally {
         if (id === sequence.current) {
           posting.current = false;
@@ -298,7 +305,10 @@ export function Router({
       value={{
         page,
         busy,
-        error,
+        error: issue ? `${issue.title}. ${issue.description}` : "",
+        issue,
+        requestKind,
+        refreshing: busy && refreshing,
         revision,
         navigate,
         updateQuery,

@@ -28,10 +28,12 @@ import type { Row } from "../types";
 export function OrderTable({
   rows,
   showCustomer = true,
+  actionLabel,
   empty,
 }: {
   rows: Row[];
   showCustomer?: boolean;
+  actionLabel?: string;
   empty?: ReactNode;
 }) {
   const { page } = useApp();
@@ -58,7 +60,19 @@ export function OrderTable({
                 key: "customer",
                 header: "Pelanggan",
                 width: proportional(2),
-                renderCell: (r: Row) => <Text>{r.customer.name}</Text>,
+                renderCell: (r: Row) =>
+                  page.role === "WAREHOUSE" ? (
+                    <Text>{r.customer.name}</Text>
+                  ) : (
+                    <Link
+                      href={withReturn(
+                        `/customers/${r.customer.id}/?tab=orders`,
+                        page.url,
+                      )}
+                    >
+                      {r.customer.name}
+                    </Link>
+                  ),
               },
             ]
           : []),
@@ -82,6 +96,22 @@ export function OrderTable({
           align: "end",
           renderCell: (r) => <Text hasTabularNumbers>{money(r.total)}</Text>,
         },
+        ...(actionLabel
+          ? [
+              {
+                key: "action",
+                header: "Tindakan",
+                renderCell: (r: Row) => (
+                  <Button
+                    label={actionLabel}
+                    size="sm"
+                    variant="secondary"
+                    href={withReturn(`/orders/${r.id}/`, page.url)}
+                  />
+                ),
+              },
+            ]
+          : []),
       ]}
       empty={
         empty || (
@@ -95,7 +125,7 @@ export function OrderTable({
   );
 }
 export default function Records() {
-  const { page, navigate, busy } = useApp();
+  const { page, navigate, busy, refreshing } = useApp();
   const d = page.data,
     screen = page.screen,
     canManage = page.role !== "SALES";
@@ -393,7 +423,12 @@ export default function Records() {
                   />
                 )}
                 <StackItem>
-                  <Button type="submit" label="Cari" isLoading={busy} />
+                  <Button
+                    type="submit"
+                    label="Cari"
+                    isLoading={refreshing}
+                    isDisabled={busy}
+                  />
                 </StackItem>
                 {(d.query || scope) && (
                   <Button

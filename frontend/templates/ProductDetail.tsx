@@ -1,3 +1,4 @@
+import { proportional } from "@astryxdesign/core/Table";
 import { Grid } from "@astryxdesign/core/Grid";
 import { MotionPanel } from "../motion";
 import { ProductIdentity } from "../ProductIdentity";
@@ -20,6 +21,7 @@ import {
   Empty,
   Banner,
   Status,
+  BatchStatus,
   ServerForm,
   money,
   quantity,
@@ -293,6 +295,7 @@ export default function ProductDetail() {
                         columns={[
                           {
                             key: "code",
+                            width: proportional(1.7, { minWidth: 136 }),
                             header: "Kode batch",
                             renderCell: (r) => (
                               <VStack gap={1}>
@@ -305,6 +308,7 @@ export default function ProductDetail() {
                           },
                           {
                             key: "received_date",
+                            width: proportional(1.2, { minWidth: 96 }),
                             header: "Diterima",
                             renderCell: (r) => (
                               <Text>{dateLabel(r.received_date)}</Text>
@@ -312,6 +316,7 @@ export default function ProductDetail() {
                           },
                           {
                             key: "expiry_date",
+                            width: proportional(1.4, { minWidth: 112 }),
                             header: "Kedaluwarsa",
                             renderCell: (r) => (
                               <VStack gap={1}>
@@ -328,6 +333,7 @@ export default function ProductDetail() {
                           },
                           {
                             key: "on_hand",
+                            width: proportional(0.8, { minWidth: 64 }),
                             header: "Fisik",
                             align: "end",
                             renderCell: (r) => (
@@ -338,7 +344,8 @@ export default function ProductDetail() {
                           },
                           {
                             key: "reserved",
-                            header: "Dicadangkan",
+                            width: proportional(1.2, { minWidth: 96 }),
+                            header: "Reservasi",
                             align: "end",
                             renderCell: (r) => (
                               <Text hasTabularNumbers>
@@ -348,6 +355,7 @@ export default function ProductDetail() {
                           },
                           {
                             key: "available",
+                            width: proportional(1.2, { minWidth: 96 }),
                             header: "Stok bebas",
                             align: "end",
                             renderCell: (r) => (
@@ -358,32 +366,15 @@ export default function ProductDetail() {
                           },
                           {
                             key: "status",
+                            width: proportional(2.75, { minWidth: 220 }),
                             header: "Status",
                             renderCell: (r) => (
-                              <Status
-                                value={
-                                  r.status === "HELD"
-                                    ? "WAITING_STOCK"
-                                    : r.is_expired
-                                      ? "OVERDUE"
-                                      : r.is_complete
-                                        ? "STOCK_READY"
-                                        : "STOCK_LOW"
-                                }
-                                label={
-                                  r.is_expired
-                                    ? "Kedaluwarsa"
-                                    : r.status === "HELD"
-                                      ? "Ditahan"
-                                      : !r.is_complete
-                                        ? "Data belum lengkap"
-                                        : "Layak diperiksa"
-                                }
-                              />
+                              <BatchStatus batch={r} today={page.today} />
                             ),
                           },
                           {
                             key: "batch_action",
+                            width: proportional(1.2, { minWidth: 96 }),
                             header: "Tindakan",
                             renderCell: (r) => (
                               <ServerForm
@@ -469,6 +460,13 @@ export default function ProductDetail() {
                             </VStack>
                             <Status value={d.supply.risk} />
                           </HStack>
+                          {d.supply.risk === "RISIKO_KOSONG_TERLAMBAT" && (
+                            <Banner
+                              status="warning"
+                              title="Periksa jadwal pengadaan berjalan"
+                              description={`Cocokkan estimasi tiba dengan proyeksi stok habis${d.supply.stockout_date ? ` pada ${dateLabel(d.supply.stockout_date)}` : ""}. Pengadaan yang terlambat perlu dikonfirmasi ulang ke pemasok.`}
+                            />
+                          )}
                           <Grid columns={4} gap={4}>
                             <Fact label="Stok layak">
                               {d.supply.eligible == null
@@ -578,13 +576,10 @@ export default function ProductDetail() {
                               <Status
                                 value={r.status}
                                 label={
-                                  r.is_expired
-                                    ? "Kedaluwarsa"
-                                    : r.status === "HELD"
-                                      ? "Ditahan"
-                                      : !r.is_complete
-                                        ? "Data belum lengkap"
-                                        : "Layak diperiksa"
+                                  r.status === "CONFIRMED" &&
+                                  Number(r.received) > 0
+                                    ? "Diterima sebagian"
+                                    : r.status_label
                                 }
                               />
                             ),

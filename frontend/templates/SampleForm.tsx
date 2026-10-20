@@ -98,7 +98,7 @@ export default function SampleForm() {
       }
       end={
         <MotionPanel width="19rem" padding={5} role="complementary">
-          <VStack gap={5}>
+          <VStack gap={6}>
             <VStack gap={2}>
               <Heading level={2}>Alur pengajuan</Heading>
               <Text weight="semibold">1. Simpan draf</Text>
@@ -132,7 +132,14 @@ export default function SampleForm() {
             <VStack gap={6}>
               {[...spec.errors, ...d.formset.errors].map(
                 (error: string, index: number) => (
-                  <Banner key={index} status="error" title={error} />
+                  <Banner
+                    key={index}
+                    status="error"
+                    title={error}
+                    role="alert"
+                    data-form-errors
+                    tabIndex={-1}
+                  />
                 ),
               )}
               {d.draft_version && (

@@ -12,7 +12,7 @@ test("work queue includes overdue and today; excludes future and undated until r
   assert.deepEqual(select("future"), dates.slice(2));
   assert.deepEqual(select("all"), dates);
 });
-test("warehouse always has shipping queue even with CRM links or invalid saved query", () => {
+test("warehouse keeps shipping as fallback and allows sample fulfillment", () => {
   for (const query of [
     "activities",
     "recommendations",
@@ -22,7 +22,9 @@ test("warehouse always has shipping queue even with CRM links or invalid saved q
   ]) {
     assert.equal(dashboardQueue("WAREHOUSE", query), "shipping");
   }
+  assert.equal(dashboardQueue("WAREHOUSE", "samples"), "samples");
   for (const role of ["SALES", "MANAGER"]) {
+    assert.equal(dashboardQueue(role, "samples"), "samples");
     assert.equal(dashboardQueue(role, "recommendations"), "recommendations");
     assert.equal(dashboardQueue(role, "shipping"), "shipping");
     assert.equal(dashboardQueue(role, "bogus"), "activities");

@@ -1,4 +1,37 @@
 // Presentation only. Django remains authoritative for action permissions.
+export function sampleStage(
+  sample: { status: string; fulfillment_status: string; outcome?: string },
+  role = "MANAGER",
+) {
+  if (["CANCELLED", "REJECTED", "DRAFT", "SUBMITTED"].includes(sample.status)) {
+    const labels: Record<string, string> = {
+      CANCELLED: "Dibatalkan",
+      REJECTED: "Ditolak",
+      DRAFT: "Draf",
+      SUBMITTED: "Menunggu keputusan",
+    };
+    return { value: sample.status, label: labels[sample.status] };
+  }
+  if (sample.fulfillment_status === "WAITING")
+    return { value: "CONFIRMED", label: "Menunggu pengiriman" };
+  if (sample.fulfillment_status === "SHIPPED")
+    return { value: "CONFIRMED", label: "Dalam pengiriman" };
+  if (sample.fulfillment_status === "RECEIVED") {
+    if (role === "WAREHOUSE")
+      return { value: "RECEIVED", label: "Diterima pelanggan" };
+    if (sample.outcome === "PURCHASED")
+      return { value: "DONE", label: "Pelanggan membeli" };
+    if (sample.outcome === "NOT_INTERESTED")
+      return { value: "DONE", label: "Evaluasi selesai · tidak berminat" };
+    if (sample.outcome === "EVALUATING")
+      return { value: "READY", label: "Masih mengevaluasi" };
+    if (sample.outcome === "NO_RESPONSE")
+      return { value: "REVIEW", label: "Belum merespons" };
+    return { value: "READY", label: "Perlu evaluasi" };
+  }
+  return { value: sample.status, label: "Disetujui" };
+}
+
 export function sampleJourney(
   sample: {
     status: string;

@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { withReturn, backLabel, stockTabUrl } from "./navigation.ts";
+import {
+  withReturn,
+  backLabel,
+  stockTabUrl,
+  listReturn,
+} from "./navigation.ts";
 test("prefilled wizard keeps customer and complete parent tab/filter context", () => {
   const back =
     "/customers/1/?tab=orders&return_to=%2Fcustomers%2F%3Fq%3DApotek";
@@ -12,7 +17,10 @@ test("prefilled wizard keeps customer and complete parent tab/filter context", (
 });
 test("sample workspace has accurate back labels", () => {
   assert.equal(backLabel("/samples/"), "Sampel");
-  assert.equal(backLabel("/samples/12/?return_to=%2Fsamples%2F"), "Detail pengajuan sampel");
+  assert.equal(
+    backLabel("/samples/12/?return_to=%2Fsamples%2F"),
+    "Detail pengajuan sampel",
+  );
 });
 test("stock tabs retain separate filter, sort and pagination contexts", () => {
   const products = "/stock/?status=inactive&filter=low&sort=-available";
@@ -44,11 +52,46 @@ test("stock tabs retain separate filter, sort and pagination contexts", () => {
 test("procurement filters do not leak into products or movement history", () => {
   const planning = "/stock/?tab=planning&q=madu&risk=attention&return_to=%2F";
   const products = stockTabUrl(planning, "products");
-  assert.equal(new URL(products, "http://localhost").searchParams.get("risk"), null);
+  assert.equal(
+    new URL(products, "http://localhost").searchParams.get("risk"),
+    null,
+  );
   const history = stockTabUrl(products + "&filter=low", "movements");
   const back = new URL(stockTabUrl(history, "planning"), "http://localhost");
   assert.equal(back.searchParams.get("q"), "madu");
   assert.equal(back.searchParams.get("risk"), "attention");
   assert.equal(back.searchParams.get("filter"), null);
   assert.equal(back.searchParams.get("return_to"), "/");
+});
+
+test("list filtering keeps the dashboard queue and nested record context", () => {
+  const dashboard = "/?view=samples&sales=2&period=30";
+  const list = withReturn("/samples/?status=SUBMITTED", dashboard);
+  assert.equal(listReturn(list), dashboard);
+  const filtered = withReturn(
+    "/samples/?status=APPROVED&q=madu",
+    listReturn(list),
+  );
+  const detail = withReturn("/samples/6/?tab=products", filtered);
+  const parent = new URLSearchParams(detail.split("?")[1]).get("return_to");
+  assert.equal(parent, filtered);
+  assert.equal(listReturn(parent), dashboard);
+  assert.equal(
+    listReturn(withReturn("/orders/", "/customers/3/?tab=orders")),
+    "/customers/3/?tab=orders",
+  );
+});
+
+test("list back navigation rejects external, malformed, same-list and unknown targets", () => {
+  for (const back of [
+    "https://evil.test/",
+    "//evil.test/",
+    "/\\evil.test/",
+    "/login/",
+    "/samples/?status=SUBMITTED",
+    "/customers/1/\n",
+  ]) {
+    assert.equal(listReturn(withReturn("/samples/", back)), undefined);
+  }
+  assert.equal(listReturn("/orders/"), undefined);
 });

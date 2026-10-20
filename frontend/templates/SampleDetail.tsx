@@ -1,8 +1,11 @@
+import { proportional } from "@astryxdesign/core/Table";
+import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { TabList, Tab } from "@astryxdesign/core/TabList";
 import { MotionPanel, MotionStack } from "../motion";
 import { ProductIdentity } from "../ProductIdentity";
-import { sampleJourney } from "../sampleJourney";
+import { sampleJourney, sampleStage } from "../sampleJourney";
 import { useQueryState } from "../router";
 import { useState } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
@@ -16,6 +19,7 @@ import {
   Link,
   PageHeader,
   Status,
+  BatchStatus,
   Banner,
   Fact,
   DataTable,
@@ -39,6 +43,7 @@ export default function SampleDetail() {
   const sample = d.sample;
   const commercial = d.can_view_commercial === true;
   const journey = sampleJourney(sample, page.role || "");
+  const stage = sampleStage(sample, page.role || "");
   const [requestedTab, setTab] = useQueryState(
     "tab",
     commercial && sample.fulfillment_status === "RECEIVED"
@@ -93,7 +98,7 @@ export default function SampleDetail() {
                 )}
                 {d.can_submit && (
                   <Button
-                    label="Ajukan"
+                    label="Ajukan sampel"
                     variant="primary"
                     onClick={() => setDialog("submit")}
                   />
@@ -114,7 +119,7 @@ export default function SampleDetail() {
                 )}
                 {d.can_receive && (
                   <Button
-                    label="Tandai diterima"
+                    label="Konfirmasi penerimaan"
                     variant="primary"
                     onClick={() => setDialog("receive")}
                   />
@@ -137,10 +142,17 @@ export default function SampleDetail() {
                   />
                 )}
                 {d.can_cancel && (
-                  <Button
-                    label="Batalkan pengajuan"
-                    variant="secondary"
-                    onClick={() => setDialog("cancel")}
+                  <DropdownMenu
+                    presentation="popover"
+                    button={{ label: "Lainnya", variant: "secondary" }}
+                    alignment="end"
+                    items={[
+                      {
+                        label: "Batalkan pengajuan",
+                        variant: "destructive",
+                        onClick: () => setDialog("cancel"),
+                      },
+                    ]}
                   />
                 )}
               </HStack>
@@ -149,7 +161,7 @@ export default function SampleDetail() {
         }
         end={
           <MotionPanel width="20rem" padding={5} role="complementary">
-            <VStack gap={5}>
+            <VStack gap={6}>
               <VStack gap={2}>
                 <Heading level={2}>
                   {commercial ? "Pelanggan" : "Penerima sampel"}
@@ -194,39 +206,45 @@ export default function SampleDetail() {
                       </Text>
                     </VStack>
                   )}
-                  <VStack gap={3}>
-                    <Heading level={2}>
-                      {sample.decided_at
-                        ? "Rekomendasi saat peninjauan"
-                        : "Rekomendasi sistem"}
-                    </Heading>
-                    {!d.policy.configured && (
-                      <Banner
-                        status="warning"
-                        title="Kebijakan belum dikonfigurasi"
-                        description="Manajer tetap dapat meninjau manual atau membuka pengaturan kebijakan sampel."
+                  <Collapsible
+                    trigger={
+                      sample.decided_at
+                        ? "Dasar keputusan sebelumnya"
+                        : "Rekomendasi sistem"
+                    }
+                    defaultIsOpen={!sample.decided_at}
+                  >
+                    <VStack gap={3}>
+                      {!d.policy.configured && (
+                        <Banner
+                          status="warning"
+                          title="Kebijakan belum dikonfigurasi"
+                          description="Manajer tetap dapat meninjau manual atau membuka pengaturan kebijakan sampel."
+                        />
+                      )}
+                      <Status
+                        value={d.recommendation.result}
+                        label={d.recommendation.label}
                       />
-                    )}
-                    <Status
-                      value={d.recommendation.result}
-                      label={d.recommendation.label}
-                    />
-                    {(d.recommendation.reasons || []).map((reason: string) => (
-                      <Text key={reason}>{reason}</Text>
-                    ))}
-                    <Text type="supporting">
-                      Dasar pengulangan memakai riwayat produk yang sama. Buka
-                      tab Riwayat pelanggan untuk memeriksa bukti pendukung.
-                    </Text>
-                    {page.role === "MANAGER" && (
-                      <Button
-                        href={withReturn("/samples/policy/", page.url)}
-                        label="Atur kebijakan"
-                        size="sm"
-                        variant="secondary"
-                      />
-                    )}
-                  </VStack>
+                      {(d.recommendation.reasons || []).map(
+                        (reason: string) => (
+                          <Text key={reason}>{reason}</Text>
+                        ),
+                      )}
+                      <Text type="supporting">
+                        Dasar pengulangan memakai riwayat produk yang sama. Buka
+                        tab Riwayat pelanggan untuk memeriksa bukti pendukung.
+                      </Text>
+                      {page.role === "MANAGER" && (
+                        <Button
+                          href={withReturn("/samples/policy/", page.url)}
+                          label="Atur kebijakan"
+                          size="sm"
+                          variant="secondary"
+                        />
+                      )}
+                    </VStack>
+                  </Collapsible>
 
                   <Button
                     label="Lihat riwayat pendukung"
@@ -253,27 +271,18 @@ export default function SampleDetail() {
                   description={d.error.message}
                 />
               )}
-              <VStack gap={2} data-tour="sample-overview">
-                <Heading level={2}>{journey.title}</Heading>
+              <VStack gap={3} data-tour="sample-overview">
+                <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
+                  <HStack gap={3} vAlign="center" wrap="wrap">
+                    <Heading level={2}>Progres sampel</Heading>
+                    <Status value={stage.value} label={stage.label} />
+                  </HStack>
+                  <Text type="supporting">
+                    Dibuat {dateLabel(sample.created_at)}
+                  </Text>
+                </HStack>
                 <Text color="secondary">{journey.description}</Text>
               </VStack>
-              <HStack gap={6} wrap="wrap">
-                <Fact label="Status pengajuan">
-                  <Status value={sample.status} label={sample.status_label} />
-                </Fact>
-                <Fact label="Pemenuhan">
-                  <Status
-                    value={sample.fulfillment_status}
-                    label={sample.fulfillment_label}
-                  />
-                </Fact>
-                {commercial && (
-                  <Fact label="Hasil tindak lanjut">
-                    {sample.outcome_label}
-                  </Fact>
-                )}
-                <Fact label="Dibuat">{dateLabel(sample.created_at)}</Fact>
-              </HStack>
               {commercial &&
                 sample.fulfillment_status === "RECEIVED" &&
                 d.evaluation.scheduled && (
@@ -393,22 +402,10 @@ export default function SampleDetail() {
                             },
                             {
                               key: "status",
+                              width: proportional(2, { minWidth: 240 }),
                               header: "Status",
                               renderCell: (row) => (
-                                <Status
-                                  value={
-                                    row.expiry_date &&
-                                    row.expiry_date < page.today
-                                      ? "OVERDUE"
-                                      : row.status
-                                  }
-                                  label={
-                                    row.expiry_date &&
-                                    row.expiry_date < page.today
-                                      ? "Kedaluwarsa"
-                                      : row.status_label
-                                  }
-                                />
+                                <BatchStatus batch={row} today={page.today} />
                               ),
                             },
                           ]}
@@ -449,8 +446,7 @@ export default function SampleDetail() {
                     aria-label="Evaluasi & pembelian"
                   >
                     <VStack gap={3}>
-                      <Heading level={2}>Hasil evaluasi</Heading>
-                      <Text>{sample.outcome_label}</Text>
+                      <Heading level={2}>Catatan evaluasi</Heading>
                       {d.evaluation.events.length ? (
                         <List hasDividers density="balanced">
                           {d.evaluation.events.map((event: Row) => (
@@ -477,8 +473,7 @@ export default function SampleDetail() {
                         </List>
                       ) : (
                         <Text type="supporting">
-                          Belum ada tanggapan pelanggan. Catat evaluasi setelah
-                          berkomunikasi, atau jadwalkan tindak lanjut.
+                          Belum ada tanggapan yang dicatat.
                         </Text>
                       )}
                     </VStack>
@@ -513,10 +508,8 @@ export default function SampleDetail() {
                         </VStack>
                       ) : (
                         <Text type="supporting">
-                          Belum ada pembelian yang ditautkan. Setelah pesanan
-                          terkirim, pilih “Membeli” pada Catat evaluasi dan
-                          pilih pesanannya. Pembuatan draf tidak otomatis
-                          berarti pelanggan sudah membeli.
+                          Belum ada pesanan yang ditautkan. Setelah terkirim,
+                          pilih pesanan melalui Catat evaluasi → Membeli.
                         </Text>
                       )}
                       {d.evaluation.orders.length > 0 && (
@@ -601,7 +594,10 @@ export default function SampleDetail() {
                         <DataTable
                           rows={d.history.previous_samples}
                           empty={
-                            <Empty title="Belum ada pengajuan sampel sebelumnya" />
+                            <Empty
+                              title="Belum ada pengajuan sampel sebelumnya"
+                              description="Riwayat pengajuan pelanggan ini akan tampil di sini."
+                            />
                           }
                           columns={[
                             {
@@ -654,7 +650,12 @@ export default function SampleDetail() {
                         <Heading level={3}>Sampel yang diterima</Heading>
                         <DataTable
                           rows={d.history.received_samples}
-                          empty={<Empty title="Belum ada sampel diterima" />}
+                          empty={
+                            <Empty
+                              title="Belum ada sampel diterima"
+                              description="Sampel muncul setelah penerimaan pelanggan dicatat."
+                            />
+                          }
                           columns={[
                             { key: "number", header: "Pengajuan" },
                             {
@@ -692,7 +693,10 @@ export default function SampleDetail() {
                         <DataTable
                           rows={d.history.followups}
                           empty={
-                            <Empty title="Belum ada tindak lanjut tercatat" />
+                            <Empty
+                              title="Belum ada tindak lanjut tercatat"
+                              description="Jadwal tindak lanjut dari evaluasi sampel akan tampil di sini."
+                            />
                           }
                           columns={[
                             { key: "request_number", header: "Pengajuan" },
@@ -730,7 +734,10 @@ export default function SampleDetail() {
                         <DataTable
                           rows={d.history.linked_orders}
                           empty={
-                            <Empty title="Belum ada pembelian yang ditautkan" />
+                            <Empty
+                              title="Belum ada pembelian yang ditautkan"
+                              description="Pesanan yang dibuat dari evaluasi sampel akan tampil di sini."
+                            />
                           }
                           columns={[
                             {
@@ -752,7 +759,9 @@ export default function SampleDetail() {
                               header: "Nilai",
                               align: "end",
                               renderCell: (row) => (
-                                <Text>{money(row.total)}</Text>
+                                <Text hasTabularNumbers>
+                                  {money(row.total)}
+                                </Text>
                               ),
                             },
                           ]}

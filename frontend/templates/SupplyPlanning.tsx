@@ -4,6 +4,8 @@ import { useState } from "react";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Selector } from "@astryxdesign/core/Selector";
 import {
+  ResultsSummary,
+  FilterRow,
   VStack,
   HStack,
   StackItem,
@@ -27,11 +29,11 @@ export default function SupplyPlanning({
   data: Row;
   update: (values: Record<string, string>) => void;
 }) {
-  const { page, busy } = useApp();
+  const { page, busy, refreshing } = useApp();
   const [query, setQuery] = useState(d.query || "");
   return (
     <VStack gap={4} data-tour="supply-planning">
-      <Text color="secondary">
+      <Text type="supporting">
         Prioritaskan produk yang berisiko habis. Buka perhitungan untuk meninjau
         saran dan pengadaan yang sedang berjalan.
       </Text>
@@ -41,11 +43,10 @@ export default function SupplyPlanning({
           update({ q: query });
         }}
       >
-        <HStack gap={3} vAlign="end" wrap="wrap">
+        <FilterRow>
           <StackItem size="fill">
             <TextInput
               label="Cari produk"
-              isLabelHidden
               placeholder="Nama produk atau SKU"
               startIcon="search"
               width="100%"
@@ -66,25 +67,45 @@ export default function SupplyPlanning({
             ]}
             onChange={(risk) => update({ risk, q: query })}
           />
-          <Button type="submit" label="Cari" isLoading={busy} />
-          {(d.query || d.selected_risk) && (
-            <Button label="Reset" href="/stock/?tab=planning" />
-          )}
-        </HStack>
+          <Button
+            type="submit"
+            variant="secondary"
+            label="Cari"
+            isLoading={refreshing}
+            isDisabled={busy}
+          />
+        </FilterRow>
       </form>
+      <ResultsSummary
+        reset={
+          d.query || d.selected_risk
+            ? { onClick: () => update({ q: "", risk: "" }) }
+            : undefined
+        }
+      >
+        {quantity(d.planning.length)} produk
+      </ResultsSummary>
       <DataTable
         rows={d.planning}
         empty={
           <Empty
-            title="Tidak ada produk yang cocok"
-            description="Ubah pencarian atau tampilkan semua produk aktif."
-            action={<Button label="Semua produk" href="/stock/?tab=planning" />}
+            kind={d.query || d.selected_risk ? "search" : "empty"}
+            title={
+              d.query || d.selected_risk
+                ? "Tidak ada produk yang cocok"
+                : "Belum ada produk untuk dipantau"
+            }
+            description={
+              d.query || d.selected_risk
+                ? "Ubah pencarian atau reset filter."
+                : "Produk aktif akan tampil di sini beserta perhitungan kebutuhan stoknya."
+            }
           />
         }
         columns={[
           {
             key: "product",
-            width: proportional(2.3, { minWidth: 200 }),
+            width: proportional(2.4, { minWidth: 220 }),
             header: "Produk",
             renderCell: (r) => (
               <ProductIdentity name={r.product.name} sku={r.product.sku}>
@@ -101,35 +122,26 @@ export default function SupplyPlanning({
                   <Text type="supporting">
                     {r.product.sku} · {r.product.unit}
                   </Text>
+                  {r.velocity && (
+                    <Text type="supporting">
+                      {r.velocity.rate} {r.product.unit}/hari ·{" "}
+                      {r.velocity.period_days} hari
+                      {r.velocity.complete ? "" : " · riwayat terbatas"}
+                    </Text>
+                  )}
                 </VStack>
               </ProductIdentity>
             ),
           },
           {
             key: "risk",
-            width: proportional(2, { minWidth: 180 }),
+            width: proportional(2, { minWidth: 190 }),
             header: "Prioritas",
             renderCell: (r) => <Status value={r.risk} />,
           },
           {
-            key: "velocity",
-            width: proportional(1, { minWidth: 96 }),
-            header: "Penjualan / hari",
-            align: "end",
-            renderCell: (r) => (
-              <VStack gap={1}>
-                <Text hasTabularNumbers>{r.velocity?.rate ?? "—"}</Text>
-                <Text type="supporting">
-                  {r.velocity
-                    ? `${r.velocity.period_days} hari${r.velocity.complete ? "" : " · riwayat terbatas"}`
-                    : "Belum diatur"}
-                </Text>
-              </VStack>
-            ),
-          },
-          {
             key: "eligible",
-            width: proportional(0.8, { minWidth: 80 }),
+            width: proportional(1.2, { minWidth: 112 }),
             header: "Stok layak",
             align: "end",
             renderCell: (r) => (
@@ -140,8 +152,8 @@ export default function SupplyPlanning({
           },
           {
             key: "outstanding_units",
-            width: proportional(1, { minWidth: 96 }),
-            header: "Sedang dipesan",
+            width: proportional(1.2, { minWidth: 112 }),
+            header: "Dipesan",
             align: "end",
             renderCell: (r) => (
               <Text hasTabularNumbers>
@@ -151,8 +163,8 @@ export default function SupplyPlanning({
           },
           {
             key: "recommend_quantity",
-            width: proportional(1, { minWidth: 96 }),
-            header: "Saran tambahan",
+            width: proportional(1.2, { minWidth: 112 }),
+            header: "Saran tambah",
             align: "end",
             renderCell: (r) => (
               <Text weight="semibold" hasTabularNumbers>
@@ -164,11 +176,12 @@ export default function SupplyPlanning({
           },
           {
             key: "action",
-            width: proportional(1.7, { minWidth: 150 }),
+            width: proportional(1.8, { minWidth: 150 }),
             header: "Tindakan",
             renderCell: (r) => (
               <Button
                 size="sm"
+                variant="secondary"
                 label={
                   r.configured
                     ? "Tinjau pengadaan"

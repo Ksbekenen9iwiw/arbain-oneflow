@@ -1,7 +1,7 @@
 import { MotionStack } from "../motion";
 import { RecordIdentity } from "../RecordIdentity";
 import { ProductIdentity } from "../ProductIdentity";
-import { withReturn } from "../navigation";
+import { withReturn, listReturn, backLabel } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 table-page: one toolbar and one filtered table.
 import { useState } from "react";
@@ -20,6 +20,9 @@ import {
   type TableColumn,
 } from "@astryxdesign/core/Table";
 import {
+  tablePresentation,
+  ResultsSummary,
+  FilterRow,
   VStack,
   HStack,
   StackItem,
@@ -37,15 +40,17 @@ import {
 import { useApp } from "../router";
 import type { Row } from "../types";
 export const orderLabels: Record<string, string> = {
-  DRAFT: "Draft",
+  DRAFT: "Draf",
   CONFIRMED: "Menunggu pengiriman",
   SHIPPED: "Terkirim",
   CANCELLED: "Dibatalkan",
 };
 export const orderContext = withReturn;
 export default function Orders() {
-  const { page, navigate, busy } = useApp();
+  const { page, navigate, busy, refreshing } = useApp();
   const d = page.data;
+  const back = listReturn(page.url);
+  const resetUrl = back ? withReturn("/orders/", back) : "/orders/";
   const [query, setQuery] = useState(d.query);
   const [from, setFrom] = useState(d.date_from_input || ""),
     [to, setTo] = useState(d.date_to_input || "");
@@ -54,6 +59,7 @@ export default function Orders() {
     shipped = d.selected_status === "SHIPPED";
   const update = (changes: Record<string, string> = {}) => {
     const params = new URLSearchParams({
+      return_to: back || "",
       q: query,
       sales: d.selected_sales,
       status: d.selected_status,
@@ -104,10 +110,9 @@ export default function Orders() {
           />
         </HStack>
         <Table
+          {...tablePresentation}
           data={r.items}
           idKey="id"
-          density="compact"
-          textOverflow="wrap"
           columns={[
             {
               key: "name",
@@ -226,11 +231,12 @@ export default function Orders() {
       height="fill"
       header={
         <PageHeader
+          back={back ? { href: back, label: backLabel(back) } : undefined}
           title="Pesanan"
           description={
             warehouse
               ? "Pesanan yang menunggu pengiriman dan riwayat terkirim."
-              : "Pantau pesanan dari draft hingga terkirim."
+              : "Pantau pesanan dari draf hingga terkirim."
           }
           actions={
             !warehouse && (
@@ -246,38 +252,28 @@ export default function Orders() {
       content={
         <LayoutContent padding={6} data-oneflow-scroll>
           <VStack gap={4}>
-            <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
-              <TabList
-                aria-label="Status pesanan"
-                value={d.selected_status || "all"}
-                onChange={(v) =>
-                  update({
-                    status: v === "all" ? "" : v,
-                    sort: v === "SHIPPED" ? "-shipped_at" : "-created_at",
-                    shipped_from: "",
-                    shipped_to: "",
-                  })
-                }
-              >
-                <Tab value="all" label={`Semua (${d.status_counts.all})`} />
-                {d.allowed_statuses.map((s: string) => (
-                  <Tab
-                    key={s}
-                    value={s}
-                    label={`${orderLabels[s]} (${d.status_counts[s]})`}
-                  />
-                ))}
-              </TabList>
-              {(filtered ||
-                d.selected_sort !==
-                  (shipped ? "-shipped_at" : "-created_at")) && (
-                <Button
-                  href="/orders/"
-                  label="Reset filter"
-                  variant="secondary"
+            <TabList
+              hasDivider
+              aria-label="Status pesanan"
+              value={d.selected_status || "all"}
+              onChange={(v) =>
+                update({
+                  status: v === "all" ? "" : v,
+                  sort: v === "SHIPPED" ? "-shipped_at" : "-created_at",
+                  shipped_from: "",
+                  shipped_to: "",
+                })
+              }
+            >
+              <Tab value="all" label={`Semua (${d.status_counts.all})`} />
+              {d.allowed_statuses.map((s: string) => (
+                <Tab
+                  key={s}
+                  value={s}
+                  label={`${orderLabels[s]} (${d.status_counts[s]})`}
                 />
-              )}
-            </HStack>
+              ))}
+            </TabList>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -285,10 +281,9 @@ export default function Orders() {
               }}
             >
               <VStack gap={3}>
-                <HStack gap={3} vAlign="end">
+                <FilterRow>
                   <StackItem size="fill">
                     <TextInput
-                      isLabelHidden
                       label="Cari pesanan"
                       startIcon="search"
                       placeholder="Nomor pesanan atau nama pelanggan"
@@ -300,7 +295,7 @@ export default function Orders() {
                   {manager && (
                     <Selector
                       label="Sales"
-                      width="14rem"
+                      width="12rem"
                       value={d.selected_sales}
                       options={[
                         { value: "", label: "Semua sales" },
@@ -309,10 +304,16 @@ export default function Orders() {
                       onChange={(sales) => update({ sales })}
                     />
                   )}
-                  <Button label="Cari" type="submit" isLoading={busy} />
-                </HStack>
+                  <Button
+                    variant="secondary"
+                    label="Cari"
+                    type="submit"
+                    isLoading={refreshing}
+                    isDisabled={busy}
+                  />
+                </FilterRow>
                 {shipped && (
-                  <HStack gap={3} vAlign="end" wrap="wrap">
+                  <FilterRow>
                     <StackItem>
                       <DateInput
                         label="Dikirim mulai"
@@ -334,6 +335,7 @@ export default function Orders() {
                       />
                     </StackItem>
                     <Button
+                      variant="secondary"
                       label="Terapkan periode"
                       type="submit"
                       isDisabled={busy}
@@ -347,30 +349,36 @@ export default function Orders() {
                         }
                       />
                     )}
-                  </HStack>
+                  </FilterRow>
                 )}
               </VStack>
             </form>
 
             {d.date_error && <Banner status="warning" title={d.date_error} />}
-            <Text type="supporting">
+            <ResultsSummary
+              reset={
+                filtered ||
+                d.selected_sort !== (shipped ? "-shipped_at" : "-created_at")
+                  ? { href: resetUrl }
+                  : undefined
+              }
+            >
               {d.orders.length} pesanan
               {d.shipped_from
                 ? ` · Dikirim ${dateLabel(d.shipped_from)}–${dateLabel(d.shipped_to)} (WIB)`
                 : ""}
-            </Text>
+            </ResultsSummary>
             {d.orders.length ? (
               <Table
+                {...tablePresentation}
                 data={d.orders}
                 idKey="id"
                 columns={columns}
                 plugins={{ sort: sorting, expansion }}
-                density="compact"
-                hasHover
-                textOverflow="wrap"
               />
             ) : (
               <Empty
+                kind={filtered ? "search" : "empty"}
                 title={
                   filtered
                     ? "Tidak ada pesanan yang cocok"
@@ -381,12 +389,10 @@ export default function Orders() {
                     ? "Ubah pencarian atau reset filter untuk melihat pesanan lain."
                     : warehouse
                       ? "Pesanan akan tampil setelah dikonfirmasi oleh sales atau manajer."
-                      : "Buat draft untuk mulai menyiapkan pesanan pelanggan."
+                      : "Buat draf untuk mulai menyiapkan pesanan pelanggan."
                 }
                 action={
-                  filtered ? (
-                    <Button href="/orders/" label="Reset filter" />
-                  ) : !warehouse ? (
+                  !filtered && !warehouse ? (
                     <Button
                       href={orderContext("/orders/new/", page.url)}
                       label="Buat pesanan"

@@ -260,13 +260,20 @@ export default function OrderWizard() {
                         d.editing
                           ? "Ubah produk dan jumlah yang dipesan. Harga produk lama tetap dipertahankan."
                           : "Tambahkan produk dan jumlah yang dipesan. Harga mengikuti katalog saat ini.",
-                        "Pastikan pelanggan, produk, dan jumlah sudah sesuai sebelum menyimpan draft.",
+                        "Pastikan pelanggan, produk, dan jumlah sudah sesuai sebelum menyimpan draf.",
                       ][step]
                     }
                   </Text>
                 </VStack>
                 {d.form.errors.map((error, i) => (
-                  <Banner key={i} status="error" title={error} />
+                  <Banner
+                    key={i}
+                    status="error"
+                    title={error}
+                    role="alert"
+                    data-form-errors
+                    tabIndex={-1}
+                  />
                 ))}
                 {step === 0 && (
                   <>
@@ -334,7 +341,14 @@ export default function OrderWizard() {
                       />
                     </HStack>
                     {d.formset.errors.map((error, i) => (
-                      <Banner key={i} status="error" title={error} />
+                      <Banner
+                        key={i}
+                        status="error"
+                        title={error}
+                        role="alert"
+                        data-form-errors
+                        tabIndex={-1}
+                      />
                     ))}
                     {d.formset.forms.flatMap((form, i) =>
                       lines[i]?.deleted
@@ -619,7 +633,7 @@ export default function OrderWizard() {
                               return `${product.name}: diminta ${quantity(line.quantity)}, tersedia ${quantity(product.available)}, kurang ${quantity(missing.toString())} ${product.unit}.`;
                             })
                             .join(" ") +
-                          " Draft tetap bisa disimpan; konfirmasi menunggu stok mencukupi."
+                          " Draf tetap bisa disimpan; konfirmasi menunggu stok mencukupi."
                         }
                       />
                     )}
@@ -627,7 +641,7 @@ export default function OrderWizard() {
                       <Text type="supporting" color="secondary">
                         {d.editing
                           ? "Perubahan belum mereservasi stok. Harga produk lama tetap; harga produk baru diperiksa saat disimpan."
-                          : "Disimpan sebagai draft. Stok baru direservasi saat pesanan dikonfirmasi. Harga diperiksa kembali saat disimpan."}
+                          : "Disimpan sebagai draf. Stok baru direservasi saat pesanan dikonfirmasi. Harga diperiksa kembali saat disimpan."}
                       </Text>
                     )}
                   </>
@@ -657,7 +671,7 @@ export default function OrderWizard() {
                     step === 2
                       ? d.editing
                         ? "Simpan perubahan"
-                        : "Simpan draft"
+                        : "Simpan draf"
                       : "Lanjut"
                   }
                   variant="primary"

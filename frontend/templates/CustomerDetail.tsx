@@ -43,7 +43,7 @@ export default function CustomerDetail() {
     ? requestedTab
     : "history";
   useEffect(() => {
-    if (requestedTab !== "samples") return;
+    if (!["samples", "orders"].includes(requestedTab)) return;
     const frame = requestAnimationFrame(() => {
       document
         .getElementById("customer-history")
@@ -174,8 +174,7 @@ export default function CustomerDetail() {
                 <VStack gap={1}>
                   <Heading level={2}>Tindakan berikutnya</Heading>
                   <Text type="supporting">
-                    Dahulukan jadwal yang jatuh tempo, lalu evaluasi sampel dan
-                    kebutuhan pembelian ulang.
+                    Jadwal terdekat dan tindak lanjut pelanggan.
                   </Text>
                 </VStack>
                 {nextActions.length > 3 && (
@@ -240,7 +239,7 @@ export default function CustomerDetail() {
               </HStack>
               <Grid columns={2} gap={6}>
                 <VStack gap={2}>
-                  <Text type="supporting">Interaksi terakhir tercatat</Text>
+                  <Text type="supporting">Hasil aktivitas terakhir</Text>
                   {last ? (
                     <>
                       <Text weight="semibold">
@@ -250,7 +249,7 @@ export default function CustomerDetail() {
                       <Text type="supporting">{activityTiming(last)}</Text>
                       <HStack>
                         <Button
-                          label="Baca hasil interaksi →"
+                          label="Baca hasil aktivitas"
                           variant="secondary"
                           size="sm"
                           onClick={() => showHistory(last.id)}
@@ -259,15 +258,18 @@ export default function CustomerDetail() {
                     </>
                   ) : (
                     <>
-                      <Text>Belum ada hasil interaksi</Text>
-                      <Link
-                        href={withReturn(
-                          `/customers/${customer.id}/activities/new/?intent=done`,
-                          page.url,
-                        )}
-                      >
-                        Catat interaksi pertama →
-                      </Link>
+                      <Text>Belum ada aktivitas yang diselesaikan</Text>
+                      <HStack>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          label="Catat hasil komunikasi"
+                          href={withReturn(
+                            `/customers/${customer.id}/activities/new/?intent=done`,
+                            page.url,
+                          )}
+                        />
+                      </HStack>
                     </>
                   )}
                 </VStack>
@@ -296,7 +298,7 @@ export default function CustomerDetail() {
                       </Text>
                       <HStack>
                         <Button
-                          label={`Lihat pesanan (${d.orders.length}) →`}
+                          label={`Lihat pesanan (${d.orders.length})`}
                           variant="secondary"
                           size="sm"
                           onClick={() => {
@@ -314,7 +316,14 @@ export default function CustomerDetail() {
                     <>
                       <Text>Belum ada pesanan dalam cakupan akun ini</Text>
                       {customer.is_active && (
-                        <Link href={orderUrl}>Buat pesanan pertama →</Link>
+                        <HStack>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            href={orderUrl}
+                            label="Buat pesanan"
+                          />
+                        </HStack>
                       )}
                     </>
                   )}
@@ -401,56 +410,22 @@ export default function CustomerDetail() {
                   ))}
                 </List>
               ) : (
-                <Empty
-                  title={
-                    d.orders.some((order: Row) => order.status === "SHIPPED")
-                      ? "Belum ada pengingat pembelian ulang"
-                      : "Belum ada riwayat pembelian"
-                  }
-                  description={
-                    d.orders.some((order: Row) => order.status === "SHIPPED")
-                      ? "Riwayat pembelian sudah tercatat. Pengingat muncul saat perkiraan jatuh tempo dan tidak ada pesanan aktif untuk produk tersebut."
-                      : "Pembelian terkirim pada minimal 3 tanggal berbeda akan membentuk pola di sini."
-                  }
-                />
+                <Text type="supporting">
+                  {d.orders.some((order: Row) => order.status === "SHIPPED")
+                    ? "Belum ada pengingat yang perlu ditindaklanjuti."
+                    : "Belum ada pembelian terkirim untuk membentuk perkiraan."}
+                </Text>
               )}
             </VStack>
-            <VStack
-              gap={3}
-
-              id="customer-agenda"
-            >
-              <HStack hAlign="between" vAlign="center" gap={2}>
-                <VStack gap={1}>
-                  <Heading level={2}>
-                    Aktivitas berikutnya ({opened.length})
-                  </Heading>
-                  <Text type="supporting">
-                    {Number(d.overdue_count) > 0
-                      ? `${d.overdue_count} terlambat · `
-                      : ""}
-                    Jadwal terawal lebih dahulu.
-                  </Text>
-                </VStack>
-                {opened.length > 3 && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    label={
-                      expanded === "all"
-                        ? "Ringkas aktivitas"
-                        : `Lihat semua (${opened.length})`
-                    }
-                    onClick={() =>
-                      setExpanded(expanded === "all" ? "limited" : "all")
-                    }
-                  />
-                )}
-              </HStack>
-              {opened.length ? (
-                <List hasDividers density="balanced">
-                  {(expanded === "all" ? opened : opened.slice(0, 3)).map(
-                    (a) => (
+            {opened.length > 0 && (
+              <VStack gap={3} id="customer-agenda">
+                <Collapsible
+                  trigger={`Agenda lengkap (${opened.length})`}
+                  isOpen={expanded === "all"}
+                  onOpenChange={(open) => setExpanded(open ? "all" : "limited")}
+                >
+                  <List hasDividers density="balanced">
+                    {opened.map((a) => (
                       <ListItem
                         key={a.id}
                         label={a.kind_label}
@@ -501,19 +476,11 @@ export default function CustomerDetail() {
                           />
                         }
                       />
-                    ),
-                  )}
-                </List>
-              ) : (
-                <Empty
-                  title="Belum ada aktivitas berikutnya"
-                  description="Jadwalkan kunjungan atau tindak lanjut berdasarkan hasil interaksi terakhir."
-                  action={
-                    <Button label="Jadwalkan aktivitas" href={activityUrl} />
-                  }
-                />
-              )}
-            </VStack>
+                    ))}
+                  </List>
+                </Collapsible>
+              </VStack>
+            )}
             <VStack
               gap={4}
               paddingBlockEnd={6}

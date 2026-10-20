@@ -4,6 +4,21 @@ export function withReturn(path: string, back: string) {
   params.set("return_to", back);
   return pathname + "?" + params;
 }
+// A list may be entered from a dashboard queue or another record. Keep that
+// explicit parent through filtering, without accepting external return links.
+export function listReturn(url: string): string | undefined {
+  const back = new URLSearchParams(url.split("?")[1]).get("return_to");
+  if (!back || /[\\\s#]/.test(back)) return undefined;
+  const pathname = back.split("?")[0];
+  if (
+    !/^\/(?:customers\/(?:\d+\/)?|orders\/(?:\d+\/)?|samples\/(?:\d+\/)?|products\/\d+\/|stock\/)?$/.test(
+      pathname,
+    )
+  )
+    return undefined;
+  if (pathname === url.split("?")[0]) return undefined;
+  return back;
+}
 export function backLabel(path: string) {
   const pathname = path.split("?")[0];
   if (pathname === "/") return "Dashboard";

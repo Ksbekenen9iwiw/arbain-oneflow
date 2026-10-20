@@ -1,6 +1,6 @@
 import SupplyPlanning from "./SupplyPlanning";
 import { ProductIdentity } from "../ProductIdentity";
-import { stockTabUrl } from "../navigation";
+import { stockTabUrl, listReturn, backLabel, withReturn } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Keeps the Astryx table-page frame; separates products from paginated history.
 import { useState } from "react";
@@ -13,6 +13,8 @@ import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { proportional, type TableColumn } from "@astryxdesign/core/Table";
 import {
+  ResultsSummary,
+  FilterRow,
   VStack,
   HStack,
   StackItem,
@@ -35,10 +37,12 @@ import {
 } from "./StockParts";
 import type { Row } from "../types";
 export default function Stock() {
-  const { page, navigate, busy } = useApp();
+  const { page, navigate, busy, refreshing } = useApp();
   const d = page.data,
     manage = page.role !== "SALES",
     history = d.selected_tab === "movements";
+  const back = listReturn(page.url);
+  const resetUrl = back ? withReturn("/stock/", back) : "/stock/";
   const [query, setQuery] = useState(d.query || "");
   const update = (changes: Record<string, string>) => {
     const params = new URLSearchParams(page.url.split("?")[1] || "");
@@ -187,6 +191,7 @@ export default function Stock() {
       height="fill"
       header={
         <PageHeader
+          back={back ? { href: back, label: backLabel(back) } : undefined}
           title="Produk & stok"
           description="Ketersediaan produk dan pencatatan stok gudang."
           actions={
@@ -205,6 +210,7 @@ export default function Stock() {
           <VStack gap={4}>
             {manage && (
               <TabList
+                hasDivider
                 aria-label="Produk dan riwayat stok"
                 value={d.selected_tab}
                 onChange={(v) => void navigate(stockTabUrl(page.url, v))}
@@ -226,10 +232,9 @@ export default function Stock() {
                     update({ q: query });
                   }}
                 >
-                  <HStack gap={3} vAlign="end" wrap="wrap">
+                  <FilterRow>
                     <StackItem size="fill">
                       <TextInput
-                        isLabelHidden
                         label="Cari produk"
                         placeholder="Nama produk atau SKU"
                         startIcon="search"
@@ -240,7 +245,7 @@ export default function Stock() {
                     </StackItem>
                     <Selector
                       label="Status produk"
-                      width="11rem"
+                      width="12rem"
                       value={d.selected_status}
                       options={[
                         { value: "", label: "Semua status" },
@@ -260,7 +265,7 @@ export default function Stock() {
                         },
                         {
                           value: "ready",
-                          label: `Cukup (${d.condition_counts.ready})`,
+                          label: `Memenuhi minimum (${d.condition_counts.ready})`,
                         },
                         {
                           value: "low",
@@ -277,22 +282,21 @@ export default function Stock() {
                       ]}
                       onChange={(filter) => update({ filter, q: query })}
                     />
-                    <Button label="Cari" type="submit" isLoading={busy} />
-                  </HStack>
-                </form>
-                <HStack hAlign="between" vAlign="center" gap={3}>
-                  <Text type="supporting">
-                    {d.products.length} produk · Stok bebas = fisik − reservasi.
-                    Kelayakan kirim diperiksa per batch.
-                  </Text>
-                  {filtered && (
                     <Button
-                      label="Reset filter"
                       variant="secondary"
-                      href="/stock/"
+                      label="Cari"
+                      type="submit"
+                      isLoading={refreshing}
+                      isDisabled={busy}
                     />
-                  )}
-                </HStack>
+                  </FilterRow>
+                </form>
+                <ResultsSummary
+                  reset={filtered ? { href: resetUrl } : undefined}
+                >
+                  {d.products.length} produk · Stok bebas = fisik − reservasi.
+                  Kelayakan kirim diperiksa per batch.
+                </ResultsSummary>
                 {d.stock_filter === "low" && (
                   <Text type="supporting">
                     Produk dengan stok tersedia di bawah batas minimum, termasuk
@@ -317,6 +321,7 @@ export default function Stock() {
                   update={update}
                   empty={
                     <Empty
+                      kind={filtered ? "search" : "empty"}
                       title={
                         filtered
                           ? "Tidak ada produk yang cocok"
@@ -330,9 +335,7 @@ export default function Stock() {
                             : "Produk akan tampil setelah ditambahkan oleh gudang atau manajer."
                       }
                       action={
-                        filtered ? (
-                          <Button label="Reset filter" href="/stock/" />
-                        ) : manage ? (
+                        !filtered && manage ? (
                           <Button
                             label="Tambah produk"
                             href={stockContext("/products/new/", page.url)}
