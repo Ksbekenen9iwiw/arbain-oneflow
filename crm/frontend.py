@@ -149,6 +149,7 @@ def assets():
 
 def render_page(request, template, context=None, status=200, screen=None):
     context = dict(context or {})
+    page_url = context.get('canonical_url', request.get_full_path())
     user = getattr(request, 'user', None)
     try:
         role = role_of(user) if user and user.is_authenticated else None
@@ -169,7 +170,7 @@ def render_page(request, template, context=None, status=200, screen=None):
     if template == 'crm/today.html' and role != 'WAREHOUSE':
         data['action_form_default'] = form_data(ActionDecisionForm())
         data.setdefault('action_form', data['action_form_default'])
-    payload = {'screen': screen or Path(template).stem, 'url': request.get_full_path(), 'data': data,
+    payload = {'screen': screen or Path(template).stem, 'url': page_url, 'data': data,
                'role': role, 'user': person(user) if user and user.is_authenticated else None,
                'csrf': get_token(request), 'demo': settings.ONEFLOW_DEMO, 'today': timezone.localdate().isoformat(),
                'messages': [{'text': str(m), 'type': m.tags} for m in get_messages(request)]}
@@ -215,8 +216,9 @@ class FrontendLoginView(LoginView):
         return response
 
     def render_to_response(self, context, **response_kwargs):
+        from crm.demo_access import demo_accounts
         return render_page(self.request, self.template_name,
-                           {'form': context['form'], 'next': context.get('next', '')},
+                           {'form': context['form'], 'next': context.get('next', ''), 'demo_accounts': demo_accounts()},
                            status=400 if self.request.method == 'POST' else 200)
 
 

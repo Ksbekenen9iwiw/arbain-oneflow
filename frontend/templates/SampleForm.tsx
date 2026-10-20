@@ -1,3 +1,6 @@
+import { MotionPanel } from "../motion";
+
+import { withReturn } from "../navigation";
 import { useState } from "react";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Selector } from "@astryxdesign/core/Selector";
@@ -31,13 +34,16 @@ export default function SampleForm() {
   const spec: FormSpec = d.form;
   const { values, onChange } = useFields(spec);
   const [lines, setLines] = useState<Line[]>(() =>
-    d.formset.forms.map((form: FormSpec, index: number) => ({
+    (d.formset.forms.length
+      ? d.formset.forms
+      : [{ fields: [], errors: [] }]
+    ).map((form: FormSpec, index: number) => ({
       id: String(index),
       product: String(
         form.fields.find((field) => field.key === "product")?.value || "",
       ),
       quantity: String(
-        form.fields.find((field) => field.key === "quantity")?.value || "",
+        form.fields.find((field) => field.key === "quantity")?.value || "1",
       ),
       deleted: !!form.fields.find((field) => field.key === "DELETE")?.value,
       errors: Object.fromEntries(
@@ -74,7 +80,7 @@ export default function SampleForm() {
   return (
     <Layout
       height="fill"
-      contentWidth={900}
+      contentWidth={1260}
       defaultHasDividers
       header={
         <PageHeader
@@ -84,11 +90,41 @@ export default function SampleForm() {
           actions={
             <Button
               label="Tambah calon pelanggan"
-              href="/customers/new/"
+              href={withReturn("/customers/new/", d.back_url)}
               variant="secondary"
             />
           }
         />
+      }
+      end={
+        <MotionPanel width="19rem" padding={5} role="complementary">
+          <VStack gap={5}>
+            <VStack gap={2}>
+              <Heading level={2}>Alur pengajuan</Heading>
+              <Text weight="semibold">1. Simpan draf</Text>
+              <Text type="supporting">
+                Periksa pelanggan, produk, dan alasan pemberian.
+              </Text>
+            </VStack>
+            <VStack gap={2}>
+              <Text weight="semibold">2. Ajukan ke manajer</Text>
+              <Text type="supporting">
+                Rekomendasi beserta riwayat pelanggan tersedia di detail untuk
+                ditinjau.
+              </Text>
+            </VStack>
+            <VStack gap={2}>
+              <Text weight="semibold">3. Kirim & tindak lanjuti</Text>
+              <Text type="supporting">
+                Gudang mengirim setelah disetujui. Sales mencatat penerimaan dan
+                tanggapan.
+              </Text>
+            </VStack>
+            <Text type="supporting">
+              Sampel mengurangi stok saat dikirim dan tidak menambah omzet.
+            </Text>
+          </VStack>
+        </MotionPanel>
       }
       content={
         <LayoutContent padding={6} data-oneflow-scroll>
@@ -122,9 +158,8 @@ export default function SampleForm() {
                 <Heading level={2}>Pelanggan</Heading>
                 {field("customer")}
                 <Text type="supporting">
-                  Calon pelanggan baru ditambahkan lewat menu Pelanggan agar tidak
-                  membuat data ganda. Profil usaha wajib dilengkapi sebelum draf
-                  diajukan.
+                  Cari pelanggan yang sudah tercatat sebelum menambahkan calon
+                  pelanggan baru.
                 </Text>
               </VStack>
               <VStack gap={4}>
@@ -133,6 +168,7 @@ export default function SampleForm() {
                   <Button
                     label="Tambah produk"
                     type="button"
+                    isDisabled={lines.length >= 50}
                     variant="secondary"
                     onClick={() => {
                       markDirty();
@@ -141,7 +177,7 @@ export default function SampleForm() {
                         {
                           id: String(current.length),
                           product: "",
-                          quantity: "",
+                          quantity: "1",
                           deleted: false,
                           errors: {},
                         },
@@ -156,23 +192,39 @@ export default function SampleForm() {
                       name={`lines-${line.id}-DELETE`}
                       value=""
                     />
-                    <Selector
-                      label="Produk"
-                      htmlName={`lines-${line.id}-product`}
-                      width="100%"
-                      hasSearch
-                      value={line.product}
-                      options={d.catalog.map((product: Row) => ({
-                        value: product.id,
-                        label: `${product.sku} · ${product.name} · tersedia ${product.available} ${product.unit}`,
-                      }))}
-                      onChange={(product) => updateLine(line.id, { product })}
-                      status={
-                        line.errors.product
-                          ? { type: "error", message: line.errors.product }
-                          : undefined
-                      }
-                    />
+                    <VStack gap={2} width="100%">
+                      <Selector
+                        label="Produk"
+                        htmlName={`lines-${line.id}-product`}
+                        width="100%"
+                        hasSearch
+                        value={line.product}
+                        options={d.catalog.map((product: Row) => ({
+                          value: product.id,
+                          label: `${product.name} · ${product.sku}`,
+                        }))}
+                        onChange={(product) => updateLine(line.id, { product })}
+                        status={
+                          line.errors.product
+                            ? { type: "error", message: line.errors.product }
+                            : undefined
+                        }
+                      />
+                      {line.product && (
+                        <Text type="supporting">
+                          Stok bebas saat ini:{" "}
+                          {d.catalog.find(
+                            (product: Row) => product.id === line.product,
+                          )?.available ?? "—"}{" "}
+                          {
+                            d.catalog.find(
+                              (product: Row) => product.id === line.product,
+                            )?.unit
+                          }
+                          . Kelayakan batch diperiksa saat persetujuan.
+                        </Text>
+                      )}
+                    </VStack>
                     <QuantityInput
                       label="Jumlah"
                       htmlName={`lines-${line.id}-quantity`}
@@ -221,10 +273,14 @@ export default function SampleForm() {
               </VStack>
               <VStack gap={4}>
                 <Heading level={2}>Dasar pengajuan</Heading>
-                {field("purpose")}
+                {field("purpose", {
+                  help: "Jelaskan tujuan pemberian agar manajer bisa menilai kebutuhan sampel.",
+                })}
                 {field("customer_need")}
                 {field("potential_orders")}
-                {field("business_profile")}
+                {field("business_profile", {
+                  help: "Wajib sebelum diajukan: jenis usaha dan kebutuhan utama pelanggan.",
+                })}
                 {field("notes")}
               </VStack>
             </VStack>
@@ -235,6 +291,9 @@ export default function SampleForm() {
         <LayoutFooter padding={6}>
           <HStack hAlign="between" gap={3}>
             <Button label="Batal" href={d.back_url} isDisabled={busy} />
+            <Text type="supporting">
+              Draf dapat diperiksa sebelum diajukan.
+            </Text>
             <Button
               form="sample-form"
               type="submit"

@@ -153,7 +153,7 @@ def activity_create(request, customer_id):
     customer = get_object_or_404(customers_for(request.user), pk=customer_id)
     from django.db.models.functions import Coalesce
     latest = customer.activities.order_by(Coalesce('completed_at', 'created_at').desc(), '-pk').first()
-    form = ActivityForm(request.POST or None, actor=request.user, initial={'stage': latest.stage if latest else 'NEW', 'status': 'DONE' if request.GET.get('intent') == 'done' else 'PLANNED', 'kind': 'INTERACTION' if request.GET.get('intent') == 'done' else 'VISIT'})
+    form = ActivityForm(request.POST or None, actor=request.user, initial={'stage': latest.stage if latest else 'NEW', 'status': 'DONE' if request.GET.get('intent') == 'done' else 'PLANNED', 'kind': 'INTERACTION' if request.GET.get('intent') == 'done' else ('FOLLOWUP' if request.GET.get('intent') == 'followup' else 'VISIT')})
     if request.method == 'POST' and form.is_valid():
         activity = form.save(commit=False)
         activity.customer = customer
@@ -574,6 +574,7 @@ def _sample_context(request, sample):
     context.update(
         back_url=sample_return_url(request),
         detail_url=sample_detail_url(request, sample.pk),
+        canonical_url=sample_detail_url(request, sample.pk),
         decision_form=SampleDecisionForm(),
         cancel_form=CancelSampleForm(),
         schedule_form=SampleScheduleForm(),
@@ -608,7 +609,7 @@ def _sample_transition(request, sample_id, operation, *args, extra=None):
 @login_required
 @require_POST
 def sample_submit(request, sample_id):
-    return _sample_transition(request, sample_id, submit_sample_request)
+    return _sample_transition(request, sample_id, submit_sample_request, extra={"dialog": "submit"})
 
 
 @login_required
@@ -620,7 +621,7 @@ def sample_cancel(request, sample_id):
         context = _sample_context(request, sample)
         context.update(cancel_form=form, dialog='cancel')
         return page(request, 'crm/sample_detail.html', context, status=400)
-    return _sample_transition(request, sample_id, cancel_sample_request, form.cleaned_data['reason'])
+    return _sample_transition(request, sample_id, cancel_sample_request, form.cleaned_data['reason'], extra={'dialog': 'cancel', 'cancel_form': form})
 
 
 @login_required
@@ -632,19 +633,19 @@ def sample_decide(request, sample_id):
         context = _sample_context(request, sample)
         context.update(decision_form=form, dialog='decision')
         return page(request, 'crm/sample_detail.html', context, status=400)
-    return _sample_transition(request, sample_id, decide_sample, form.cleaned_data['decision'], form.cleaned_data['note'])
+    return _sample_transition(request, sample_id, decide_sample, form.cleaned_data['decision'], form.cleaned_data['note'], extra={'dialog': 'decision', 'decision_form': form})
 
 
 @login_required
 @require_POST
 def sample_ship(request, sample_id):
-    return _sample_transition(request, sample_id, ship_sample_request)
+    return _sample_transition(request, sample_id, ship_sample_request, extra={"dialog": "ship"})
 
 
 @login_required
 @require_POST
 def sample_receive(request, sample_id):
-    return _sample_transition(request, sample_id, receive_sample)
+    return _sample_transition(request, sample_id, receive_sample, extra={"dialog": "receive"})
 
 
 @login_required
@@ -656,7 +657,7 @@ def sample_schedule(request, sample_id):
         context = _sample_context(request, sample)
         context.update(schedule_form=form, dialog='schedule')
         return page(request, 'crm/sample_detail.html', context, status=400)
-    return _sample_transition(request, sample_id, schedule_sample_followup, form.cleaned_data['followup_date'], form.cleaned_data['note'])
+    return _sample_transition(request, sample_id, schedule_sample_followup, form.cleaned_data['followup_date'], form.cleaned_data['note'], extra={'dialog': 'schedule', 'schedule_form': form})
 
 
 @login_required
@@ -670,7 +671,7 @@ def sample_outcome(request, sample_id):
         return page(request, 'crm/sample_detail.html', context, status=400)
     order = form.cleaned_data['order_id']
     return _sample_transition(request, sample_id, record_sample_followup, form.cleaned_data['response'],
-                              form.cleaned_data['outcome'], form.cleaned_data['note'], order.pk if order else None)
+                              form.cleaned_data['outcome'], form.cleaned_data['note'], order.pk if order else None, extra={'dialog': 'outcome', 'outcome_form': form})
 
 
 @login_required
@@ -687,9 +688,9 @@ def sample_policy(request):
     if request.method == 'POST' and form.is_valid():
         save_sample_policy(request.user, **form.cleaned_data)
         messages.success(request, 'Kebijakan pengajuan sampel tersimpan.')
-        return redirect('/samples/')
+        return redirect(sample_return_url(request))
     return page(request, 'crm/sample_policy.html', {
-        'form': form, 'back_url': '/samples/', 'heading': 'Kebijakan pengajuan sampel',
+        'form': form, 'back_url': sample_return_url(request), 'heading': 'Kebijakan pengajuan sampel',
         'submit_label': 'Simpan kebijakan', 'policy_configured': bool(policy and policy.is_configured),
     }, status=400 if request.method == 'POST' else 200)
 
@@ -697,13 +698,18 @@ def sample_policy(request):
 def _product_detail_url(request, product_id):
     back = stock_return_url(request)
     base = f'/products/{product_id}/'
-    return base + ('?' + urlencode({'return_to': back}) if back != '/stock/' else '')
+    params = {'section': 'supply'}
+    if back != '/stock/':
+        params['return_to'] = back
+    return base + '?' + urlencode(params)
 
 
 def _supply_failure(request, product_id, error=None, status=400, **overrides):
     product = get_object_or_404(Product.objects.select_related('balance'), pk=product_id)
     context = product_workspace(request.user, product, request.GET)
     context['back_url'] = stock_return_url(request)
+    context['selected_section'] = 'supply'
+    context['canonical_url'] = _product_detail_url(request, product_id)
     if error is not None:
         context['error'] = error
     context.update(overrides)
@@ -715,11 +721,11 @@ def _supply_failure(request, product_id, error=None, status=400, **overrides):
 def supply_settings_save(request, product_id):
     form = SupplySettingForm(request.POST, actor=request.user)
     if not form.is_valid():
-        return _supply_failure(request, product_id, supply_form=form)
+        return _supply_failure(request, product_id, supply_form=form, dialog="settings")
     try:
         save_settings(request.user, product_id, **form.cleaned_data)
     except BusinessError as error:
-        return _supply_failure(request, product_id, error=error)
+        return _supply_failure(request, product_id, error=error, supply_form=form, dialog="settings")
     messages.success(request, 'Pengaturan pasokan tersimpan.')
     return redirect(_product_detail_url(request, product_id))
 
@@ -729,11 +735,11 @@ def supply_settings_save(request, product_id):
 def supply_order_create(request, product_id):
     form = PurchaseOrderForm(request.POST, actor=request.user)
     if not form.is_valid():
-        return _supply_failure(request, product_id, purchase_form=form)
+        return _supply_failure(request, product_id, purchase_form=form, dialog='purchase')
     try:
         order = create_purchase_order(request.user, product_id, **form.cleaned_data)
     except BusinessError as error:
-        return _supply_failure(request, product_id, error=error)
+        return _supply_failure(request, product_id, error=error, purchase_form=form, dialog='purchase')
     messages.success(request, f'Pengadaan {order.number} dicatat. Stok fisik belum berubah.')
     return redirect(_product_detail_url(request, product_id))
 
@@ -747,7 +753,7 @@ def _supply_order_action(request, purchase_order_id, operation, form_class):
     try:
         order = operation(request.user, order.pk, **form.cleaned_data)
     except BusinessError as error:
-        return _supply_failure(request, order.product_id, error=error, dialog=kind, dialog_po=str(order.pk))
+        return _supply_failure(request, order.product_id, error=error, dialog=kind, dialog_po=str(order.pk), **{f'{kind}_form': form})
     messages.success(request, f'Pengadaan {order.number} diperbarui: {order.get_status_display()}.')
     return redirect(_product_detail_url(request, order.product_id))
 

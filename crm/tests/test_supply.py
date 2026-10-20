@@ -300,11 +300,11 @@ class SupplyViewTests(TestCase):
         response = self.client.post(f'/products/{self.product.id}/supply/settings/',
                                     {'analysis_period_days': '30', 'lead_time_days': '3',
                                      'coverage_target_days': '14', 'safety_stock_days': '2'})
-        self.assertRedirects(response, f'/products/{self.product.id}/')
+        self.assertRedirects(response, f'/products/{self.product.id}/?section=supply')
         self.assertEqual(self.product.supply_setting.analysis_period_days, 30)
         response = self.client.post(f'/products/{self.product.id}/supply/orders/',
                                     {'quantity': '280', 'expected_date': '', 'note': 'Simulasi'})
-        self.assertRedirects(response, f'/products/{self.product.id}/')
+        self.assertRedirects(response, f'/products/{self.product.id}/?section=supply')
         order = PurchaseOrder.objects.get()
         self.assertEqual((order.quantity_ordered, order.status), (280, PurchaseOrder.Status.CONFIRMED))
         self.product.balance.refresh_from_db()
@@ -315,7 +315,7 @@ class SupplyViewTests(TestCase):
                                      'received_date': timezone.localdate().isoformat(),
                                      'expiry_date': (timezone.localdate() + timedelta(days=200)).isoformat(),
                                      'operation_id': str(uuid4())})
-        self.assertRedirects(response, f'/products/{self.product.id}/')
+        self.assertRedirects(response, f'/products/{self.product.id}/?section=supply')
         order.refresh_from_db()
         self.product.balance.refresh_from_db()
         self.assertEqual(order.status, PurchaseOrder.Status.RECEIVED)

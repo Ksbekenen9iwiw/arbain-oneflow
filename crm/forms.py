@@ -272,7 +272,7 @@ class SalesTargetForm(forms.Form):
 class SupplySettingForm(forms.Form):
     analysis_period_days = forms.TypedChoiceField(label='Periode analisis penjualan', choices=ProductSupplySetting.Period.choices, coerce=int, help_text='Hanya hari kalender penuh yang dihitung; penjualan hari ini belum ikut.')
     lead_time_days = StrictIntegerField(label='Waktu pengisian ulang (hari)', min_value=0, max_value=3650, help_text='Lama dari pemesanan sampai barang bisa dijual. 0 berarti datang di hari yang sama.')
-    coverage_target_days = StrictIntegerField(label='Target cakupan setelah barang datang (hari)', min_value=1, max_value=3650, help_text='Lama stok harus mencukupi SELENGGAH pengadaan tiba, di LUAR hari cadangan; jangan hitung cadangan dua kali.')
+    coverage_target_days = StrictIntegerField(label='Target cakupan setelah barang datang (hari)', min_value=1, max_value=3650, help_text='Berapa hari stok perlu mencukupi setelah pengadaan tiba. Cadangan dihitung terpisah.')
     safety_stock_days = StrictIntegerField(label='Cadangan (hari kebutuhan)', min_value=0, max_value=3650, help_text='Bantalan terpisah dari target cakupan. 0 berarti tanpa cadangan.')
 
     def __init__(self, *args, actor, **kwargs):

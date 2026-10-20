@@ -1,3 +1,8 @@
+import { proportional } from "@astryxdesign/core/Table";
+import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { RecordIdentity } from "../RecordIdentity";
 import { useState } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Selector } from "@astryxdesign/core/Selector";
@@ -24,7 +29,7 @@ import { withReturn } from "../navigation";
 
 const requestLabels: Record<string, string> = {
   DRAFT: "Draf",
-  SUBMITTED: "Diajukan",
+  SUBMITTED: "Menunggu keputusan",
   APPROVED: "Disetujui",
   REJECTED: "Ditolak",
   CANCELLED: "Dibatalkan",
@@ -33,10 +38,12 @@ const requestLabels: Record<string, string> = {
 export default function Samples() {
   const { page, navigate, busy } = useApp();
   const d = page.data;
+  const [query, setQuery] = useState(d.query || "");
   const [from, setFrom] = useState(d.date_from || "");
   const [to, setTo] = useState(d.date_to || "");
   const update = (changes: Record<string, string> = {}) => {
     const params = new URLSearchParams({
+      q: query,
       status: d.selected_status || "",
       fulfillment: d.selected_fulfillment || "",
       customer: d.selected_customer || "",
@@ -50,6 +57,7 @@ export default function Samples() {
     void navigate("/samples/" + (params.size ? "?" + params : ""));
   };
   const filtered =
+    d.query ||
     d.selected_status ||
     d.selected_fulfillment ||
     d.selected_customer ||
@@ -88,80 +96,129 @@ export default function Samples() {
       }
       content={
         <LayoutContent padding={6} data-oneflow-scroll>
-          <VStack gap={4}>
-            <HStack gap={3} vAlign="end" wrap="wrap">
-              <Selector
-                label="Status pengajuan"
-                width="13rem"
+          <VStack gap={4} data-tour="samples-overview">
+            {page.role !== "WAREHOUSE" && (
+              <TabList
+                aria-label="Status pengajuan sampel"
                 value={d.selected_status || ""}
-                options={[
-                  { value: "", label: "Semua status" },
-                  ...d.status_options,
-                ]}
                 onChange={(status) => update({ status, page: "1" })}
-              />
-              <Selector
-                label="Pemenuhan"
-                width="13rem"
-                value={d.selected_fulfillment || ""}
-                options={[
-                  { value: "", label: "Semua tahap" },
-                  ...d.fulfillment_options,
-                ]}
-                onChange={(fulfillment) =>
-                  update({ fulfillment, page: "1" })
-                }
-              />
-              <Selector
-                label="Pelanggan"
-                width="16rem"
-                hasSearch
-                value={d.selected_customer || ""}
-                options={[
-                  { value: "", label: "Semua pelanggan" },
-                  ...d.customer_options,
-                ]}
-                onChange={(customer) => update({ customer, page: "1" })}
-              />
-              {page.role === "MANAGER" && (
+                hasDivider
+              >
+                <Tab value="" label="Semua" />
+                {[
+                  "SUBMITTED",
+                  "DRAFT",
+                  "APPROVED",
+                  "REJECTED",
+                  "CANCELLED",
+                ].map((status) => (
+                  <Tab
+                    key={status}
+                    value={status}
+                    label={`${requestLabels[status]} (${d.status_counts[status] || 0})`}
+                  />
+                ))}
+              </TabList>
+            )}
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                update({ page: "1" });
+              }}
+            >
+              <HStack gap={3} vAlign="end">
+                <StackItem size="fill">
+                  <TextInput
+                    label="Cari pengajuan"
+                    isLabelHidden
+                    placeholder="Nomor pengajuan atau nama pelanggan"
+                    startIcon="search"
+                    width="100%"
+                    value={query}
+                    onChange={setQuery}
+                  />
+                </StackItem>
+                <Button type="submit" label="Cari" isLoading={busy} />
+              </HStack>
+            </form>
+            <Collapsible
+              trigger="Filter pelanggan, sales, dan periode"
+              defaultIsOpen={
+                !!(
+                  d.selected_customer ||
+                  d.selected_sales ||
+                  from ||
+                  to ||
+                  d.selected_fulfillment
+                )
+              }
+            >
+              <HStack gap={3} vAlign="end" wrap="wrap">
                 <Selector
-                  label="Sales"
+                  label="Pemenuhan"
                   width="13rem"
-                  value={d.selected_sales || ""}
+                  value={d.selected_fulfillment || ""}
                   options={[
-                    { value: "", label: "Semua sales" },
-                    ...d.sales_options,
+                    { value: "", label: "Semua tahap" },
+                    ...d.fulfillment_options,
                   ]}
-                  onChange={(sales) => update({ sales, page: "1" })}
+                  onChange={(fulfillment) => update({ fulfillment, page: "1" })}
                 />
-              )}
-              <StackItem>
-                <DateInput
-                  label="Dibuat mulai"
-                  value={(from || undefined) as ISODateString | undefined}
-                  onChange={(value) => setFrom(value || "")}
-                  hasClear
-                  format="system_date"
+                <Selector
+                  label="Pelanggan"
+                  width="16rem"
+                  hasSearch
+                  value={d.selected_customer || ""}
+                  options={[
+                    { value: "", label: "Semua pelanggan" },
+                    ...d.customer_options,
+                  ]}
+                  onChange={(customer) => update({ customer, page: "1" })}
                 />
-              </StackItem>
-              <StackItem>
-                <DateInput
-                  label="Sampai"
-                  value={(to || undefined) as ISODateString | undefined}
-                  onChange={(value) => setTo(value || "")}
-                  hasClear
-                  format="system_date"
+                {page.role === "MANAGER" && (
+                  <Selector
+                    label="Sales"
+                    width="13rem"
+                    value={d.selected_sales || ""}
+                    options={[
+                      { value: "", label: "Semua sales" },
+                      ...d.sales_options,
+                    ]}
+                    onChange={(sales) => update({ sales, page: "1" })}
+                  />
+                )}
+                <StackItem>
+                  <DateInput
+                    label="Dibuat mulai"
+                    value={(from || undefined) as ISODateString | undefined}
+                    onChange={(value) => setFrom(value || "")}
+                    hasClear
+                    format="system_date"
+                  />
+                </StackItem>
+                <StackItem>
+                  <DateInput
+                    label="Sampai"
+                    value={(to || undefined) as ISODateString | undefined}
+                    onChange={(value) => setTo(value || "")}
+                    hasClear
+                    format="system_date"
+                  />
+                </StackItem>
+                <Button
+                  label="Terapkan periode"
+                  onClick={() => update({ page: "1" })}
+                  isLoading={busy}
                 />
-              </StackItem>
-              <Button
-                label="Terapkan periode"
-                onClick={() => update({ page: "1" })}
-                isLoading={busy}
-              />
-              {filtered && (
-                <Button label="Reset filter" href="/samples/" variant="secondary" />
-              )}
-            </HStack>
+                {filtered && (
+                  <Button
+                    label="Reset filter"
+                    href="/samples/"
+                    variant="secondary"
+                  />
+                )}
+              </HStack>
+            </Collapsible>
             {d.date_error && <Banner status="warning" title={d.date_error} />}
             <Text type="supporting">{quantity(d.total)} pengajuan</Text>
             <DataTable
@@ -185,10 +242,12 @@ export default function Samples() {
               columns={[
                 {
                   key: "number",
-                  header: "Pengajuan",
+                  width: proportional(1, { minWidth: 96 }),
+                  header: "Nomor",
                   renderCell: (row) => (
                     <VStack gap={1}>
                       <Link
+                        data-tour="sample-record"
                         weight="semibold"
                         href={withReturn(`/samples/${row.id}/`, page.url)}
                       >
@@ -200,11 +259,15 @@ export default function Samples() {
                 },
                 {
                   key: "customer",
+                  width: proportional(1.8, { minWidth: 170 }),
                   header: "Pelanggan",
                   renderCell: (row) => (
                     <VStack gap={1}>
-                      <Text>{row.customer.name}</Text>
-                      <Text type="supporting">{row.customer.code}</Text>
+                      <RecordIdentity
+                        name={row.customer.name}
+                        company
+                        supporting={row.customer.code}
+                      />
                     </VStack>
                   ),
                 },
@@ -220,9 +283,13 @@ export default function Samples() {
                 },
                 {
                   key: "status",
-                  header: "Pengajuan",
+                  width: proportional(1.6, { minWidth: 170 }),
+                  header: "Status pengajuan",
                   renderCell: (row) => (
-                    <Status value={row.status} label={requestLabels[row.status]} />
+                    <Status
+                      value={row.status}
+                      label={requestLabels[row.status]}
+                    />
                   ),
                 },
                 {
@@ -236,9 +303,23 @@ export default function Samples() {
                   ),
                 },
                 {
-                  key: "outcome",
-                  header: "Hasil",
-                  renderCell: (row) => <Text>{row.outcome_label}</Text>,
+                  key: "action",
+                  width: proportional(1.4, { minWidth: 140 }),
+                  header: "Tindakan",
+                  renderCell: (row) => (
+                    <Button
+                      size="sm"
+                      label={
+                        page.role === "MANAGER" && row.status === "SUBMITTED"
+                          ? "Tinjau pengajuan"
+                          : page.role === "WAREHOUSE" &&
+                              row.fulfillment_status === "WAITING"
+                            ? "Siapkan sampel"
+                            : "Lihat detail"
+                      }
+                      href={withReturn(`/samples/${row.id}/`, page.url)}
+                    />
+                  ),
                 },
               ]}
             />

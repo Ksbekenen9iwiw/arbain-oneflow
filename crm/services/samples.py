@@ -344,9 +344,12 @@ def cancel_request(actor, request_id, reason):
         if request.cancel_reason != reason:
             raise BusinessError('IDEMPOTENCY_CONFLICT', 'Pengajuan sudah dibatalkan dengan alasan berbeda.')
         return request
-    if request.fulfillment_status != SampleRequest.FulfillmentStatus.WAITING or request.status not in {
-        SampleRequest.Status.DRAFT, SampleRequest.Status.SUBMITTED, SampleRequest.Status.APPROVED,
-    }:
+    before_shipping = (
+        request.status in {SampleRequest.Status.DRAFT, SampleRequest.Status.SUBMITTED}
+        and request.fulfillment_status == SampleRequest.FulfillmentStatus.PENDING
+    ) or (request.status == SampleRequest.Status.APPROVED
+          and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING)
+    if not before_shipping:
         raise BusinessError('INVALID_STATE', 'Pengajuan tidak dapat dibatalkan pada tahap ini.')
     if request.status == SampleRequest.Status.APPROVED:
         _release_allocations(request)

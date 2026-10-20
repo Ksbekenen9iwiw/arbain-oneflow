@@ -40,3 +40,15 @@ test("stock tabs retain separate filter, sort and pagination contexts", () => {
   assert.equal(again.searchParams.get("page"), "2");
   assert.equal(again.searchParams.get("product"), "8");
 });
+
+test("procurement filters do not leak into products or movement history", () => {
+  const planning = "/stock/?tab=planning&q=madu&risk=attention&return_to=%2F";
+  const products = stockTabUrl(planning, "products");
+  assert.equal(new URL(products, "http://localhost").searchParams.get("risk"), null);
+  const history = stockTabUrl(products + "&filter=low", "movements");
+  const back = new URL(stockTabUrl(history, "planning"), "http://localhost");
+  assert.equal(back.searchParams.get("q"), "madu");
+  assert.equal(back.searchParams.get("risk"), "attention");
+  assert.equal(back.searchParams.get("filter"), null);
+  assert.equal(back.searchParams.get("return_to"), "/");
+});

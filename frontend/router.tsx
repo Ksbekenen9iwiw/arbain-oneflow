@@ -274,6 +274,12 @@ export function Router({
             today: "Dashboard",
             customers: "Pelanggan",
             orders: "Pesanan",
+            samples: "Pengajuan sampel",
+            sample_detail: page.data.sample?.number,
+            sample_form: page.data.editing
+              ? `Edit ${page.data.editing}`
+              : "Buat pengajuan sampel",
+            sample_policy: "Kebijakan sampel",
             stock: "Produk & stok",
             product_detail: page.data.product?.name,
             order_detail: page.data.order?.number,

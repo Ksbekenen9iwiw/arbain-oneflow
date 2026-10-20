@@ -116,7 +116,7 @@ test("detail navigation is followed by an overview that never auto-completes", (
       );
     }
     for (const [record, next] of [
-      ["order", "stock"],
+      ["order", "samples"],
       ["product", "dashboard"],
     ]) {
       const index = steps.findIndex((step) => step.id === record);

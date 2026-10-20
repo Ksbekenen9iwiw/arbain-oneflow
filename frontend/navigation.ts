@@ -20,7 +20,9 @@ export function backLabel(path: string) {
 // Keep each stock tab's filters separate, including its own sort and page.
 export function stockTabUrl(url: string, tab: string) {
   const params = new URLSearchParams(url.split("?")[1]);
-  const current = params.get("tab") === "movements" ? "movements" : "products";
+  const current = ["movements", "planning"].includes(params.get("tab") || "")
+    ? params.get("tab")!
+    : "products";
   const keys = [
     "q",
     "status",
@@ -31,6 +33,7 @@ export function stockTabUrl(url: string, tab: string) {
     "from",
     "to",
     "page",
+    "risk",
   ];
   for (const key of keys) {
     const value = params.get(key);
@@ -40,7 +43,7 @@ export function stockTabUrl(url: string, tab: string) {
     if (next) params.set(key, next);
     else params.delete(key);
   }
-  if (tab === "movements") params.set("tab", tab);
+  if (tab !== "products") params.set("tab", tab);
   else params.delete("tab");
   return "/stock/" + (params.size ? "?" + params : "");
 }

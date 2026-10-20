@@ -457,7 +457,7 @@ export default function OrderWizard() {
                           <HStack gap={3} hAlign="between" vAlign="center">
                             <Text type="supporting" color="secondary">
                               {product
-                                ? `${money(product.price)} / ${product.unit} · tersedia ${quantity(product.available)} ${product.unit}`
+                                ? `${money(product.price)} / ${product.unit} · stok bebas ${quantity(product.available)} ${product.unit}`
                                 : "Pilih produk untuk melihat harga dan stok."}
                             </Text>
                             <Button

@@ -218,6 +218,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               <SideNavItem
                 label="Pengajuan sampel"
                 icon={BeakerIcon}
+                data-tour="nav-samples"
                 href="/samples/"
                 isSelected={path.startsWith("/samples")}
               />

@@ -1,3 +1,5 @@
+import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { ProductThumbnail } from "../ProductIdentity";
 import { MotionPanel } from "../motion";
 import { MotionStack } from "../motion";
 import { withReturn, backLabel } from "../navigation";
@@ -101,7 +103,16 @@ export default function CustomerDetail() {
                 href={activityUrl}
               />
               {customer.is_active && (
-                <Button label="Buat pesanan" href={orderUrl} />
+                <>
+                  <Button label="Buat pesanan" href={orderUrl} />
+                  <Button
+                    label="Ajukan sampel"
+                    href={withReturn(
+                      `/samples/new/?customer=${customer.id}`,
+                      page.url,
+                    )}
+                  />
+                </>
               )}
             </HStack>
           }
@@ -114,7 +125,7 @@ export default function CustomerDetail() {
               <HStack hAlign="between" vAlign="center">
                 <Heading level={2}>Informasi</Heading>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   label="Sembunyikan"
                   onClick={() => setPanel(false)}
                 />
@@ -145,7 +156,7 @@ export default function CustomerDetail() {
                 {!panel && (
                   <Button
                     label="Tampilkan informasi"
-                    variant="ghost"
+                    variant="secondary"
                     onClick={() => setPanel(true)}
                   />
                 )}
@@ -163,7 +174,7 @@ export default function CustomerDetail() {
                       <HStack>
                         <Button
                           label="Baca hasil interaksi →"
-                          variant="ghost"
+                          variant="secondary"
                           size="sm"
                           onClick={() => showHistory(last.id)}
                         />
@@ -209,7 +220,7 @@ export default function CustomerDetail() {
                       <HStack>
                         <Button
                           label={`Lihat pesanan (${d.orders.length}) →`}
-                          variant="ghost"
+                          variant="secondary"
                           size="sm"
                           onClick={() => {
                             setTab("orders");
@@ -237,7 +248,8 @@ export default function CustomerDetail() {
               <VStack gap={1}>
                 <Heading level={2}>Perkiraan pembelian ulang</Heading>
                 <Text type="supporting">
-                  Maksimal 6 tanggal terakhir · per pasangan pelanggan–produk.
+                  Pengingat muncul saat perkiraan pembelian tiba, dari minimal 3
+                  tanggal berbeda. Tetap tindak lanjuti meskipun stok kurang.
                 </Text>
               </VStack>
               {(d.reorder_patterns || []).length ||
@@ -246,30 +258,54 @@ export default function CustomerDetail() {
                   {(d.reorder_patterns || []).map((p: Row) => (
                     <ListItem
                       key={p.product_sku}
+                      startContent={
+                        <ProductThumbnail
+                          name={p.product_name}
+                          sku={p.product_sku}
+                        />
+                      }
                       label={`${p.product_name} · Perkiraan ${dateLabel(p.next_due)}`}
+                      endContent={
+                        <Button
+                          size="sm"
+                          label="Jadwalkan tindak lanjut"
+                          href={withReturn(
+                            `/customers/${customer.id}/activities/new/?intent=followup`,
+                            page.url,
+                          )}
+                        />
+                      }
                       description={
                         <VStack gap={2}>
                           <Text type="supporting">
-                            Terakhir {dateLabel(p.last_purchase_date)} ·{" "}
-                            {p.purchase_date_count} tanggal · interval{" "}
-                            {(p.intervals_days || []).join(", ")} hari (median{" "}
-                            {p.interval_days}). Acuan {quantity(p.typical_quantity)}{" "}
-                            {p.unit} · tersedia {quantity(p.available_quantity)}.
-                            {!p.consistent &&
-                              " Pola belum konsisten — tinjau manual."}
+                            Acuan {quantity(p.typical_quantity)} {p.unit} · stok
+                            bebas {quantity(p.available_quantity)}
+                            {!p.consistent ? " · pola belum konsisten" : ""}
                           </Text>
-                          {(p.inbound || []).length > 0 && (
-                            <Text type="supporting">
-                              Pengadaan berjalan (bukan stok siap kirim):{" "}
-                              {(p.inbound || [])
-                                .map(
-                                  (po: Row) =>
-                                    `${po.number} · ${po.remaining} unit · ${po.expected_date ? "estimasi " + dateLabel(po.expected_date) : "estimasi belum ada"}`,
-                                )
-                                .join("; ")}
-                              .
-                            </Text>
-                          )}
+                          <Collapsible trigger="Dasar perkiraan">
+                            <VStack gap={2}>
+                              <Text type="supporting">
+                                Terakhir {dateLabel(p.last_purchase_date)} ·{" "}
+                                {p.purchase_date_count} tanggal · interval{" "}
+                                {(p.intervals_days || []).join(", ")} hari
+                                (median {p.interval_days}).
+                                {!p.consistent &&
+                                  " Pola belum konsisten — tinjau manual."}
+                              </Text>
+                              {(p.inbound || []).length > 0 && (
+                                <Text type="supporting">
+                                  Pengadaan berjalan (bukan stok siap kirim):{" "}
+                                  {(p.inbound || [])
+                                    .map(
+                                      (po: Row) =>
+                                        `${po.number} · ${po.remaining} unit · ${po.expected_date ? "estimasi " + dateLabel(po.expected_date) : "estimasi belum ada"}`,
+                                    )
+                                    .join("; ")}
+                                  .
+                                </Text>
+                              )}
+                            </VStack>
+                          </Collapsible>
                         </VStack>
                       }
                     />
@@ -289,8 +325,16 @@ export default function CustomerDetail() {
                 </List>
               ) : (
                 <Empty
-                  title="Belum ada riwayat pembelian"
-                  description="Pembelian terkirim akan membentuk pola perkiraan di sini."
+                  title={
+                    d.orders.some((order: Row) => order.status === "SHIPPED")
+                      ? "Belum ada pengingat pembelian ulang"
+                      : "Belum ada riwayat pembelian"
+                  }
+                  description={
+                    d.orders.some((order: Row) => order.status === "SHIPPED")
+                      ? "Riwayat pembelian sudah tercatat. Pengingat muncul saat perkiraan jatuh tempo dan tidak ada pesanan aktif untuk produk tersebut."
+                      : "Pembelian terkirim pada minimal 3 tanggal berbeda akan membentuk pola di sini."
+                  }
                 />
               )}
             </VStack>
@@ -314,7 +358,7 @@ export default function CustomerDetail() {
                 {opened.length > 3 && (
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="secondary"
                     label={
                       expanded === "all"
                         ? "Ringkas aktivitas"
@@ -362,7 +406,7 @@ export default function CustomerDetail() {
                               <HStack>
                                 <Button
                                   size="sm"
-                                  variant="ghost"
+                                  variant="secondary"
                                   label="Lihat interaksi asal →"
                                   onClick={() => showHistory(a.followup_of_id)}
                                 />
@@ -440,7 +484,16 @@ export default function CustomerDetail() {
                         description="Pesanan baru akan tersimpan pada pelanggan ini."
                         action={
                           customer.is_active ? (
-                            <Button label="Buat pesanan" href={orderUrl} />
+                            <>
+                              <Button label="Buat pesanan" href={orderUrl} />
+                              <Button
+                                label="Ajukan sampel"
+                                href={withReturn(
+                                  `/samples/new/?customer=${customer.id}`,
+                                  page.url,
+                                )}
+                              />
+                            </>
                           ) : undefined
                         }
                       />
@@ -544,7 +597,7 @@ export default function CustomerDetail() {
                                         </Text>
                                         <Button
                                           size="sm"
-                                          variant="ghost"
+                                          variant="secondary"
                                           label={
                                             a.status === "PLANNED"
                                               ? "Lihat aktivitas →"
@@ -596,7 +649,7 @@ export default function CustomerDetail() {
                       {visibleHistory.length > 8 && (
                         <HStack hAlign="end">
                           <Button
-                            variant="ghost"
+                            variant="secondary"
                             label={
                               historySize === "all"
                                 ? "Ringkas riwayat"

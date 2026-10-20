@@ -22,6 +22,7 @@ import {
 import { useApp } from "../router";
 import type { Field } from "../types";
 import coverUrl from "../assets/arbain-honey-herbal.jpg";
+import { DemoAccess } from "../DemoAccess";
 import { useContentMotion } from "../motion";
 
 const coverStyle: CSSProperties = {
@@ -262,6 +263,21 @@ export default function Login() {
                   </VStack>
                 </ServerForm>
               </VStack>
+              {page.demo && page.data.demo_accounts?.length > 0 && (
+                <DemoAccess
+                  accounts={page.data.demo_accounts}
+                  disabled={pending}
+                  onSelect={(account) => {
+                    setUsername(account.username);
+                    setPassword(account.password);
+                    setStep("password");
+                    setMessage("");
+                    setShowServerErrors(false);
+                    setShowPassword(false);
+                    clearDirty();
+                  }}
+                />
+              )}
             </VStack>
           </Center>
         </StackItem>

@@ -108,6 +108,15 @@ export function PageHeader({
 export function Status({ value, label }: { value: string; label?: string }) {
   const labels: Row = {
     DRAFT: "Draft",
+    SUBMITTED: "Menunggu keputusan",
+    APPROVED: "Disetujui",
+    REJECTED: "Ditolak",
+    WAITING: "Belum dikirim",
+    RECEIVED: "Diterima",
+    ACTIVE: "Aktif",
+    HELD: "Ditahan",
+    REVIEW: "Perlu ditinjau",
+    RECOMMENDED: "Direkomendasikan",
     CONFIRMED: "Menunggu pengiriman",
     SHIPPED: "Terkirim",
     CANCELLED: "Dibatalkan",
@@ -138,6 +147,11 @@ export function Status({ value, label }: { value: string; label?: string }) {
     "STOCK_LOW",
     "PERLU_PENGADAAN",
     "PERLU_KONFIGURASI",
+    "HELD",
+    "REVIEW",
+    "NEEDS_REVIEW",
+    "REJECT_SUGGESTED",
+    "PERLU_DITINJAU",
   ].includes(value);
   return (
     <HStack hAlign="start">
@@ -156,13 +170,21 @@ export function Status({ value, label }: { value: string; label?: string }) {
             ? "red"
             : warning
               ? "orange"
-              : ["SHIPPED", "DONE", "STOCK_READY", "PASOKAN_AMAN"].includes(
-                    value,
-                  )
+              : [
+                    "SHIPPED",
+                    "DONE",
+                    "STOCK_READY",
+                    "PASOKAN_AMAN",
+                    "APPROVED",
+                    "RECEIVED",
+                    "RECOMMENDED",
+                    "APPROVE_SUGGESTED",
+                  ].includes(value)
                 ? "green"
                 : [
                       "CONFIRMED",
                       "READY",
+                      "SUBMITTED",
                       "DUE_TODAY",
                       "PERLU_DITINJAU",
                     ].includes(value)

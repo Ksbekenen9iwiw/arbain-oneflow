@@ -1,3 +1,4 @@
+import SupplyPlanning from "./SupplyPlanning";
 import { ProductIdentity } from "../ProductIdentity";
 import { stockTabUrl } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -105,7 +106,7 @@ export default function Stock() {
       : []),
     {
       key: "available",
-      header: "Tersedia",
+      header: "Stok bebas",
       sortable: true,
       align: "end",
       width: proportional(1, { minWidth: 60 }),
@@ -156,6 +157,20 @@ export default function Stock() {
                       href: stockContext(`/stock/${r.id}/reconcile/`, page.url),
                     },
                     {
+                      label: "Batch & kedaluwarsa",
+                      href: stockContext(
+                        `/products/${r.id}/?section=batches`,
+                        page.url,
+                      ),
+                    },
+                    {
+                      label: "Perencanaan pengadaan",
+                      href: stockContext(
+                        `/products/${r.id}/?section=supply`,
+                        page.url,
+                      ),
+                    },
+                    {
                       label: "Edit produk",
                       href: stockContext(`/products/${r.id}/edit/`, page.url),
                     },
@@ -195,10 +210,13 @@ export default function Stock() {
                 onChange={(v) => void navigate(stockTabUrl(page.url, v))}
               >
                 <Tab value="products" label="Produk" />
+                <Tab value="planning" label="Pengadaan" />
                 <Tab value="movements" label="Riwayat mutasi" />
               </TabList>
             )}
-            {history ? (
+            {d.selected_tab === "planning" ? (
+              <SupplyPlanning data={d} update={update} />
+            ) : history ? (
               <MovementView data={d} update={update} />
             ) : (
               <>
@@ -264,7 +282,8 @@ export default function Stock() {
                 </form>
                 <HStack hAlign="between" vAlign="center" gap={3}>
                   <Text type="supporting">
-                    {d.products.length} produk · Tersedia = fisik − reservasi
+                    {d.products.length} produk · Stok bebas = fisik − reservasi.
+                    Kelayakan kirim diperiksa per batch.
                   </Text>
                   {filtered && (
                     <Button

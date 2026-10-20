@@ -875,6 +875,45 @@ export default function Today() {
             <VStack gap={6}>
               {analytics}
               {metrics}
+              <HStack gap={3} vAlign="center" wrap="wrap">
+                <Text weight="semibold">
+                  {manager
+                    ? "Tinjauan operasional"
+                    : warehouse
+                      ? "Persiapan gudang"
+                      : "Tindak lanjut pelanggan"}
+                </Text>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  label={
+                    manager
+                      ? "Tinjau sampel"
+                      : warehouse
+                        ? "Pengiriman sampel"
+                        : "Pengajuan & evaluasi sampel"
+                  }
+                  href={withReturn(
+                    manager
+                      ? "/samples/?status=SUBMITTED"
+                      : warehouse
+                        ? "/samples/?status=APPROVED&fulfillment=WAITING"
+                        : "/samples/",
+                    page.url,
+                  )}
+                />
+                {(manager || warehouse) && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    label="Tinjau kebutuhan pengadaan"
+                    href={withReturn(
+                      "/stock/?tab=planning&risk=attention",
+                      page.url,
+                    )}
+                  />
+                )}
+              </HStack>
               {workQueue}
               {(d.sample_tasks || []).length > 0 && (
                 <VStack gap={3}>
@@ -888,8 +927,11 @@ export default function Today() {
                     />
                   </HStack>
                   <Text type="supporting">
-                    Tugas mengikuti peran: peninjauan manajer, persiapan gudang,
-                    atau tindak lanjut sales.
+                    {manager
+                      ? "Pengajuan yang menunggu keputusan Anda."
+                      : warehouse
+                        ? "Sampel disetujui yang perlu disiapkan untuk pengiriman."
+                        : "Sampel sudah diterima. Catat tanggapan pelanggan dan rencana berikutnya."}
                   </Text>
                   <DataTable
                     rows={d.sample_tasks}
@@ -925,16 +967,15 @@ export default function Today() {
                   <HStack hAlign="between" vAlign="center">
                     <Heading level={2}>Peringatan pasokan</Heading>
                     <Button
-                      href={withReturn("/stock/", page.url)}
+                      href={withReturn("/stock/?tab=planning", page.url)}
                       size="sm"
                       variant="secondary"
-                      label="Buka gudang"
+                      label="Semua pengadaan"
                     />
                   </HStack>
                   <Text type="supporting">
-                    Dihitung ulang setiap halaman dimuat; tidak ada notifikasi
-                    latar saat aplikasi tertutup. Keputusan pengadaan tetap pada
-                    Anda.
+                    Produk diurutkan dari risiko paling mendesak. Buka produk
+                    untuk meninjau alasan dan jumlah pengadaan.
                   </Text>
                   <DataTable
                     rows={d.supply_alerts}
@@ -946,7 +987,7 @@ export default function Today() {
                           <VStack gap={1}>
                             <Link
                               href={withReturn(
-                                `/products/${alert.product.id}/`,
+                                `/products/${alert.product.id}/?section=supply`,
                                 page.url,
                               )}
                               weight="semibold"

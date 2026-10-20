@@ -433,15 +433,21 @@ export default function Detail() {
                       },
                       {
                         key: "status",
-                        header: "Status batch",
+                        header: "Kondisi batch saat ini",
                         renderCell: (r) => (
                           <Status
                             value={
-                              r.status === "HELD"
-                                ? "WAITING_STOCK"
-                                : "STOCK_READY"
+                              r.expiry_date && r.expiry_date < page.today
+                                ? "OVERDUE"
+                                : r.status === "HELD"
+                                  ? "HELD"
+                                  : "STOCK_READY"
                             }
-                            label={r.status_label}
+                            label={
+                              r.expiry_date && r.expiry_date < page.today
+                                ? "Kedaluwarsa"
+                                : r.status_label
+                            }
                           />
                         ),
                       },

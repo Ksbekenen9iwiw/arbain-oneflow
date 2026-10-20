@@ -20,7 +20,7 @@ py -3.12 -m venv .venv
 
 Buka http://127.0.0.1:8000/. Tidak perlu mengaktifkan virtualenv atau mengubah execution policy PowerShell.
 
-`seed_demo` memakai tanggal hari ini dalam WIB. Simpan empat password acak yang tampil saat seed, khusus untuk latihan lokal Anda. Password tidak disimpan dalam source atau laporan. Jika lupa, atur ulang akun dengan `.venv\Scripts\python.exe manage.py changepassword nadia`; ulangi untuk akun yang diperlukan. Seed tidak dapat dipakai untuk mengambil ulang password.
+`seed_demo` memakai tanggal hari ini dalam WIB. Simpan empat password acak yang tampil saat seed, khusus untuk latihan lokal Anda. Password acak dari seed tidak disimpan dalam source atau laporan. Mode penilaian opsional di bawah memakai kredensial demo publik yang disediakan tim. Jika lupa, atur ulang akun dengan `.venv\Scripts\python.exe manage.py changepassword nadia`; ulangi untuk akun yang diperlukan. Seed tidak dapat dipakai untuk mengambil ulang password.
 
 | Akun | Peran | Pekerjaan |
 |---|---|---|
@@ -56,6 +56,29 @@ Jalankan Django seperti biasa, lalu `npm run dev` di terminal kedua. Perintah in
 - `crm/static/crm/react/`: hasil build ber-hash beserta manifest Vite (tidak masuk Git). Jalankan build sebelum packaging atau `collectstatic`.
 
 Navigasi internal memakai respons JSON dari URL Django yang sama. Refresh, direct link, login, dan tombol Back tetap didukung. Error validasi mempertahankan input, formulir yang belum disimpan memberi konfirmasi sebelum berpindah, dan operasi stok tetap idempoten. Template HTML lama dipertahankan sebagai fallback tanpa JavaScript; tanpa hasil build, Django menampilkan fallback tersebut.
+
+## Akses penilaian dan fitur operasional baru
+
+Halaman masuk menyediakan **Akses demo untuk juri** saat `ONEFLOW_DEMO=1` dan kredensial demo cocok dengan akun aktif. Pilih peran, lihat atau salin username/sandi, lalu gunakan akun untuk mengisi formulir masuk. Autentikasi tetap melalui Django; tidak ada login otomatis atau pengubahan sandi saat halaman dibuka. Akun staff/superuser tidak ditawarkan.
+
+Untuk database **simulasi** yang sudah berisi empat akun demo, pengaturan berikut secara eksplisit mengganti sandinya dengan kredensial publik penilaian dari tim:
+
+```bash
+ONEFLOW_DEMO=1 .venv/bin/python manage.py configure_judging_accounts --confirm-demo-reset
+```
+
+Di Windows, gunakan `.venv\Scripts\python.exe` sebagai pengganti `.venv/bin/python`. Jangan menjalankan pengaturan akun juri pada database operasional. `ONEFLOW_DEMO=0` menghilangkan akses juri. Instalasi demo lain dapat menggunakan `ONEFLOW_DEMO_ACCOUNTS` berupa JSON array dengan `username`, `password`, `name`, `role`, dan `description`; akun hanya ditampilkan jika sandinya cocok.
+
+Untuk mencoba semua skenario pada **database baru yang kosong**, jalankan seed dengan `--fefo-demo --samples-demo --supply-demo --reorder-demo`. Jangan seed ulang database yang sudah berisi data.
+
+- **Produk & stok → Pengadaan:** urutan risiko, stok layak, pengadaan berjalan, saran tambahan, dan akses ke perhitungan setiap produk. Hanya manajer/gudang.
+- **Detail produk:** tab Batch & kedaluwarsa, Pengadaan, Riwayat mutasi, dan Reservasi. Stok bebas tetap dibedakan dari kelayakan kirim per batch.
+- **Pengajuan sampel:** status pengajuan, pencarian pelanggan/nomor, filter lanjutan, dan tindakan sesuai peran. Detail memisahkan produk, bukti riwayat pelanggan, serta jejak proses. Keputusan manajer ditampilkan terpisah dari rekomendasi sistem.
+- **Detail pelanggan:** perkiraan pembelian ulang menyertakan dasar perhitungan yang bisa dibuka, stok bebas, dan tindakan penjadwalan. Stok kurang tidak menyembunyikan pengingat.
+- **Dashboard:** pintasan tugas sampel dan kebutuhan pengadaan sesuai peran, selain aktivitas dan pesanan. Panduan aplikasi mencakup halaman sampel dan penjelasan setelah navigasi.
+- Kesalahan validasi pengadaan/sampel membuka kembali dialog dengan isian yang sama. URL kembali ke halaman detail yang dapat di-refresh.
+
+Riset desktop melalui Mobbin: [Shopify inventory](https://mobbin.com/screens/d9deb551-88bf-4c93-91b3-43ef6659ccef) untuk pemisahan saldo stok; [Shopify purchase orders](https://mobbin.com/flows/bdbc79e6-cbf8-45a8-b3a6-86ae24bf1827) untuk alur pencatatan sampai penerimaan; [Airwallex approvals](https://mobbin.com/screens/68f1a7f7-0e87-49a9-a9a9-6ec913167bf0) untuk bukti dan alasan keputusan; [Calendly contact activity](https://mobbin.com/screens/8158ffb0-f197-4691-8149-271f7a1ab997) untuk riwayat yang terhubung ke tindakan berikutnya. Implementasi mempertahankan frame `table-page`, `detail-page`, `form-two-column`, `login-split`, serta komponen asli Astryx; aturan bisnis tetap dari Django.
 
 ## Alur kerja
 

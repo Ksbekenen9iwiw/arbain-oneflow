@@ -1,5 +1,6 @@
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -90,8 +91,13 @@ def sample_records(actor, params):
             raise Http404
         sales = str(get_object_or_404(sales_options, pk=sales).pk)
         records = records.filter(sales_id=sales)
-    if status:
-        records = records.filter(status=status)
+    query = params.get('q', '').strip()
+    if query:
+        match = Q(customer__name__icontains=query) | Q(customer__code__icontains=query)
+        number = query.upper().removeprefix('SP-').removeprefix('SMP-')
+        if number.isascii() and number.isdecimal() and len(number) <= 18:
+            match |= Q(pk=int(number))
+        records = records.filter(match)
     if fulfillment:
         records = records.filter(fulfillment_status=fulfillment)
     raw_start, raw_end, date_error = params.get('from', ''), params.get('to', ''), ''
@@ -104,6 +110,9 @@ def sample_records(actor, params):
             date_error = 'Isi kedua tanggal dengan rentang yang valid. Hasil belum dibatasi periode.'
         else:
             records = records.filter(created_at__date__gte=start, created_at__date__lte=end)
+    status_counts = {value: records.filter(status=value).count() for value in SampleRequest.Status.values}
+    if status:
+        records = records.filter(status=status)
     sort = params.get('sort', '-created_at')
     if sort not in {'created_at', '-created_at', 'number', '-number'}:
         sort = '-created_at'
@@ -115,7 +124,7 @@ def sample_records(actor, params):
     rows = [_request_row(request) for request in page.object_list]
     customer_options = Customer.objects.filter(sample_requests__in=sample_requests_for(actor)).distinct().order_by('name')
     return {
-        'samples': rows,
+        'samples': rows, 'query': query, 'status_counts': status_counts,
         'status_options': [{'value': value, 'label': label} for value, label in SampleRequest.Status.choices],
         'fulfillment_options': [{'value': value, 'label': label} for value, label in SampleRequest.FulfillmentStatus.choices],
         'selected_status': status,
@@ -172,7 +181,7 @@ def sample_context(actor, request):
             'evidence': request.evidence_snapshot,
         },
         'history': {
-            'has_history': bool(shipped or previous),
+            'has_history': bool(shipped or previous or followups),
             'purchase_count': len(shipped),
             'purchase_total': sum(order.total_rupiah for order in shipped),
             'last_purchase_at': shipped[0].shipped_at if shipped else None,
@@ -190,7 +199,7 @@ def sample_context(actor, request):
         'can_edit': role in {'SALES', 'MANAGER'} and request.status == SampleRequest.Status.DRAFT,
         'can_submit': role in {'SALES', 'MANAGER'} and request.status == SampleRequest.Status.DRAFT,
         'can_decide': role == 'MANAGER' and request.status == SampleRequest.Status.SUBMITTED,
-        'can_cancel': role in {'SALES', 'MANAGER'} and request.status in {SampleRequest.Status.DRAFT, SampleRequest.Status.SUBMITTED, SampleRequest.Status.APPROVED} and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING,
+        'can_cancel': role in {'SALES', 'MANAGER'} and ((request.status in {SampleRequest.Status.DRAFT, SampleRequest.Status.SUBMITTED} and request.fulfillment_status == SampleRequest.FulfillmentStatus.PENDING) or (request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING)),
         'can_ship': role in {'WAREHOUSE', 'MANAGER'} and request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.WAITING,
         'can_receive': role in {'SALES', 'WAREHOUSE', 'MANAGER'} and request.status == SampleRequest.Status.APPROVED and request.fulfillment_status == SampleRequest.FulfillmentStatus.SHIPPED,
         'can_followup': role in {'SALES', 'MANAGER'} and request.fulfillment_status == SampleRequest.FulfillmentStatus.RECEIVED,

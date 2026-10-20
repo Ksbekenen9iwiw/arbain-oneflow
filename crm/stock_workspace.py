@@ -71,7 +71,27 @@ def movement_records(actor, params, product=None):
 
 def stock_records(actor, params):
     role = role_of(actor)
-    tab = 'movements' if params.get('tab') == 'movements' else 'products'
+    tab = params.get('tab') if params.get('tab') in ('movements', 'planning') else 'products'
+    if tab == 'planning':
+        if role == 'SALES':
+            raise PermissionDenied
+        from crm.services.supply import forecast
+        query = params.get('q', '').strip()
+        risk = params.get('risk', '')
+        rows = []
+        for product in Product.objects.select_related('balance').filter(is_active=True).order_by('sku'):
+            if query and query.casefold() not in f'{product.sku} {product.name}'.casefold():
+                continue
+            supply = forecast(product)
+            rows.append({'id': product.pk, 'product': product, **supply})
+        counts = {'all': len(rows), 'attention': sum(r['risk'] != 'PASOKAN_AMAN' for r in rows)}
+        if risk == 'attention':
+            rows = [r for r in rows if r['risk'] != 'PASOKAN_AMAN']
+        else:
+            risk = ''
+        priority = {'RISIKO_KOSONG_TERLAMBAT': 0, 'PERLU_PENGADAAN': 1, 'PERLU_DITINJAU': 2, 'PERLU_KONFIGURASI': 3, 'PASOKAN_AMAN': 4}
+        rows.sort(key=lambda r: (priority.get(r['risk'], 5), r['product'].sku))
+        return {'selected_tab': tab, 'planning': rows, 'query': query, 'selected_risk': risk, 'planning_counts': counts}
     products = list(Product.objects.select_related('balance'))
     summary = {'product_count': len(products), 'low_stock_count': sum(p.balance.available < p.min_stock for p in products), 'conflict_count': sum(p.balance.available < 0 for p in products)}
     if tab == 'movements':
@@ -111,7 +131,7 @@ def product_workspace(actor, product, params):
     data = {'product': product, 'can_manage': role_of(actor) != 'SALES', 'selected_section': 'movements'}
     if data['can_manage']:
         data.update(movement_records(actor, params, product))
-        data['selected_section'] = 'reservations' if params.get('section') == 'reservations' else 'movements'
+        data['selected_section'] = params.get('section') if params.get('section') in ('batches', 'supply', 'movements', 'reservations') else 'batches'
         reservations = product.order_lines.filter(order__in=orders_for(actor).filter(status='CONFIRMED')).select_related('order__customer__owner', 'order__sales', 'order__confirmed_by', 'order__shipped_by', 'order__cancelled_by').order_by('order__confirmed_at', 'order_id')
         data['reservations'] = [{'id': line.pk, 'order': line.order, 'quantity': line.quantity} for line in reservations]
         data['reservation_total'] = sum(line['quantity'] for line in data['reservations'])
