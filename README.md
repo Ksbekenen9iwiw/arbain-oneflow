@@ -1,5 +1,13 @@
 # Arbain OneFlow
 
+**Dataset sintetis realistis:** tersedia `seed_realistic` untuk database kosong
+dan `reseed_realistic` untuk mengganti seluruh data CRM demo dengan backup wajib.
+Dataset mencakup 48 pelanggan, sekitar 180 hari transaksi, batch stok, pengadaan,
+dan evaluasi sampel. Akun yang sudah ada tetap memakai password sebelumnya.
+Lihat [panduan reseed](docs/reseed-realistic.md) dan
+[query pemeriksaan SQL](scripts/check_synthetic.sql). Panduan `seed_demo` di bawah
+tetap berlaku untuk dataset presentasi lama 12 pelanggan.
+
 MVP lokal untuk tantangan ARB-02 UMS: profil pelanggan, aktivitas sales, pesanan, reservasi stok, pengiriman, dan pusat tindakan dalam satu aplikasi. Data demo sepenuhnya sintetis. Produk, nama pelanggan, dan alamat contoh tidak mewakili data CV Arbain.
 
 **Mulai dari file ini.** Backend memakai Python 3.12 dan Django. Frontend memakai React 19, TypeScript, Vite 8, serta komponen dan template resmi Astryx 0.7 (theme Neutral). Node.js 22.12+ diperlukan untuk membangun frontend. Paket, ikon, dan font Figtree dibundel lokal; sesudah instalasi dan build, demo dapat berjalan tanpa CDN atau layanan eksternal.
