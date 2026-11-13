@@ -32,6 +32,7 @@ import {
   dateLabel,
   money,
   quantity,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import { withReturn, backLabel } from "../navigation";
@@ -39,6 +40,8 @@ import type { Row } from "../types";
 
 export default function SampleDetail() {
   const { page, busy, clearDirty } = useApp();
+  const { isNarrow, contentPadding } = useResponsive();
+  const [narrowPanelOpen, setNarrowPanelOpen] = useState(false);
   const d = page.data;
   const sample = d.sample;
   const commercial = d.can_view_commercial === true;
@@ -78,6 +81,109 @@ export default function SampleDetail() {
       unit: line.product.unit,
     })),
   );
+  const samplePanelContent = (
+    <VStack gap={6}>
+      <VStack gap={2}>
+        <Heading level={2}>
+          {commercial ? "Pelanggan" : "Penerima sampel"}
+        </Heading>
+        {page.role === "WAREHOUSE" ? (
+          <Text weight="semibold">{sample.customer.name}</Text>
+        ) : (
+          <Link
+            weight="semibold"
+            href={withReturn(
+              `/customers/${sample.customer.id}/`,
+              page.url,
+            )}
+          >
+            {sample.customer.name}
+          </Link>
+        )}
+        <Text type="supporting">
+          {sample.customer.phone || "Nomor belum diisi"}
+        </Text>
+        <Text type="supporting">
+          {sample.customer.address || "Alamat belum diisi"}
+        </Text>
+      </VStack>
+      {commercial && (
+        <>
+          <Divider />
+          {sample.decided_at && (
+            <VStack gap={2}>
+              <Heading level={2}>Keputusan manajer</Heading>
+              <Status
+                value={
+                  sample.status === "REJECTED" ? "REJECTED" : "APPROVED"
+                }
+              />
+              <Text>
+                {sample.decision_note || "Sesuai rekomendasi sistem."}
+              </Text>
+              <Text type="supporting">
+                {sample.decided_by?.name} ·{" "}
+                {dateLabel(sample.decided_at)}
+              </Text>
+            </VStack>
+          )}
+          <Collapsible
+            trigger={
+              sample.decided_at
+                ? "Dasar keputusan sebelumnya"
+                : "Rekomendasi sistem"
+            }
+            defaultIsOpen={!sample.decided_at}
+          >
+            <VStack gap={3}>
+              {!d.policy.configured && (
+                <Banner
+                  status="warning"
+                  title="Kebijakan belum dikonfigurasi"
+                  description="Manajer tetap dapat meninjau manual atau membuka pengaturan kebijakan sampel."
+                />
+              )}
+              <Status
+                value={d.recommendation.result}
+                label={d.recommendation.label}
+              />
+              {(d.recommendation.reasons || []).map(
+                (reason: string) => (
+                  <Text key={reason}>{reason}</Text>
+                ),
+              )}
+              <Text type="supporting">
+                Dasar pengulangan memakai riwayat produk yang sama. Buka
+                tab Riwayat pelanggan untuk memeriksa bukti pendukung.
+              </Text>
+              {page.role === "MANAGER" && (
+                <Button
+                  href={withReturn("/samples/policy/", page.url)}
+                  label="Atur kebijakan"
+                  size="sm"
+                  variant="secondary"
+                />
+              )}
+            </VStack>
+          </Collapsible>
+
+          <Button
+            label="Lihat riwayat pendukung"
+            onClick={() => {
+              setNarrowPanelOpen(false);
+              setTab("evidence");
+            }}
+          />
+        </>
+      )}
+      {!commercial && (
+        <Text type="supporting">
+          Hubungi penerima untuk koordinasi pengiriman. Evaluasi
+          pelanggan ditangani sales.
+        </Text>
+      )}
+    </VStack>
+  );
   return (
     <>
       <Layout
@@ -90,6 +196,13 @@ export default function SampleDetail() {
             back={{ href: d.back_url, label: backLabel(d.back_url) }}
             actions={
               <HStack gap={2} wrap="wrap">
+                {isNarrow && (
+                  <Button
+                    label="Info & rekomendasi"
+                    variant="secondary"
+                    onClick={() => setNarrowPanelOpen(true)}
+                  />
+                )}
                 {d.can_edit && (
                   <Button
                     label="Edit draf"
@@ -160,109 +273,14 @@ export default function SampleDetail() {
           />
         }
         end={
-          <MotionPanel width="20rem" padding={5} role="complementary">
-            <VStack gap={6}>
-              <VStack gap={2}>
-                <Heading level={2}>
-                  {commercial ? "Pelanggan" : "Penerima sampel"}
-                </Heading>
-                {page.role === "WAREHOUSE" ? (
-                  <Text weight="semibold">{sample.customer.name}</Text>
-                ) : (
-                  <Link
-                    weight="semibold"
-                    href={withReturn(
-                      `/customers/${sample.customer.id}/`,
-                      page.url,
-                    )}
-                  >
-                    {sample.customer.name}
-                  </Link>
-                )}
-                <Text type="supporting">
-                  {sample.customer.phone || "Nomor belum diisi"}
-                </Text>
-                <Text type="supporting">
-                  {sample.customer.address || "Alamat belum diisi"}
-                </Text>
-              </VStack>
-              {commercial && (
-                <>
-                  <Divider />
-                  {sample.decided_at && (
-                    <VStack gap={2}>
-                      <Heading level={2}>Keputusan manajer</Heading>
-                      <Status
-                        value={
-                          sample.status === "REJECTED" ? "REJECTED" : "APPROVED"
-                        }
-                      />
-                      <Text>
-                        {sample.decision_note || "Sesuai rekomendasi sistem."}
-                      </Text>
-                      <Text type="supporting">
-                        {sample.decided_by?.name} ·{" "}
-                        {dateLabel(sample.decided_at)}
-                      </Text>
-                    </VStack>
-                  )}
-                  <Collapsible
-                    trigger={
-                      sample.decided_at
-                        ? "Dasar keputusan sebelumnya"
-                        : "Rekomendasi sistem"
-                    }
-                    defaultIsOpen={!sample.decided_at}
-                  >
-                    <VStack gap={3}>
-                      {!d.policy.configured && (
-                        <Banner
-                          status="warning"
-                          title="Kebijakan belum dikonfigurasi"
-                          description="Manajer tetap dapat meninjau manual atau membuka pengaturan kebijakan sampel."
-                        />
-                      )}
-                      <Status
-                        value={d.recommendation.result}
-                        label={d.recommendation.label}
-                      />
-                      {(d.recommendation.reasons || []).map(
-                        (reason: string) => (
-                          <Text key={reason}>{reason}</Text>
-                        ),
-                      )}
-                      <Text type="supporting">
-                        Dasar pengulangan memakai riwayat produk yang sama. Buka
-                        tab Riwayat pelanggan untuk memeriksa bukti pendukung.
-                      </Text>
-                      {page.role === "MANAGER" && (
-                        <Button
-                          href={withReturn("/samples/policy/", page.url)}
-                          label="Atur kebijakan"
-                          size="sm"
-                          variant="secondary"
-                        />
-                      )}
-                    </VStack>
-                  </Collapsible>
-
-                  <Button
-                    label="Lihat riwayat pendukung"
-                    onClick={() => setTab("evidence")}
-                  />
-                </>
-              )}
-              {!commercial && (
-                <Text type="supporting">
-                  Hubungi penerima untuk koordinasi pengiriman. Evaluasi
-                  pelanggan ditangani sales.
-                </Text>
-              )}
-            </VStack>
-          </MotionPanel>
+          !isNarrow ? (
+            <MotionPanel width="20rem" padding={5} role="complementary">
+              {samplePanelContent}
+            </MotionPanel>
+          ) : undefined
         }
         content={
-          <LayoutContent padding={6} data-oneflow-scroll>
+          <LayoutContent padding={contentPadding} data-oneflow-scroll>
             <VStack gap={6}>
               {d.error && (
                 <Banner
@@ -866,6 +884,17 @@ export default function SampleDetail() {
           </LayoutContent>
         }
       />
+      {isNarrow && (
+        <FormDialog
+          isOpen={narrowPanelOpen}
+          onOpenChange={setNarrowPanelOpen}
+          title={`Informasi · ${sample.number}`}
+        >
+          <VStack padding={4} gap={4}>
+            {samplePanelContent}
+          </VStack>
+        </FormDialog>
+      )}
       <FormDialog
         isOpen={!!dialog}
         onOpenChange={close}

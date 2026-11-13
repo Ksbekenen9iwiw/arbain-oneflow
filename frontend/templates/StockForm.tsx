@@ -16,12 +16,14 @@ import {
   DataTable,
   money,
   quantity,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import type { Field, FormSpec } from "../types";
 import { ProductThumbnail } from "../ProductIdentity";
 export default function StockForm() {
   const { page, busy } = useApp();
+  const { contentPadding } = useResponsive();
   const d = page.data,
     spec: FormSpec = d.form,
     p = d.stock_product || d.product;
@@ -106,7 +108,7 @@ export default function StockForm() {
         />
       }
       content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+        <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <ServerForm id="stock-form">
             <VStack gap={6}>
               {spec.errors.map((error, i) => (
@@ -264,8 +266,8 @@ export default function StockForm() {
         </LayoutContent>
       }
       footer={
-        <LayoutFooter padding={6}>
-          <HStack hAlign="between" gap={3}>
+        <LayoutFooter padding={contentPadding}>
+          <HStack hAlign="between" gap={3} wrap="wrap">
             <Button label="Batal" href={d.back_url} isDisabled={busy} />
             <Button
               form="stock-form"

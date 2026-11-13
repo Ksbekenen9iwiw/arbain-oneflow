@@ -15,10 +15,12 @@ import {
   money,
   quantity,
   Banner,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 export default function FormPage() {
   const { page, busy } = useApp();
+  const { contentPadding } = useResponsive();
   const d = page.data,
     product = d.stock_product || d.product;
   const editing = page.screen === "product_edit";
@@ -46,11 +48,11 @@ export default function FormPage() {
         />
       }
       content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+        <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={6}>
             {d.activity && (
               <VStack gap={4}>
-                <HStack gap={6}>
+                <HStack gap={6} wrap="wrap">
                   <Fact label="Aktivitas">{d.activity.kind_label}</Fact>
                   <Fact label="Jadwal">
                     {dateLabel(
@@ -154,8 +156,8 @@ export default function FormPage() {
         </LayoutContent>
       }
       footer={
-        <LayoutFooter padding={6}>
-          <HStack hAlign="between" gap={3}>
+        <LayoutFooter padding={contentPadding}>
+          <HStack hAlign="between" gap={3} wrap="wrap">
             <Button
               label="Batal"
               href={d.back_url || "/stock/"}

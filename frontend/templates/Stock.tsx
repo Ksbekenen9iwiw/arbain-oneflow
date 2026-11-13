@@ -27,6 +27,7 @@ import {
   money,
   quantity,
   Status,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import {
@@ -38,6 +39,7 @@ import {
 import type { Row } from "../types";
 export default function Stock() {
   const { page, navigate, busy, refreshing } = useApp();
+  const { contentPadding } = useResponsive();
   const d = page.data,
     manage = page.role !== "SALES",
     history = d.selected_tab === "movements";
@@ -206,7 +208,7 @@ export default function Stock() {
         />
       }
       content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+        <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={4}>
             {manage && (
               <TabList
@@ -233,7 +235,7 @@ export default function Stock() {
                   }}
                 >
                   <FilterRow>
-                    <StackItem size="fill">
+                    <StackItem size="fill" style={{ minWidth: "14rem" }}>
                       <TextInput
                         label="Cari produk"
                         placeholder="Nama produk atau SKU"

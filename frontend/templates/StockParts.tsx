@@ -132,7 +132,7 @@ export function MovementView({
         <VStack gap={3}>
           <FilterRow>
             {!singleProduct && (
-              <StackItem size="fill">
+              <StackItem size="fill" style={{ minWidth: "14rem" }}>
                 <Selector
                   label="Produk"
                   width="100%"

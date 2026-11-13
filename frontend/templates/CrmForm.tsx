@@ -13,11 +13,13 @@ import {
   FieldControl,
   ServerForm,
   useFields,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import type { Field, FormSpec } from "../types";
 export default function CrmForm() {
   const { page, busy } = useApp();
+  const { contentPadding } = useResponsive();
   const d = page.data,
     spec: FormSpec = d.form;
   const { values, onChange } = useFields(spec);
@@ -63,7 +65,7 @@ export default function CrmForm() {
         />
       }
       content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+        <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <ServerForm id="record-form">
             <VStack gap={6}>
               {spec.errors.map((error, i) => (
@@ -169,8 +171,8 @@ export default function CrmForm() {
         </LayoutContent>
       }
       footer={
-        <LayoutFooter padding={6}>
-          <HStack hAlign="between" gap={3}>
+        <LayoutFooter padding={contentPadding}>
+          <HStack hAlign="between" gap={3} wrap="wrap">
             <Button label="Batal" href={d.back_url} isDisabled={busy} />
             <Button
               form="record-form"

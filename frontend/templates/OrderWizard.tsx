@@ -29,6 +29,7 @@ import {
   Fact,
   money,
   quantity,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import {
@@ -45,6 +46,7 @@ const STEPS = ["Pelanggan", "Produk & jumlah", "Tinjau pesanan"];
 const footerZone: CSSProperties = { flexBasis: 0 };
 export default function OrderWizard() {
   const { page, busy, submit, markDirty } = useApp();
+  const { isMobile, contentPadding } = useResponsive();
   const d = page.data as WizardData;
   const customerField = d.form.fields.find((f) => f.key === "customer")!;
   const [customer, setCustomer] = useState(String(customerField.value || ""));
@@ -177,12 +179,12 @@ export default function OrderWizard() {
     <Layout
       height="fill"
       contentWidth={720}
-      padding={5}
+      padding={contentPadding}
       defaultHasDividers
       header={
         <LayoutHeader hasDivider={false}>
           <VStack gap={5}>
-            <HStack gap={3} vAlign="center">
+            <HStack gap={3} vAlign="center" wrap="wrap">
               <StackItem size="fill">
                 <VStack gap={1}>
                   <Heading level={1}>
@@ -380,8 +382,11 @@ export default function OrderWizard() {
                           gap={3}
                         >
                           {index > 0 && <Divider />}
-                          <HStack gap={3} vAlign="start">
-                            <StackItem size="fill">
+                          <HStack gap={3} vAlign="start" wrap="wrap">
+                            <StackItem
+                              size="fill"
+                              style={{ minWidth: "14rem" }}
+                            >
                               <VStack data-field={`product-${line.id}`}>
                                 <Selector
                                   label={`Produk ${index + 1}`}
@@ -443,7 +448,7 @@ export default function OrderWizard() {
                               </VStack>
                             </StackItem>
                             <VStack
-                              width="13rem"
+                              width={isMobile ? "100%" : "13rem"}
                               data-field={`quantity-${line.id}`}
                             >
                               <QuantityInput

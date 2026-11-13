@@ -26,6 +26,7 @@ import {
   money,
   quantity,
   dateLabel,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import { Collapsible } from "@astryxdesign/core/Collapsible";
@@ -34,6 +35,8 @@ import type { Row } from "../types";
 import { StockCondition, MovementView, stockContext } from "./StockParts";
 export default function ProductDetail() {
   const { page, navigate, busy, clearDirty } = useApp();
+  const { isNarrow, contentPadding } = useResponsive();
+  const [narrowInfoOpen, setNarrowInfoOpen] = useState(false);
   const d = page.data,
     p = d.product;
   const [panel, setPanel] = useState(false);
@@ -98,23 +101,44 @@ export default function ProductDetail() {
       v ? params.set(k, v) : params.delete(k);
     void navigate(`/products/${p.id}/` + (params.size ? "?" + params : ""));
   };
+  const productInfoContent = (
+    <VStack gap={4}>
+      <Fact label="Harga per satuan">
+        {money(p.price)} / {p.unit}
+      </Fact>
+      <Fact label="Batas minimum">
+        {quantity(p.min_stock)} {p.unit}
+      </Fact>
+      <Fact label="Status produk">
+        {p.is_active
+          ? "Aktif dijual"
+          : "Nonaktif — tidak tersedia untuk pesanan baru"}
+      </Fact>
+      {d.can_manage && (
+        <Button
+          label="Edit produk"
+          href={stockContext(`/products/${p.id}/edit/`, page.url)}
+        />
+      )}
+    </VStack>
+  );
   return (
     <>
       <Layout
         height="fill"
         defaultHasDividers
         header={
-          <LayoutHeader padding={6}>
+          <LayoutHeader padding={contentPadding}>
             <VStack gap={3}>
               <Link href={d.back_url} color="secondary">
                 ← {backLabel(d.back_url)}
               </Link>
-              <HStack gap={4} hAlign="between" vAlign="center">
+              <HStack gap={4} hAlign="between" vAlign="center" wrap="wrap">
                 <StackItem size="fill">
                   <ProductIdentity sku={p.sku} name={p.name} size="detail">
                     <VStack gap={2}>
                       <Heading level={1}>{p.name}</Heading>
-                      <HStack gap={3} vAlign="center">
+                      <HStack gap={3} vAlign="center" wrap="wrap">
                         <Text color="secondary">
                           {p.sku} · {p.unit}
                         </Text>
@@ -127,7 +151,7 @@ export default function ProductDetail() {
                   </ProductIdentity>
                 </StackItem>
                 {d.can_manage && (
-                  <HStack gap={2}>
+                  <HStack gap={2} wrap="wrap">
                     <Button
                       label="Hitung & koreksi fisik"
                       href={stockContext(`/stock/${p.id}/reconcile/`, page.url)}
@@ -144,49 +168,38 @@ export default function ProductDetail() {
           </LayoutHeader>
         }
         end={
-          panel ? (
-            <MotionPanel width="17rem" padding={4} role="complementary">
+          !isNarrow && panel ? (
+            <MotionPanel width="18rem" padding={4} role="complementary">
               <VStack gap={4}>
                 <HStack hAlign="between" vAlign="center">
                   <Heading level={2}>Informasi</Heading>
                   <Button
+                    size="sm"
                     label="Sembunyikan"
                     variant="secondary"
                     onClick={() => setPanel(false)}
                   />
                 </HStack>
-                <Fact label="Harga per satuan">
-                  {money(p.price)} / {p.unit}
-                </Fact>
-                <Fact label="Batas minimum">
-                  {quantity(p.min_stock)} {p.unit}
-                </Fact>
-                <Fact label="Status produk">
-                  {p.is_active
-                    ? "Aktif dijual"
-                    : "Nonaktif — tidak tersedia untuk pesanan baru"}
-                </Fact>
-                {d.can_manage && (
-                  <Button
-                    label="Edit produk"
-                    href={stockContext(`/products/${p.id}/edit/`, page.url)}
-                  />
-                )}
+                {productInfoContent}
               </VStack>
             </MotionPanel>
           ) : undefined
         }
         content={
-          <LayoutContent padding={6} data-oneflow-scroll>
+          <LayoutContent padding={contentPadding} data-oneflow-scroll>
             <VStack gap={6}>
               <VStack gap={4} data-tour="product-overview">
-                <HStack hAlign="between" vAlign="center">
+                <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
                   <Heading level={2}>Stok saat ini</Heading>
-                  {!panel && (
+                  {(isNarrow || !panel) && (
                     <Button
                       label="Informasi produk"
                       variant="secondary"
-                      onClick={() => setPanel(true)}
+                      size="sm"
+                      onClick={() => {
+                        if (isNarrow) setNarrowInfoOpen(true);
+                        else setPanel(true);
+                      }}
                     />
                   )}
                 </HStack>
@@ -467,7 +480,10 @@ export default function ProductDetail() {
                               description={`Cocokkan estimasi tiba dengan proyeksi stok habis${d.supply.stockout_date ? ` pada ${dateLabel(d.supply.stockout_date)}` : ""}. Pengadaan yang terlambat perlu dikonfirmasi ulang ke pemasok.`}
                             />
                           )}
-                          <Grid columns={4} gap={4}>
+                          <Grid
+                            columns={{ minWidth: 160, repeat: "fit", max: 4 }}
+                            gap={4}
+                          >
                             <Fact label="Stok layak">
                               {d.supply.eligible == null
                                 ? "—"
@@ -703,6 +719,17 @@ export default function ProductDetail() {
           </LayoutContent>
         }
       />
+      {isNarrow && (
+        <FormDialog
+          isOpen={narrowInfoOpen}
+          onOpenChange={setNarrowInfoOpen}
+          title={`Informasi · ${p.name}`}
+        >
+          <VStack padding={4} gap={4}>
+            {productInfoContent}
+          </VStack>
+        </FormDialog>
+      )}
       <FormDialog
         isOpen={!!supplyDialog.open}
         onOpenChange={closeSupplyDialog}
