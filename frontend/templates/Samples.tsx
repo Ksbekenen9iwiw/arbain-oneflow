@@ -27,6 +27,7 @@ import {
   DataTable,
   dateLabel,
   quantity,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import { withReturn, listReturn, backLabel } from "../navigation";
@@ -41,6 +42,7 @@ const requestLabels: Record<string, string> = {
 
 export default function Samples() {
   const { page, navigate, busy, refreshing } = useApp();
+  const { contentPadding } = useResponsive();
   const d = page.data;
   const back = listReturn(page.url);
   const resetUrl = back ? withReturn("/samples/", back) : "/samples/";
@@ -84,7 +86,7 @@ export default function Samples() {
               : "Ajukan, tinjau, dan telusuri pemberian sampel pelanggan."
           }
           actions={
-            <HStack gap={2}>
+            <HStack gap={2} wrap="wrap">
               {page.role === "MANAGER" && (
                 <Button
                   label="Atur kebijakan"
@@ -103,7 +105,7 @@ export default function Samples() {
         />
       }
       content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+        <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={4} data-tour="samples-overview">
             {page.role !== "WAREHOUSE" && (
               <TabList
@@ -135,7 +137,7 @@ export default function Samples() {
               }}
             >
               <FilterRow>
-                <StackItem size="fill">
+                <StackItem size="fill" style={{ minWidth: "14rem" }}>
                   <TextInput
                     label="Cari pengajuan"
                     placeholder="Nomor pengajuan atau nama pelanggan"

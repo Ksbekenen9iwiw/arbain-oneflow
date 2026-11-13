@@ -16,6 +16,7 @@ import {
   StackItem,
   Section,
 } from "@astryxdesign/core/Layout";
+import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { Text, Heading } from "@astryxdesign/core/Text";
 import { Button } from "@astryxdesign/core/Button";
@@ -61,6 +62,15 @@ export {
   Table,
   Token,
 };
+export function useResponsive() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isNarrow = useMediaQuery("(max-width: 1024px)");
+  return {
+    isMobile,
+    isNarrow,
+    contentPadding: (isMobile ? 4 : 6) as 4 | 6,
+  };
+}
 export const money = (value: string | number) =>
   "Rp " + BigInt(value || 0).toLocaleString("id-ID");
 export const quantity = (value: string | number) =>
@@ -88,23 +98,28 @@ export function PageHeader({
   back?: { href: string; label: string };
   leading?: ReactNode;
 }) {
+  const { isMobile, contentPadding } = useResponsive();
   return (
-    <LayoutHeader padding={6}>
+    <LayoutHeader padding={contentPadding}>
       <VStack gap={3}>
         {back && (
-          <Link href={back.href} color="secondary">
-            ← {back.label}
-          </Link>
+          <HStack gap={2} vAlign="center">
+            <Link href={back.href} color="secondary">
+              ← {back.label}
+            </Link>
+          </HStack>
         )}
-        <HStack gap={4} vAlign="center" hAlign="between">
+        <HStack gap={3} vAlign="center" hAlign="between" wrap="wrap">
           <HStack gap={3} vAlign="center">
             {leading}
-            <VStack gap={2}>
+            <VStack gap={1}>
               <Heading level={1}>{title}</Heading>
               {description && <Text type="supporting">{description}</Text>}
             </VStack>
           </HStack>
-          {actions && <StackItem>{actions}</StackItem>}
+          {actions && (
+            <VStack width={isMobile ? "100%" : undefined}>{actions}</VStack>
+          )}
         </HStack>
       </VStack>
     </LayoutHeader>
@@ -141,6 +156,20 @@ export function Status({ value, label }: { value: string; label?: string }) {
     RISIKO_KOSONG_TERLAMBAT: "Risiko kosong, percepat",
     PERLU_KONFIGURASI: "Perlu konfigurasi",
     PERLU_DITINJAU: "Perlu ditinjau",
+    CRITICAL: "Alarm kritis",
+    WARNING: "Perlu pengadaan",
+    SAFE: "Aman",
+    FAST: "Laku keras",
+    SLOW: "Kurang laku",
+    DEAD: "Tidak laku di apotek",
+    STOP: "Jangan dibawa",
+    PRIORITY: "Prioritaskan bawa",
+    REDUCE: "Kurangi bawaan",
+    BILLED_PAID: "Ditagih (> 2 item)",
+    NOT_BILLED: "Belum ditagih (≤ 2 item)",
+    DEFERRED: "Penagihan tunda",
+    NEAR_EXPIRY: "Wajib tarik ≤ 6 bln ED",
+    DAMAGED: "Tarik barang rusak",
   };
   const critical = [
     "OVERDUE",
@@ -148,6 +177,11 @@ export function Status({ value, label }: { value: string; label?: string }) {
     "STOCK_EMPTY",
     "WAITING_STOCK",
     "RISIKO_KOSONG_TERLAMBAT",
+    "CRITICAL",
+    "DEAD",
+    "STOP",
+    "NEAR_EXPIRY",
+    "DAMAGED",
   ].includes(value);
   const warning = [
     "STOCK_LOW",
@@ -159,6 +193,10 @@ export function Status({ value, label }: { value: string; label?: string }) {
     "NEEDS_REVIEW",
     "REJECT_SUGGESTED",
     "PERLU_DITINJAU",
+    "WARNING",
+    "SLOW",
+    "REDUCE",
+    "DEFERRED",
   ].includes(value);
   return (
     <HStack hAlign="start">
@@ -186,6 +224,10 @@ export function Status({ value, label }: { value: string; label?: string }) {
                     "RECEIVED",
                     "RECOMMENDED",
                     "APPROVE_SUGGESTED",
+                    "SAFE",
+                    "FAST",
+                    "PRIORITY",
+                    "BILLED_PAID",
                   ].includes(value)
                 ? "green"
                 : [
@@ -730,8 +772,15 @@ export function FormDialog({
   footer?: ReactNode;
 }) {
   const { busy, clearDirty, page } = useApp();
+  const { contentPadding } = useResponsive();
   const [changed, setChanged] = useState(
-    !!(page.data.action_dialog || page.data.target_dialog || page.data.dialog),
+    !!(
+      page.data.action_dialog ||
+      page.data.target_dialog ||
+      page.data.directive_dialog ||
+      page.data.raw_material_dialog ||
+      page.data.dialog
+    ),
   );
   const [discard, setDiscard] = useState(false);
   useEffect(() => {
@@ -759,7 +808,7 @@ export function FormDialog({
     >
       <Layout
         height="auto"
-        padding={6}
+        padding={contentPadding}
         defaultHasDividers
         header={
           <DialogHeader
@@ -781,7 +830,7 @@ export function FormDialog({
               </FormChangeContext>
             </section>
             {discard && (
-              <VStack padding={6} gap={4}>
+              <VStack padding={contentPadding} gap={4}>
                 <Text>
                   Isian belum disimpan. Anda bisa melanjutkan pengisian atau
                   membuang perubahan.
@@ -792,8 +841,8 @@ export function FormDialog({
         }
         footer={
           discard ? (
-            <LayoutFooter key="discard-actions" padding={6}>
-              <HStack gap={2} hAlign="end">
+            <LayoutFooter key="discard-actions" padding={contentPadding}>
+              <HStack gap={2} hAlign="end" wrap="wrap">
                 <Button
                   label="Lanjut mengisi"
                   type="button"
@@ -813,7 +862,7 @@ export function FormDialog({
               </HStack>
             </LayoutFooter>
           ) : footer ? (
-            <LayoutFooter key="form-actions" padding={6}>
+            <LayoutFooter key="form-actions" padding={contentPadding}>
               {footer}
             </LayoutFooter>
           ) : undefined

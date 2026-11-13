@@ -7,6 +7,7 @@ import { Selector } from "@astryxdesign/core/Selector";
 import {
   VStack,
   HStack,
+  StackItem,
   Heading,
   Text,
   Button,
@@ -14,7 +15,9 @@ import {
   PageHeader,
   FieldControl,
   ServerForm,
+  FormDialog,
   useFields,
+  useResponsive,
 } from "../ui";
 import { QuantityInput } from "../QuantityInput";
 import { useApp } from "../router";
@@ -30,6 +33,8 @@ type Line = {
 
 export default function SampleForm() {
   const { page, busy, markDirty } = useApp();
+  const { isNarrow, contentPadding } = useResponsive();
+  const [guideOpen, setGuideOpen] = useState(false);
   const d = page.data;
   const spec: FormSpec = d.form;
   const { values, onChange } = useFields(spec);
@@ -77,57 +82,72 @@ export default function SampleForm() {
     );
   };
   const active = lines.filter((line) => !line.deleted);
+  const guideContent = (
+    <VStack gap={6}>
+      <VStack gap={2}>
+        <Heading level={2}>Alur pengajuan</Heading>
+        <Text weight="semibold">1. Simpan draf</Text>
+        <Text type="supporting">
+          Periksa pelanggan, produk, dan alasan pemberian.
+        </Text>
+      </VStack>
+      <VStack gap={2}>
+        <Text weight="semibold">2. Ajukan ke manajer</Text>
+        <Text type="supporting">
+          Rekomendasi beserta riwayat pelanggan tersedia di detail untuk
+          ditinjau.
+        </Text>
+      </VStack>
+      <VStack gap={2}>
+        <Text weight="semibold">3. Kirim & tindak lanjuti</Text>
+        <Text type="supporting">
+          Gudang mengirim setelah disetujui. Sales mencatat penerimaan dan
+          tanggapan.
+        </Text>
+      </VStack>
+      <Text type="supporting">
+        Sampel mengurangi stok saat dikirim dan tidak menambah omzet.
+      </Text>
+    </VStack>
+  );
   return (
-    <Layout
-      height="fill"
-      contentWidth={1260}
-      defaultHasDividers
-      header={
-        <PageHeader
-          title={d.editing ? `Edit ${d.editing}` : "Buat pengajuan sampel"}
-          description="Draf tidak mereservasi atau mengurangi stok."
-          back={{ href: d.back_url, label: "Kembali" }}
-          actions={
-            <Button
-              label="Tambah calon pelanggan"
-              href={withReturn("/customers/new/", d.back_url)}
-              variant="secondary"
-            />
-          }
-        />
-      }
-      end={
-        <MotionPanel width="19rem" padding={5} role="complementary">
-          <VStack gap={6}>
-            <VStack gap={2}>
-              <Heading level={2}>Alur pengajuan</Heading>
-              <Text weight="semibold">1. Simpan draf</Text>
-              <Text type="supporting">
-                Periksa pelanggan, produk, dan alasan pemberian.
-              </Text>
-            </VStack>
-            <VStack gap={2}>
-              <Text weight="semibold">2. Ajukan ke manajer</Text>
-              <Text type="supporting">
-                Rekomendasi beserta riwayat pelanggan tersedia di detail untuk
-                ditinjau.
-              </Text>
-            </VStack>
-            <VStack gap={2}>
-              <Text weight="semibold">3. Kirim & tindak lanjuti</Text>
-              <Text type="supporting">
-                Gudang mengirim setelah disetujui. Sales mencatat penerimaan dan
-                tanggapan.
-              </Text>
-            </VStack>
-            <Text type="supporting">
-              Sampel mengurangi stok saat dikirim dan tidak menambah omzet.
-            </Text>
-          </VStack>
-        </MotionPanel>
-      }
-      content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+    <>
+      <Layout
+        height="fill"
+        contentWidth={1260}
+        defaultHasDividers
+        header={
+          <PageHeader
+            title={d.editing ? `Edit ${d.editing}` : "Buat pengajuan sampel"}
+            description="Draf tidak mereservasi atau mengurangi stok."
+            back={{ href: d.back_url, label: "Kembali" }}
+            actions={
+              <HStack gap={2} wrap="wrap">
+                {isNarrow && (
+                  <Button
+                    label="Alur pengajuan"
+                    variant="secondary"
+                    onClick={() => setGuideOpen(true)}
+                  />
+                )}
+                <Button
+                  label="Tambah calon pelanggan"
+                  href={withReturn("/customers/new/", d.back_url)}
+                  variant="secondary"
+                />
+              </HStack>
+            }
+          />
+        }
+        end={
+          !isNarrow ? (
+            <MotionPanel width="19rem" padding={5} role="complementary">
+              {guideContent}
+            </MotionPanel>
+          ) : undefined
+        }
+        content={
+          <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <ServerForm id="sample-form">
             <VStack gap={6}>
               {[...spec.errors, ...d.formset.errors].map(
@@ -193,45 +213,49 @@ export default function SampleForm() {
                   />
                 </HStack>
                 {active.map((line) => (
-                  <HStack key={line.id} gap={3} vAlign="end">
+                  <HStack key={line.id} gap={3} vAlign="end" wrap="wrap">
                     <input
                       type="hidden"
                       name={`lines-${line.id}-DELETE`}
                       value=""
                     />
-                    <VStack gap={2} width="100%">
-                      <Selector
-                        label="Produk"
-                        htmlName={`lines-${line.id}-product`}
-                        width="100%"
-                        hasSearch
-                        value={line.product}
-                        options={d.catalog.map((product: Row) => ({
-                          value: product.id,
-                          label: `${product.name} · ${product.sku}`,
-                        }))}
-                        onChange={(product) => updateLine(line.id, { product })}
-                        status={
-                          line.errors.product
-                            ? { type: "error", message: line.errors.product }
-                            : undefined
-                        }
-                      />
-                      {line.product && (
-                        <Text type="supporting">
-                          Stok bebas saat ini:{" "}
-                          {d.catalog.find(
-                            (product: Row) => product.id === line.product,
-                          )?.available ?? "—"}{" "}
-                          {
-                            d.catalog.find(
-                              (product: Row) => product.id === line.product,
-                            )?.unit
+                    <StackItem size="fill" style={{ minWidth: "14rem" }}>
+                      <VStack gap={2} width="100%">
+                        <Selector
+                          label="Produk"
+                          htmlName={`lines-${line.id}-product`}
+                          width="100%"
+                          hasSearch
+                          value={line.product}
+                          options={d.catalog.map((product: Row) => ({
+                            value: product.id,
+                            label: `${product.name} · ${product.sku}`,
+                          }))}
+                          onChange={(product) =>
+                            updateLine(line.id, { product })
                           }
-                          . Kelayakan batch diperiksa saat persetujuan.
-                        </Text>
-                      )}
-                    </VStack>
+                          status={
+                            line.errors.product
+                              ? { type: "error", message: line.errors.product }
+                              : undefined
+                          }
+                        />
+                        {line.product && (
+                          <Text type="supporting">
+                            Stok bebas saat ini:{" "}
+                            {d.catalog.find(
+                              (product: Row) => product.id === line.product,
+                            )?.available ?? "—"}{" "}
+                            {
+                              d.catalog.find(
+                                (product: Row) => product.id === line.product,
+                              )?.unit
+                            }
+                            . Kelayakan batch diperiksa saat persetujuan.
+                          </Text>
+                        )}
+                      </VStack>
+                    </StackItem>
                     <QuantityInput
                       label="Jumlah"
                       htmlName={`lines-${line.id}-quantity`}
@@ -295,8 +319,8 @@ export default function SampleForm() {
         </LayoutContent>
       }
       footer={
-        <LayoutFooter padding={6}>
-          <HStack hAlign="between" gap={3}>
+        <LayoutFooter padding={contentPadding}>
+          <HStack hAlign="between" gap={3} wrap="wrap">
             <Button label="Batal" href={d.back_url} isDisabled={busy} />
             <Text type="supporting">
               Draf dapat diperiksa sebelum diajukan.
@@ -311,6 +335,18 @@ export default function SampleForm() {
           </HStack>
         </LayoutFooter>
       }
-    />
+      />
+      {isNarrow && (
+        <FormDialog
+          isOpen={guideOpen}
+          onOpenChange={setGuideOpen}
+          title="Alur pengajuan sampel"
+        >
+          <VStack padding={4} gap={4}>
+            {guideContent}
+          </VStack>
+        </FormDialog>
+      )}
+    </>
   );
 }

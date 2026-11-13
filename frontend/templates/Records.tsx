@@ -393,8 +393,8 @@ export default function Records() {
                 search();
               }}
             >
-              <HStack gap={3} vAlign="end">
-                <StackItem size="fill">
+              <HStack gap={3} vAlign="end" wrap="wrap">
+                <StackItem size="fill" style={{ minWidth: "14rem" }}>
                   <TextInput
                     label="Cari"
                     value={query}
@@ -445,7 +445,7 @@ export default function Records() {
                 )}
               </HStack>
             </form>
-            <HStack hAlign="between" vAlign="center" gap={3}>
+            <HStack hAlign="between" vAlign="center" gap={3} wrap="wrap">
               <Text type="supporting">
                 {rows.length}{" "}
                 {isOrders ? "pesanan" : isStock ? "produk" : "pelanggan"} · klik

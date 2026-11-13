@@ -28,12 +28,14 @@ import {
   PageHeader,
   dateLabel,
   Status,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import type { Row } from "../types";
 export const customerContext = withReturn;
 export default function Customers() {
   const { page, navigate, busy, refreshing } = useApp();
+  const { contentPadding } = useResponsive();
   const d = page.data;
   const back = listReturn(page.url);
   const resetUrl = back ? withReturn("/customers/", back) : "/customers/";
@@ -189,7 +191,7 @@ export default function Customers() {
         />
       }
       content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+        <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={4}>
             <TabList
               hasDivider
@@ -211,7 +213,7 @@ export default function Customers() {
               }}
             >
               <FilterRow>
-                <StackItem size="fill">
+                <StackItem size="fill" style={{ minWidth: "14rem" }}>
                   <TextInput
                     label="Cari pelanggan"
                     value={query}

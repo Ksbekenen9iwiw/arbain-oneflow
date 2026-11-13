@@ -1,7 +1,7 @@
 import { defineTheme } from "@astryxdesign/core/theme";
 import { themes, defaultThemeSlug } from "../astryx-themes";
 
-// Keep Astryx Neutral's layout and components; emphasize actionable status tokens.
+// Keep Astryx Neutral's layout and components; emphasize actionable status tokens and surface polish.
 export const oneflowTheme = defineTheme({
   name: "oneflow",
   extends: themes[defaultThemeSlug],
@@ -74,6 +74,12 @@ export const oneflowTheme = defineTheme({
                 transition: "width var(--duration-medium) var(--ease-standard)",
               },
             },
+            card: {
+              base: {
+                transition:
+                  "border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard)",
+              },
+            },
           },
         },
       },
@@ -82,15 +88,32 @@ export const oneflowTheme = defineTheme({
   components: {
     token: {
       "color:red": {
-        backgroundColor: "light-dark(#B91C1C, #F87171)",
+        backgroundColor: "var(--color-error)",
         color: "var(--color-on-error)",
         fontWeight: "var(--font-weight-semibold)",
       },
       "color:orange": {
-        backgroundColor: "light-dark(#F59E0B, #FBBF24)",
+        backgroundColor: "var(--color-warning)",
         color: "var(--color-on-warning)",
         fontWeight: "var(--font-weight-semibold)",
+      },
+      "color:green": {
+        fontWeight: "var(--font-weight-semibold)",
+      },
+      "color:blue": {
+        fontWeight: "var(--font-weight-semibold)",
+      },
+    },
+    card: {
+      base: {
+        borderRadius: "var(--radius-lg)",
+      },
+    },
+    dialog: {
+      base: {
+        borderRadius: "var(--radius-xl)",
       },
     },
   },
 });
+

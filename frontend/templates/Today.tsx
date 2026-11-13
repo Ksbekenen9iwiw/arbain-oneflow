@@ -42,9 +42,14 @@ import {
   SimpleForm,
   FormDialog,
   Empty,
+  useResponsive,
 } from "../ui";
 import { StockCondition } from "./StockParts";
 import { OrderTable } from "./Records";
+import {
+  ConsignmentAndAttendanceHub,
+  DashboardAlarmPanel,
+} from "./TodayConsignment";
 import { useApp, useQueryState } from "../router";
 import {
   dashboardQueue,
@@ -82,6 +87,8 @@ function Metric({
 
 export default function Today() {
   const { page, busy, navigate } = useApp();
+  const { isMobile, isNarrow, contentPadding } = useResponsive();
+  const [narrowAlarmOpen, setNarrowAlarmOpen] = useState(false);
   const d = page.data,
     m = d.metrics,
     warehouse = page.role === "WAREHOUSE",
@@ -111,10 +118,24 @@ export default function Today() {
         : "limited",
     );
   const [selected, setSelected] = useState<Row | null>(d.action_dialog || null),
-    [target, setTarget] = useState(!!d.target_dialog);
+    [target, setTarget] = useState(!!d.target_dialog),
+    [directiveOpen, setDirectiveOpen] = useState(!!d.directive_dialog),
+    [directiveProduct, setDirectiveProduct] = useState<Row | null>(null),
+    [rawMaterialOpen, setRawMaterialOpen] = useState(!!d.raw_material_dialog),
+    [rawMaterialItem, setRawMaterialItem] = useState<Row | null>(null);
   const [retryDialog, setRetryDialog] = useState(
-    !!(d.action_dialog || d.target_dialog),
+    !!(
+      d.action_dialog ||
+      d.target_dialog ||
+      d.directive_dialog ||
+      d.raw_material_dialog
+    ),
   );
+  const [alarmPanelState, setAlarmPanelState] = useQueryState(
+    "alarm",
+    "shown",
+  );
+  const showAlarmPanel = alarmPanelState !== "hidden";
   const [targetView, setTargetView] = useQueryState("targets", "hidden");
   const showTargets = targetView === "shown";
   const setShowTargets = (value: boolean | ((v: boolean) => boolean)) =>
@@ -127,6 +148,10 @@ export default function Today() {
     if (!open && !busy) {
       setSelected(null);
       setTarget(false);
+      setDirectiveOpen(false);
+      setDirectiveProduct(null);
+      setRawMaterialOpen(false);
+      setRawMaterialItem(null);
       setRetryDialog(false);
     }
   };
@@ -201,7 +226,7 @@ export default function Today() {
       }
     : undefined;
   const metrics = warehouse && (
-    <Grid columns={3} gap={3}>
+    <Grid columns={{ minWidth: 220, repeat: "fit", max: 3 }} gap={3}>
       {warehouse && (
         <Metric
           label="Menunggu pengiriman"
@@ -250,115 +275,125 @@ export default function Today() {
     </Grid>
   );
   const analytics = !warehouse && (
-    <Grid columns={3} gap={6}>
-      <GridSpan columns={2}>
-        <Suspense fallback={<ChartSkeleton />}>
-          <ShipmentTrend
-            days={m.shipment_days}
-            today={page.today}
-            defaultPeriod={sales ? "30" : "month"}
-          />
-        </Suspense>
+    <Grid columns={isNarrow ? 1 : 3} gap={4}>
+      <GridSpan columns={isNarrow ? 1 : 2}>
+        <Card padding={4}>
+          <Suspense fallback={<ChartSkeleton />}>
+            <ShipmentTrend
+              days={m.shipment_days}
+              today={page.today}
+              defaultPeriod={sales ? "30" : "month"}
+            />
+          </Suspense>
+        </Card>
       </GridSpan>
-      <VStack gap={5}>
-        <VStack gap={3}>
-          <HStack hAlign="between" vAlign="center">
-            <Heading level={3} accessibilityLevel={2}>
-              Target bulanan
-            </Heading>
-            {d.target_form && (
-              <IconButton
-                label="Atur target bulanan"
-                tooltip="Atur target bulanan"
-                icon={<Icon icon={AdjustmentsHorizontalIcon} />}
+      <Card padding={4}>
+        <VStack gap={5}>
+          <VStack gap={3}>
+            <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
+              <Heading level={3} accessibilityLevel={2}>
+                Target bulanan
+              </Heading>
+              {d.target_form && (
+                <IconButton
+                  label="Atur target bulanan"
+                  tooltip="Atur target bulanan"
+                  icon={<Icon icon={AdjustmentsHorizontalIcon} />}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setTarget(true)}
+                />
+              )}
+            </HStack>
+            <VStack gap={1}>
+              <Text type="supporting">{monthLabel}</Text>
+              <HStack gap={2} vAlign="center" wrap="wrap">
+                <Text size="2xl" weight="semibold" hasTabularNumbers>
+                  {money(m.shipped_value_rupiah)}
+                </Text>
+                <Text type="supporting">terkirim</Text>
+              </HStack>
+            </VStack>
+            {goal.achievement_percent != null ? (
+              <>
+                <HStack hAlign="between" wrap="wrap" gap={2}>
+                  <Text weight="semibold" hasTabularNumbers>
+                    {pct(goal.achievement_percent)}
+                  </Text>
+                  <Text type="supporting">
+                    dari {money(goal.target_rupiah)}
+                  </Text>
+                </HStack>
+                <ProgressBar
+                  label="Capaian target bulan ini"
+                  isLabelHidden
+                  value={Math.min(100, goal.achievement_percent)}
+                  variant={
+                    goal.achievement_percent >= 100 ? "success" : "accent"
+                  }
+                />
+              </>
+            ) : (
+              <Text color="secondary">
+                {goal.is_complete
+                  ? "Target Rp 0; persentase tidak dihitung."
+                  : page.role === "SALES"
+                    ? "Target bulan ini belum ditetapkan. Hubungi manajer."
+                    : "Target belum lengkap. Atur target setiap sales untuk melihat capaian tim."}
+              </Text>
+            )}
+            <HStack gap={2} wrap="wrap">
+              <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => setTarget(true)}
+                href={ordersUrl("SHIPPED", true)}
+                label={`${m.shipped_order_count} pesanan`}
+                tooltip="Lihat pesanan terkirim bulan ini"
               />
-            )}
-          </HStack>
-          <VStack gap={1}>
-            <Text type="supporting">{monthLabel}</Text>
-            <HStack gap={2} vAlign="center" wrap="wrap">
-              <Text size="2xl" weight="semibold" hasTabularNumbers>
-                {money(m.shipped_value_rupiah)}
-              </Text>
-              <Text type="supporting">terkirim</Text>
+              <Button
+                size="sm"
+                variant="secondary"
+                label="Rincian target"
+                aria-expanded={showTargets}
+                aria-controls="target-details"
+                onClick={() => {
+                  setShowTargets((v) => !v);
+                  requestAnimationFrame(() =>
+                    document
+                      .getElementById("target-details")
+                      ?.scrollIntoView({ block: "nearest" }),
+                  );
+                }}
+              />
             </HStack>
           </VStack>
-          {goal.achievement_percent != null ? (
-            <>
-              <HStack hAlign="between">
-                <Text weight="semibold" hasTabularNumbers>
-                  {pct(goal.achievement_percent)}
-                </Text>
-                <Text type="supporting">dari {money(goal.target_rupiah)}</Text>
-              </HStack>
-              <ProgressBar
-                label="Capaian target bulan ini"
-                isLabelHidden
-                value={Math.min(100, goal.achievement_percent)}
-                variant={goal.achievement_percent >= 100 ? "success" : "accent"}
+          <VStack gap={2}>
+            <Text type="supporting">Stok seluruh gudang</Text>
+            {Number(m.stock_conflict_count) > 0 && (
+              <Button
+                href="/stock/?filter=conflict"
+                size="sm"
+                variant="secondary"
+                label={`${m.stock_conflict_count} produk · konflik stok`}
+                icon={<Icon icon="error" color="error" />}
               />
-            </>
-          ) : (
-            <Text color="secondary">
-              {goal.is_complete
-                ? "Target Rp 0; persentase tidak dihitung."
-                : page.role === "SALES"
-                  ? "Target bulan ini belum ditetapkan. Hubungi manajer."
-                  : "Target belum lengkap. Atur target setiap sales untuk melihat capaian tim."}
-            </Text>
-          )}
-          <HStack gap={2} wrap="wrap">
-            <Button
-              size="sm"
-              variant="secondary"
-              href={ordersUrl("SHIPPED", true)}
-              label={`${m.shipped_order_count} pesanan`}
-              tooltip="Lihat pesanan terkirim bulan ini"
-            />
-            <Button
-              size="sm"
-              variant="secondary"
-              label="Rincian target"
-              aria-expanded={showTargets}
-              aria-controls="target-details"
-              onClick={() => {
-                setShowTargets((v) => !v);
-                requestAnimationFrame(() =>
-                  document
-                    .getElementById("target-details")
-                    ?.scrollIntoView({ block: "nearest" }),
-                );
-              }}
-            />
-          </HStack>
+            )}
+            {Number(m.low_stock_count) > 0 ? (
+              <Button
+                href="/stock/?filter=low&status=active"
+                size="sm"
+                variant="secondary"
+                label={`${m.low_stock_count} produk di bawah minimum`}
+                icon={<Icon icon="warning" color="warning" />}
+              />
+            ) : (
+              <Text type="supporting">
+                Stok tersedia memenuhi batas minimum.
+              </Text>
+            )}
+          </VStack>
         </VStack>
-        <VStack gap={2}>
-          <Text type="supporting">Stok seluruh gudang</Text>
-          {Number(m.stock_conflict_count) > 0 && (
-            <Button
-              href="/stock/?filter=conflict"
-              size="sm"
-              variant="secondary"
-              label={`${m.stock_conflict_count} produk · konflik stok`}
-              icon={<Icon icon="error" color="error" />}
-            />
-          )}
-          {Number(m.low_stock_count) > 0 ? (
-            <Button
-              href="/stock/?filter=low&status=active"
-              size="sm"
-              variant="secondary"
-              label={`${m.low_stock_count} produk di bawah minimum`}
-              icon={<Icon icon="warning" color="warning" />}
-            />
-          ) : (
-            <Text type="supporting">Stok tersedia memenuhi batas minimum.</Text>
-          )}
-        </VStack>
-      </VStack>
+      </Card>
     </Grid>
   );
   // Astryx Table bleeds through the inherited bottom padding. Reserve that
@@ -476,7 +511,7 @@ export default function Today() {
   );
   const workQueue = (
     <VStack gap={3} paddingBlockEnd={6} id="work-queue">
-      <HStack hAlign="between" vAlign="center">
+      <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
         <VStack gap={1}>
           <Heading level={2}>
             {warehouse
@@ -543,7 +578,7 @@ export default function Today() {
           role="tabpanel"
           aria-label="Aktivitas"
         >
-          <HStack hAlign="between" gap={3} vAlign="center">
+          <HStack hAlign="between" gap={3} vAlign="center" wrap="wrap">
             <SegmentedControl
               label="Jadwal aktivitas"
               value={schedule}
@@ -940,7 +975,7 @@ export default function Today() {
             title="Dashboard"
             description={dateLabel(page.today)}
             actions={
-              <HStack gap={2}>
+              <HStack gap={2} wrap="wrap" vAlign="center">
                 <IconButton
                   size="md"
                   variant="secondary"
@@ -950,6 +985,16 @@ export default function Today() {
                   isLoading={busy}
                   onClick={() => void navigate(page.url, true)}
                 />
+                {(isNarrow || !showAlarmPanel) && (
+                  <Button
+                    label="Alarm & arahan"
+                    variant="secondary"
+                    onClick={() => {
+                      if (isNarrow) setNarrowAlarmOpen(true);
+                      else setAlarmPanelState("shown");
+                    }}
+                  />
+                )}
                 {warehouse && (
                   <Button
                     label="Produk & stok"
@@ -960,7 +1005,7 @@ export default function Today() {
                   <Selector
                     label="Cakupan sales"
                     isLabelHidden
-                    width="12rem"
+                    width={isMobile ? "100%" : "12rem"}
                     value={d.selected_sales}
                     options={[
                       { value: "", label: "Seluruh tim" },
@@ -971,6 +1016,7 @@ export default function Today() {
                   />
                 )}
                 <Button
+                  width={isMobile ? "100%" : undefined}
                   label={
                     warehouse
                       ? "Lihat pengiriman"
@@ -994,11 +1040,49 @@ export default function Today() {
             }
           />
         }
+        end={
+          !isNarrow && showAlarmPanel ? (
+            <DashboardAlarmPanel
+              role={page.role}
+              rawMaterialAlerts={d.raw_material_alerts || []}
+              productTraction={d.product_traction || []}
+              onHide={() => setAlarmPanelState("hidden")}
+              onEditRawMaterial={(material) => {
+                setRetryDialog(false);
+                setRawMaterialItem(material);
+                setRawMaterialOpen(true);
+              }}
+              onEditDirective={(product) => {
+                setRetryDialog(false);
+                setDirectiveProduct(product || null);
+                setDirectiveOpen(true);
+              }}
+            />
+          ) : undefined
+        }
         content={
-          <LayoutContent padding={6} data-oneflow-scroll>
+          <LayoutContent padding={contentPadding} data-oneflow-scroll>
             <VStack gap={6}>
               {analytics}
               {metrics}
+              <ConsignmentAndAttendanceHub
+                role={page.role}
+                pageUrl={page.url}
+                attendanceRecaps={d.attendance_recaps || []}
+                consignmentOutlets={d.consignment_outlets || []}
+                productTraction={d.product_traction || []}
+                rawMaterialAlerts={d.raw_material_alerts || []}
+                onEditDirective={(product) => {
+                  setRetryDialog(false);
+                  setDirectiveProduct(product || null);
+                  setDirectiveOpen(true);
+                }}
+                onEditRawMaterial={(material) => {
+                  setRetryDialog(false);
+                  setRawMaterialItem(material);
+                  setRawMaterialOpen(true);
+                }}
+              />
               {workQueue}
               {(d.supply_alerts || []).length > 0 && (
                 <VStack gap={3}>
@@ -1170,13 +1254,46 @@ export default function Today() {
           </LayoutContent>
         }
       />
+      {isNarrow && (
+        <FormDialog
+          isOpen={narrowAlarmOpen}
+          onOpenChange={setNarrowAlarmOpen}
+          title="Alarm bahan baku & arahan sales"
+        >
+          <VStack padding={4} gap={4}>
+            <DashboardAlarmPanel
+              inDialog
+              role={page.role}
+              rawMaterialAlerts={d.raw_material_alerts || []}
+              productTraction={d.product_traction || []}
+              onHide={() => setNarrowAlarmOpen(false)}
+              onEditRawMaterial={(material) => {
+                setNarrowAlarmOpen(false);
+                setRetryDialog(false);
+                setRawMaterialItem(material);
+                setRawMaterialOpen(true);
+              }}
+              onEditDirective={(product) => {
+                setNarrowAlarmOpen(false);
+                setRetryDialog(false);
+                setDirectiveProduct(product || null);
+                setDirectiveOpen(true);
+              }}
+            />
+          </VStack>
+        </FormDialog>
+      )}
       <FormDialog
-        isOpen={!!selected || target}
+        isOpen={!!selected || target || directiveOpen || rawMaterialOpen}
         onOpenChange={close}
         title={
           target
             ? "Atur target bulanan"
-            : selected?.reasons.customer_name || "Tinjau tindakan"
+            : directiveOpen
+              ? "Atur arahan bawaan sales"
+              : rawMaterialOpen
+                ? "Perbarui stok & alarm bahan baku"
+                : selected?.reasons.customer_name || "Tinjau tindakan"
         }
         footer={
           <HStack hAlign="end">
@@ -1186,14 +1303,116 @@ export default function Today() {
               variant="primary"
               isLoading={busy}
               label={
-                target ? "Simpan target" : recommendationSubmitLabel(outcome)
+                target
+                  ? "Simpan target"
+                  : directiveOpen
+                    ? "Simpan arahan bawaan"
+                    : rawMaterialOpen
+                      ? "Simpan bahan baku"
+                      : recommendationSubmitLabel(outcome)
               }
             />
           </HStack>
         }
       >
         <VStack padding={6} gap={6}>
-          {target ? (
+          {directiveOpen && d.directive_form_default ? (
+            <SimpleForm
+              spec={
+                retryDialog
+                  ? d.directive_form
+                  : {
+                      ...d.directive_form_default,
+                      fields: d.directive_form_default.fields.map((f: Row) =>
+                        f.key === "product_id" && directiveProduct
+                          ? { ...f, value: String(directiveProduct.product_id) }
+                          : f.key === "directive" && directiveProduct?.directive
+                            ? {
+                                ...f,
+                                value: String(directiveProduct.directive.code),
+                              }
+                            : f.key === "substitute_product_id" &&
+                                directiveProduct?.directive
+                              ? {
+                                  ...f,
+                                  value: String(
+                                    directiveProduct.directive.substitute_id ||
+                                      "",
+                                  ),
+                                }
+                              : f.key === "reason" &&
+                                  directiveProduct?.directive
+                                ? {
+                                    ...f,
+                                    value: String(
+                                      directiveProduct.directive.reason || "",
+                                    ),
+                                  }
+                                : f,
+                      ),
+                    }
+              }
+              id="dashboard-dialog-form"
+              hideSubmit
+              action={withReturn("/directives/save/", page.url)}
+              label="Simpan arahan bawaan"
+            />
+          ) : rawMaterialOpen && d.raw_material_form_default ? (
+            <SimpleForm
+              spec={
+                retryDialog
+                  ? d.raw_material_form
+                  : {
+                      ...d.raw_material_form_default,
+                      fields: d.raw_material_form_default.fields.map((f: Row) =>
+                        f.key === "material_id" && rawMaterialItem
+                          ? { ...f, value: String(rawMaterialItem.id) }
+                          : f.key === "on_hand" && rawMaterialItem
+                            ? { ...f, value: String(rawMaterialItem.on_hand) }
+                            : f.key === "min_threshold" && rawMaterialItem
+                              ? {
+                                  ...f,
+                                  value: String(rawMaterialItem.min_threshold),
+                                }
+                              : f.key === "fast_moving_threshold" &&
+                                  rawMaterialItem
+                                ? {
+                                    ...f,
+                                    value: String(
+                                      rawMaterialItem.fast_moving_threshold,
+                                    ),
+                                  }
+                                : f.key === "note" && rawMaterialItem
+                                  ? {
+                                      ...f,
+                                      value: String(rawMaterialItem.note || ""),
+                                    }
+                                  : f,
+                      ),
+                    }
+              }
+              onValuesChange={(
+                name,
+                value,
+              ): Record<string, string | boolean> => {
+                if (name !== "material_id") return {};
+                const found = (d.raw_material_alerts || []).find(
+                  (m: Row) => String(m.id) === String(value),
+                );
+                if (!found) return {};
+                return {
+                  on_hand: String(found.on_hand),
+                  min_threshold: String(found.min_threshold),
+                  fast_moving_threshold: String(found.fast_moving_threshold),
+                  note: String(found.note || ""),
+                };
+              }}
+              id="dashboard-dialog-form"
+              hideSubmit
+              action={withReturn("/raw-materials/save/", page.url)}
+              label="Simpan bahan baku"
+            />
+          ) : target ? (
             <SimpleForm
               spec={retryDialog ? d.target_form : d.target_form_default}
               onValuesChange={(

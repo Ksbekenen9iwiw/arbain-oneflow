@@ -28,7 +28,9 @@ import {
   Link,
   Status,
   SimpleForm,
+  FormDialog,
   dateLabel,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import { withReturn, backLabel } from "../navigation";
@@ -36,6 +38,8 @@ import type { Row } from "../types";
 
 export default function ActivityDetail() {
   const { page, busy } = useApp();
+  const { isNarrow, contentPadding } = useResponsive();
+  const [narrowPanelOpen, setNarrowPanelOpen] = useState(false);
   const d = page.data,
     activity = d.activity;
   const [panel, setPanel] = useState(true);
@@ -57,103 +61,112 @@ export default function ActivityDetail() {
         : "PLANNED";
   const relatedUrl = (id: string) =>
     withReturn(`/activities/${id}/complete/`, d.back_url);
-  return (
-    <Layout
-      height="fill"
-      contentWidth={1260}
-      defaultHasDividers
-      header={
-        <LayoutHeader padding={6}>
-          <VStack gap={3}>
-            <HStack gap={4} vAlign="center" justify="between">
-              <Link href={d.back_url} color="secondary">
-                ← {backLabel(d.back_url)}
-              </Link>
-              <IconButton
-                label={
-                  panel
-                    ? "Sembunyikan detail aktivitas"
-                    : "Tampilkan detail aktivitas"
-                }
-                icon={<Icon icon={ViewColumnsIcon} />}
-                variant="secondary"
-                aria-expanded={panel}
-                onClick={() => setPanel(!panel)}
-              />
+  const activityPanelContent = (
+    <VStack gap={6}>
+      <VStack gap={4}>
+        <Heading level={2}>Detail aktivitas</Heading>
+        <MetadataList label={{ position: "top" }}>
+          <MetadataListItem label="Penanggung jawab">
+            <HStack gap={2} vAlign="center">
+              <Avatar name={activity.sales.name} size="sm" />
+              <Text>{activity.sales.name}</Text>
             </HStack>
+          </MetadataListItem>
+          <MetadataListItem label="Tahap prospek tercatat">
+            {activity.stage}
+          </MetadataListItem>
+          <MetadataListItem label="Dibuat">
+            {dateLabel(activity.created_at, true)}
+          </MetadataListItem>
+          {activity.completed_at && (
+            <MetadataListItem label="Diselesaikan">
+              {dateLabel(activity.completed_at, true)}
+            </MetadataListItem>
+          )}
+        </MetadataList>
+      </VStack>
+      <Divider />
+      <VStack gap={4}>
+        <Heading level={2}>Pelanggan</Heading>
+        <MetadataList label={{ position: "top" }}>
+          <MetadataListItem label="Nama">
+            <Link href={customerUrl}>{d.customer.name}</Link>
+          </MetadataListItem>
+          <MetadataListItem label="Telepon">
+            {d.customer.phone || "Belum diisi"}
+          </MetadataListItem>
+          <MetadataListItem label="Alamat">
+            {d.customer.address || "Belum diisi"}
+          </MetadataListItem>
+        </MetadataList>
+        <Button
+          label="Lihat riwayat pelanggan"
+          variant="secondary"
+          href={customerUrl}
+        />
+      </VStack>
+    </VStack>
+  );
+  return (
+    <>
+      <Layout
+        height="fill"
+        contentWidth={1260}
+        defaultHasDividers
+        header={
+          <LayoutHeader padding={contentPadding}>
             <VStack gap={3}>
-              <HStack gap={3} vAlign="center" wrap="wrap">
-                <Heading level={1}>
-                  {activity.kind_label} · {d.customer.name}
-                </Heading>
-                <Status value={urgency} />
-              </HStack>
-              <Text type="supporting">
-                Aktivitas #{activity.id} ·{" "}
-                {due ? `Dijadwalkan ${dateLabel(due)}` : "Belum dijadwalkan"}
-              </Text>
-            </VStack>
-          </VStack>
-        </LayoutHeader>
-      }
-      end={
-        panel ? (
-          <LayoutPanel
-            width={340}
-            padding={6}
-            hasDivider
-            role="complementary"
-            aria-label="Detail aktivitas"
-          >
-            <VStack gap={6}>
-              <VStack gap={4}>
-                <Heading level={2}>Detail aktivitas</Heading>
-                <MetadataList label={{ position: "top" }}>
-                  <MetadataListItem label="Penanggung jawab">
-                    <HStack gap={2} vAlign="center">
-                      <Avatar name={activity.sales.name} size="sm" />
-                      <Text>{activity.sales.name}</Text>
-                    </HStack>
-                  </MetadataListItem>
-                  <MetadataListItem label="Tahap prospek tercatat">
-                    {activity.stage}
-                  </MetadataListItem>
-                  <MetadataListItem label="Dibuat">
-                    {dateLabel(activity.created_at, true)}
-                  </MetadataListItem>
-                  {activity.completed_at && (
-                    <MetadataListItem label="Diselesaikan">
-                      {dateLabel(activity.completed_at, true)}
-                    </MetadataListItem>
-                  )}
-                </MetadataList>
-              </VStack>
-              <Divider />
-              <VStack gap={4}>
-                <Heading level={2}>Pelanggan</Heading>
-                <MetadataList label={{ position: "top" }}>
-                  <MetadataListItem label="Nama">
-                    <Link href={customerUrl}>{d.customer.name}</Link>
-                  </MetadataListItem>
-                  <MetadataListItem label="Telepon">
-                    {d.customer.phone || "Belum diisi"}
-                  </MetadataListItem>
-                  <MetadataListItem label="Alamat">
-                    {d.customer.address || "Belum diisi"}
-                  </MetadataListItem>
-                </MetadataList>
-                <Button
-                  label="Lihat riwayat pelanggan"
+              <HStack gap={4} vAlign="center" justify="between" wrap="wrap">
+                <Link href={d.back_url} color="secondary">
+                  ← {backLabel(d.back_url)}
+                </Link>
+                <IconButton
+                  label={
+                    isNarrow
+                      ? "Tampilkan detail aktivitas"
+                      : panel
+                        ? "Sembunyikan detail aktivitas"
+                        : "Tampilkan detail aktivitas"
+                  }
+                  icon={<Icon icon={ViewColumnsIcon} />}
                   variant="secondary"
-                  href={customerUrl}
+                  aria-expanded={isNarrow ? narrowPanelOpen : panel}
+                  onClick={() => {
+                    if (isNarrow) setNarrowPanelOpen(true);
+                    else setPanel(!panel);
+                  }}
                 />
+              </HStack>
+              <VStack gap={2}>
+                <HStack gap={3} vAlign="center" wrap="wrap">
+                  <Heading level={1}>
+                    {activity.kind_label} · {d.customer.name}
+                  </Heading>
+                  <Status value={urgency} />
+                </HStack>
+                <Text type="supporting">
+                  Aktivitas #{activity.id} ·{" "}
+                  {due ? `Dijadwalkan ${dateLabel(due)}` : "Belum dijadwalkan"}
+                </Text>
               </VStack>
             </VStack>
-          </LayoutPanel>
-        ) : undefined
-      }
-      content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+          </LayoutHeader>
+        }
+        end={
+          !isNarrow && panel ? (
+            <LayoutPanel
+              width={340}
+              padding={6}
+              hasDivider
+              role="complementary"
+              aria-label="Detail aktivitas"
+            >
+              {activityPanelContent}
+            </LayoutPanel>
+          ) : undefined
+        }
+        content={
+          <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={6}>
             <VStack gap={3}>
               <Heading level={2}>Catatan aktivitas</Heading>
@@ -248,7 +261,7 @@ export default function ActivityDetail() {
       footer={
         !done ? (
           <LayoutFooter padding={4}>
-            <HStack gap={3} justify="end">
+            <HStack gap={3} justify="end" wrap="wrap">
               <Button
                 label="Batal"
                 href={d.back_url}
@@ -266,6 +279,18 @@ export default function ActivityDetail() {
           </LayoutFooter>
         ) : undefined
       }
-    />
+      />
+      {isNarrow && (
+        <FormDialog
+          isOpen={narrowPanelOpen}
+          onOpenChange={setNarrowPanelOpen}
+          title={`Detail aktivitas · ${d.customer.name}`}
+        >
+          <VStack padding={4} gap={4}>
+            {activityPanelContent}
+          </VStack>
+        </FormDialog>
+      )}
+    </>
   );
 }

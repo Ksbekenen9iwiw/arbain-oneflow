@@ -18,6 +18,7 @@ import {
   Button,
   Banner,
   ServerForm,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import type { Field } from "../types";
@@ -36,6 +37,7 @@ const coverStyle: CSSProperties = {
 
 export default function Login() {
   const { page, busy, submit, clearDirty } = useApp();
+  const { isMobile } = useResponsive();
   const initialUsername = String(
     page.data.form.fields.find((field: Field) => field.name === "username")
       ?.value || "",
@@ -121,18 +123,22 @@ export default function Login() {
 
   return (
     <Grid
-      columns={{ minWidth: 360, repeat: "fit", max: 2 }}
+      columns={{ minWidth: 320, repeat: "fit", max: 2 }}
       gap={6}
       align="stretch"
       style={
         {
-          padding: "var(--spacing-6)",
+          padding: isMobile ? "var(--spacing-4)" : "var(--spacing-6)",
           minHeight: "100dvh",
           "--size-element-lg": "calc(var(--spacing-12) + var(--spacing-2))",
         } as CSSProperties
       }
     >
-      <VStack gap={8} padding={6} minHeight="calc(100dvh - var(--spacing-12))">
+      <VStack
+        gap={8}
+        padding={isMobile ? 2 : 6}
+        minHeight={isMobile ? "auto" : "calc(100dvh - var(--spacing-12))"}
+      >
         <HStack gap={2} vAlign="center">
           <Icon icon={CubeIcon} />
           <Text weight="bold" size="xl">
@@ -295,7 +301,7 @@ export default function Login() {
       <Card
         variant="transparent"
         padding={0}
-        minHeight="38rem"
+        minHeight={isMobile ? "18rem" : "38rem"}
         style={{ position: "relative", overflow: "hidden" }}
       >
         <img
@@ -307,14 +313,14 @@ export default function Login() {
         />
         <VStack
           gap={4}
-          padding={10}
+          padding={isMobile ? 6 : 10}
           height="100%"
           style={{
             position: "relative",
             color: "var(--color-on-dark)",
             background:
               "linear-gradient(180deg, color-mix(in srgb, var(--color-on-light) 74%, transparent), color-mix(in srgb, var(--color-on-light) 30%, transparent) 40%, transparent 65%)",
-            paddingTop: "clamp(3rem, 9vh, 7rem)",
+            paddingTop: "clamp(2rem, 8vh, 7rem)",
           }}
         >
           <Heading

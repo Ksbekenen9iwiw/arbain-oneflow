@@ -58,7 +58,7 @@ export default function ShipmentTrend({
   }));
   return (
     <VStack gap={2} ref={chartRef}>
-      <HStack hAlign="between" gap={2} vAlign="center">
+      <HStack hAlign="between" gap={2} vAlign="center" wrap="wrap">
         <Heading level={3} accessibilityLevel={2}>
           Nilai barang terkirim
         </Heading>
@@ -73,7 +73,7 @@ export default function ShipmentTrend({
           <SegmentedControlItem value="month" label="Bulan ini" />
         </SegmentedControl>
       </HStack>
-      <HStack gap={2} vAlign="center">
+      <HStack gap={2} vAlign="center" wrap="wrap">
         <Text size="2xl" weight="semibold" hasTabularNumbers>
           {money(String(total))}
         </Text>

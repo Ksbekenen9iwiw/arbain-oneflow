@@ -30,11 +30,19 @@ import {
   ChevronRightIcon,
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
-import { VStack, HStack, Text, Banner, ServerForm } from "../ui";
+import {
+  VStack,
+  HStack,
+  Text,
+  Banner,
+  ServerForm,
+  useResponsive,
+} from "../ui";
 import { useApp } from "../router";
 import Walkthrough, { canStartTour } from "../Walkthrough";
 export default function Shell({ children }: { children: ReactNode }) {
   const { page, revision, busy, issue, requestKind, leaveAndSubmit } = useApp();
+  const { isMobile } = useResponsive();
   const [tourRequest, setTourRequest] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
   const lastPath = useRef(page.url.split("?")[0]);
@@ -121,17 +129,18 @@ export default function Shell({ children }: { children: ReactNode }) {
       <AppShell
         contentPadding={0}
         height="fill"
+        mobileNav={{ breakpoint: "md" }}
         sideNav={
           <SideNav
             id="workspace-navigation"
             collapsible={{
-              isCollapsed,
+              isCollapsed: !isMobile && isCollapsed,
               onCollapsedChange: changeCollapsed,
               hasButton: false,
             }}
-            resizable
+            resizable={!isMobile}
             header={
-              isCollapsed ? (
+              !isMobile && isCollapsed ? (
                 <VStack gap={2} hAlign="center">
                   {collapseButton}
                   <SideNavHeading
@@ -150,12 +159,12 @@ export default function Shell({ children }: { children: ReactNode }) {
                       icon={<NavIcon icon={<Icon icon={CubeIcon} />} />}
                     />
                   </StackItem>
-                  <StackItem>{collapseButton}</StackItem>
+                  {!isMobile && <StackItem>{collapseButton}</StackItem>}
                 </HStack>
               )
             }
             footer={
-              isCollapsed ? (
+              !isMobile && isCollapsed ? (
                 <VStack gap={3} hAlign="center" paddingBlock={2}>
                   <Avatar
                     name={accountName}

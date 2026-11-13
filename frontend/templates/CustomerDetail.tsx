@@ -1,6 +1,6 @@
 import { Collapsible } from "@astryxdesign/core/Collapsible";
-import { useEffect } from "react";
-import { ProductThumbnail } from "../ProductIdentity";
+import { useEffect, useState } from "react";
+import { ProductIdentity, ProductThumbnail } from "../ProductIdentity";
 import { MotionPanel } from "../motion";
 import { MotionStack } from "../motion";
 import { withReturn, backLabel } from "../navigation";
@@ -8,6 +8,7 @@ import { withReturn, backLabel } from "../navigation";
 // Astryx detail-page frame: record header, chronological List, and context rail.
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Grid } from "@astryxdesign/core/Grid";
+import { Card } from "@astryxdesign/core/Card";
 import { TabList, Tab } from "@astryxdesign/core/TabList";
 import {
   SegmentedControl,
@@ -29,21 +30,30 @@ import {
   money,
   quantity,
   Banner,
+  DataTable,
+  SimpleForm,
+  FormDialog,
+  useResponsive,
 } from "../ui";
 import { useApp, useQueryState } from "../router";
 import { OrderTable } from "./Records";
 import type { Row } from "../types";
 
 export default function CustomerDetail() {
-  const { page } = useApp();
+  const { page, busy } = useApp();
+  const { isNarrow, contentPadding } = useResponsive();
+  const [narrowInfoOpen, setNarrowInfoOpen] = useState(false);
   const d = page.data,
     customer = d.customer;
   const [requestedTab, setTab] = useQueryState("tab", "history");
-  const tab = ["orders", "samples"].includes(requestedTab)
+  const tab = ["orders", "samples", "consignment"].includes(requestedTab)
     ? requestedTab
     : "history";
+  const [consignOpen, setConsignOpen] = useState(d.dialog === "consignment");
+  const [consignRetry, setConsignRetry] = useState(d.dialog === "consignment");
+  const [selectedProductId, setSelectedProductId] = useState("");
   useEffect(() => {
-    if (!["samples", "orders"].includes(requestedTab)) return;
+    if (!["samples", "orders", "consignment"].includes(requestedTab)) return;
     const frame = requestAnimationFrame(() => {
       document
         .getElementById("customer-history")
@@ -105,62 +115,84 @@ export default function CustomerDetail() {
   };
   const activityTiming = (a: Row) =>
     `${a.completed_at ? "Hasil disimpan" : "Dicatat"} ${dateLabel(a.completed_at || a.created_at, true)} WIB`;
+  const customerInfoFacts = (
+    <VStack gap={4}>
+      <Fact label="Penanggung jawab">{customer.owner.name}</Fact>
+      <Fact label="Kategori mitra & potongan harga">
+        {customer.outlet_type_label || "Apotek"} · Diskon{" "}
+        {customer.discount_percent ?? 16}%
+      </Fact>
+      <Fact label="Tahap terakhir dicatat">
+        {d.latest_stage || "Belum ada aktivitas"}
+      </Fact>
+      <Fact label="Telepon">{customer.phone || "Belum diisi"}</Fact>
+      <Fact label="Alamat">{customer.address || "Belum diisi"}</Fact>
+    </VStack>
+  );
   return (
-    <Layout
-      height="fill"
-      defaultHasDividers
-      header={
-        <PageHeader
-          title={customer.name}
-          description={`${customer.code} · ${customer.is_active ? "Aktif" : "Nonaktif"}`}
-          back={{ href: d.back_url, label: backLabel(d.back_url) }}
-          actions={
-            <HStack gap={2}>
-              <Button
-                label="Catat aktivitas"
-                variant="primary"
-                href={activityUrl}
-              />
-              {customer.is_active && (
-                <>
-                  <Button label="Buat pesanan" href={orderUrl} />
-                  <Button
-                    label="Ajukan sampel"
-                    href={withReturn(
-                      `/samples/new/?customer=${customer.id}`,
-                      page.url,
-                    )}
-                  />
-                </>
-              )}
-            </HStack>
-          }
-        />
-      }
-      end={
-        panel ? (
-          <MotionPanel width="17rem" padding={4}>
-            <VStack gap={6}>
-              <HStack hAlign="between" vAlign="center">
-                <Heading level={2}>Informasi</Heading>
+    <>
+      <Layout
+        height="fill"
+        defaultHasDividers
+        header={
+          <PageHeader
+            title={customer.name}
+            description={`${customer.code} · ${customer.is_active ? "Aktif" : "Nonaktif"}`}
+            back={{ href: d.back_url, label: backLabel(d.back_url) }}
+            actions={
+              <HStack gap={2} wrap="wrap">
                 <Button
-                  variant="secondary"
-                  label="Sembunyikan"
-                  onClick={() => setPanel(false)}
+                  label="Catat aktivitas"
+                  variant="primary"
+                  href={activityUrl}
                 />
+                {d.consignment_form_default && (
+                  <Button
+                    label="Catat titip jual"
+                    variant="secondary"
+                    onClick={() => {
+                      setConsignRetry(false);
+                      setSelectedProductId("");
+                      setConsignOpen(true);
+                    }}
+                  />
+                )}
+                {customer.is_active && (
+                  <>
+                    <Button label="Buat pesanan" href={orderUrl} />
+                    <Button
+                      label="Ajukan sampel"
+                      href={withReturn(
+                        `/samples/new/?customer=${customer.id}`,
+                        page.url,
+                      )}
+                    />
+                  </>
+                )}
               </HStack>
-              <Fact label="Penanggung jawab">{customer.owner.name}</Fact>
-              <Fact label="Tahap terakhir dicatat">
-                {d.latest_stage || "Belum ada aktivitas"}
-              </Fact>
-              <Fact label="Telepon">{customer.phone || "Belum diisi"}</Fact>
-              <Fact label="Alamat">{customer.address || "Belum diisi"}</Fact>
-            </VStack>
-          </MotionPanel>
-        ) : undefined
-      }
-      content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+            }
+          />
+        }
+        end={
+          !isNarrow && panel ? (
+            <MotionPanel width="18rem" padding={4}>
+              <VStack gap={5}>
+                <HStack hAlign="between" vAlign="center">
+                  <Heading level={2}>Informasi</Heading>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    label="Sembunyikan"
+                    onClick={() => setPanel(false)}
+                  />
+                </HStack>
+                {customerInfoFacts}
+              </VStack>
+            </MotionPanel>
+          ) : undefined
+        }
+        content={
+          <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={6}>
             {!customer.is_active && (
               <Banner
@@ -227,107 +259,118 @@ export default function CustomerDetail() {
               </List>
             </VStack>
             <VStack gap={4} data-tour="customer-overview">
-              <HStack hAlign="between" vAlign="center">
+              <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
                 <Heading level={2}>Ringkasan pelanggan</Heading>
-                {!panel && (
+                {(isNarrow || !panel) && (
                   <Button
                     label="Tampilkan informasi"
                     variant="secondary"
-                    onClick={() => setPanel(true)}
+                    size="sm"
+                    onClick={() => {
+                      if (isNarrow) setNarrowInfoOpen(true);
+                      else setPanel(true);
+                    }}
                   />
                 )}
               </HStack>
-              <Grid columns={2} gap={6}>
-                <VStack gap={2}>
-                  <Text type="supporting">Hasil aktivitas terakhir</Text>
-                  {last ? (
-                    <>
-                      <Text weight="semibold">
-                        {last.kind_label} · {last.stage}
-                      </Text>
-                      <Text maxLines={2}>{last.result}</Text>
-                      <Text type="supporting">{activityTiming(last)}</Text>
-                      <HStack>
-                        <Button
-                          label="Baca hasil aktivitas"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => showHistory(last.id)}
-                        />
-                      </HStack>
-                    </>
-                  ) : (
-                    <>
-                      <Text>Belum ada aktivitas yang diselesaikan</Text>
-                      <HStack>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          label="Catat hasil komunikasi"
-                          href={withReturn(
-                            `/customers/${customer.id}/activities/new/?intent=done`,
-                            page.url,
-                          )}
-                        />
-                      </HStack>
-                    </>
-                  )}
-                </VStack>
-                <VStack gap={2}>
-                  <Text type="supporting">Pesanan terbaru dibuat</Text>
-                  {latestOrder ? (
-                    <>
-                      <HStack gap={2} wrap="wrap">
-                        <Link
-                          href={withReturn(
-                            `/orders/${latestOrder.id}/`,
-                            page.url,
-                          )}
-                          weight="semibold"
-                        >
-                          {latestOrder.number}
-                        </Link>
-                        <Status value={latestOrder.status} />
-                      </HStack>
-                      <Text>
-                        {money(latestOrder.total)} ·{" "}
-                        {dateLabel(latestOrder.created_at)}
-                      </Text>
-                      <Text type="supporting">
-                        {d.pending_order_count} pesanan menunggu pengiriman
-                      </Text>
-                      <HStack>
-                        <Button
-                          label={`Lihat pesanan (${d.orders.length})`}
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            setTab("orders");
-                            requestAnimationFrame(() =>
-                              document
-                                .getElementById("customer-history")
-                                ?.scrollIntoView({ block: "start" }),
-                            );
-                          }}
-                        />
-                      </HStack>
-                    </>
-                  ) : (
-                    <>
-                      <Text>Belum ada pesanan dalam cakupan akun ini</Text>
-                      {customer.is_active && (
+              <Grid
+                columns={{ minWidth: 260, repeat: "fit", max: 2 }}
+                gap={4}
+              >
+                <Card padding={4}>
+                  <VStack gap={2}>
+                    <Text type="supporting">Hasil aktivitas terakhir</Text>
+                    {last ? (
+                      <>
+                        <Text weight="semibold">
+                          {last.kind_label} · {last.stage}
+                        </Text>
+                        <Text maxLines={2}>{last.result}</Text>
+                        <Text type="supporting">{activityTiming(last)}</Text>
+                        <HStack>
+                          <Button
+                            label="Baca hasil aktivitas"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => showHistory(last.id)}
+                          />
+                        </HStack>
+                      </>
+                    ) : (
+                      <>
+                        <Text>Belum ada aktivitas yang diselesaikan</Text>
                         <HStack>
                           <Button
                             size="sm"
                             variant="secondary"
-                            href={orderUrl}
-                            label="Buat pesanan"
+                            label="Catat hasil komunikasi"
+                            href={withReturn(
+                              `/customers/${customer.id}/activities/new/?intent=done`,
+                              page.url,
+                            )}
                           />
                         </HStack>
-                      )}
-                    </>
-                  )}
-                </VStack>
+                      </>
+                    )}
+                  </VStack>
+                </Card>
+                <Card padding={4}>
+                  <VStack gap={2}>
+                    <Text type="supporting">Pesanan terbaru dibuat</Text>
+                    {latestOrder ? (
+                      <>
+                        <HStack gap={2} wrap="wrap">
+                          <Link
+                            href={withReturn(
+                              `/orders/${latestOrder.id}/`,
+                              page.url,
+                            )}
+                            weight="semibold"
+                          >
+                            {latestOrder.number}
+                          </Link>
+                          <Status value={latestOrder.status} />
+                        </HStack>
+                        <Text>
+                          {money(latestOrder.total)} ·{" "}
+                          {dateLabel(latestOrder.created_at)}
+                        </Text>
+                        <Text type="supporting">
+                          {d.pending_order_count} pesanan menunggu pengiriman
+                        </Text>
+                        <HStack>
+                          <Button
+                            label={`Lihat pesanan (${d.orders.length})`}
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              setTab("orders");
+                              requestAnimationFrame(() =>
+                                document
+                                  .getElementById("customer-history")
+                                  ?.scrollIntoView({ block: "start" }),
+                              );
+                            }}
+                          />
+                        </HStack>
+                      </>
+                    ) : (
+                      <>
+                        <Text>Belum ada pesanan dalam cakupan akun ini</Text>
+                        {customer.is_active && (
+                          <HStack>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              href={orderUrl}
+                              label="Buat pesanan"
+                            />
+                          </HStack>
+                        )}
+                      </>
+                    )}
+                  </VStack>
+                </Card>
               </Grid>
             </VStack>
             <VStack gap={3} id="customer-reorder">
@@ -510,8 +553,274 @@ export default function CustomerDetail() {
                   label={`Sampel (${(d.samples || []).length})`}
                   panelId="customer-samples-panel"
                 />
+                <Tab
+                  value="consignment"
+                  label={`Titip jual (${(d.consignment?.items || []).length})`}
+                  panelId="customer-consignment-panel"
+                />
               </TabList>
-              {tab === "samples" ? (
+              {tab === "consignment" ? (
+                <MotionStack
+                  motionKey={tab}
+                  id="customer-consignment-panel"
+                  role="tabpanel"
+                  aria-label="Stok titip jual di apotek"
+                  gap={4}
+                >
+                  {(d.carry_directives || []).some(
+                    (item: Row) => item.directive,
+                  ) && (
+                    <Banner
+                      status="warning"
+                      title="Arahan bawaan manajer untuk kunjungan apotek"
+                      description={(d.carry_directives || [])
+                        .filter((item: Row) => item.directive)
+                        .map(
+                          (item: Row) =>
+                            `${item.name} (${item.directive.label}): ${item.directive.reason}${item.directive.substitute_name ? ` → Ganti bawa ${item.directive.substitute_name}` : ""}`,
+                        )
+                        .join(" · ")}
+                    />
+                  )}
+                  <HStack
+                    hAlign="between"
+                    vAlign="center"
+                    wrap="wrap"
+                    gap={3}
+                  >
+                    <Text type="supporting">
+                      Stok titip jual di {customer.name} (
+                      {customer.outlet_type_label || "Apotek"} · Diskon mitra{" "}
+                      {customer.discount_percent ?? 16}% ·{" "}
+                      {quantity(d.consignment?.total_on_display || 0)} unit
+                      aktif, {quantity(d.consignment?.total_sold || 0)} unit
+                      terjual
+                      {Number(d.consignment?.deferred_billing_rupiah || 0) > 0
+                        ? ` · Tagihan tunda: ${money(d.consignment.deferred_billing_rupiah)}`
+                        : ""}
+                      ).
+                    </Text>
+                    {d.consignment_form_default && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        label="Catat kunjungan titip jual"
+                        onClick={() => {
+                          setConsignRetry(false);
+                          setSelectedProductId("");
+                          setConsignOpen(true);
+                        }}
+                      />
+                    )}
+                  </HStack>
+                  <DataTable
+                    rows={d.consignment?.items || []}
+                    empty={
+                      <Empty
+                        title="Belum ada stok titip jual di apotek ini"
+                        description="Catat penempatan barang titip jual pertama saat kunjungan sales."
+                        action={
+                          d.consignment_form_default ? (
+                            <Button
+                              label="Catat titip jual pertama"
+                              onClick={() => {
+                                setConsignRetry(false);
+                                setSelectedProductId("");
+                                setConsignOpen(true);
+                              }}
+                            />
+                          ) : undefined
+                        }
+                      />
+                    }
+                    columns={[
+                      {
+                        key: "name",
+                        header: "Produk",
+                        renderCell: (item: Row) => (
+                          <ProductIdentity
+                            sku={item.sku}
+                            name={item.name}
+                            size="row"
+                          >
+                            <VStack gap={1}>
+                              <Text weight="semibold">{item.name}</Text>
+                              <Text type="supporting">{item.sku}</Text>
+                            </VStack>
+                          </ProductIdentity>
+                        ),
+                      },
+                      {
+                        key: "quantity_on_display",
+                        header: "Stok di Apotek",
+                        align: "end",
+                        renderCell: (item: Row) => (
+                          <Text weight="semibold" hasTabularNumbers>
+                            {quantity(item.quantity_on_display)} {item.unit}
+                          </Text>
+                        ),
+                      },
+                      {
+                        key: "total_sold",
+                        header: "Total Laku",
+                        align: "end",
+                        renderCell: (item: Row) => (
+                          <VStack gap={1} hAlign="end">
+                            <Text hasTabularNumbers>
+                              {quantity(item.total_sold)} {item.unit}
+                            </Text>
+                            <Text type="supporting">
+                              Perputaran {item.sell_through_pct}%
+                            </Text>
+                          </VStack>
+                        ),
+                      },
+                      {
+                        key: "status",
+                        header: "Kondisi, ED & Arahan",
+                        renderCell: (item: Row) => (
+                          <VStack gap={1}>
+                            <HStack gap={2} wrap="wrap">
+                              {item.is_near_expiry && (
+                                <Status
+                                  value="NEAR_EXPIRY"
+                                  label="Wajib tarik ≤ 6 bln ED"
+                                />
+                              )}
+                              {item.is_weak ? (
+                                <Status
+                                  value="SLOW"
+                                  label="Kurang laku di sini"
+                                />
+                              ) : (
+                                <Status value="SAFE" label="Bergerak baik" />
+                              )}
+                              {item.directive_code && (
+                                <Status
+                                  value={item.directive_code}
+                                  label={item.directive_label}
+                                />
+                              )}
+                            </HStack>
+                            {item.nearest_expiry_date && (
+                              <Text type="supporting">
+                                ED terdekat:{" "}
+                                {dateLabel(item.nearest_expiry_date)}
+                              </Text>
+                            )}
+                          </VStack>
+                        ),
+                      },
+                      {
+                        key: "last_checked_date",
+                        header: "Cek Terakhir",
+                        renderCell: (item: Row) => (
+                          <Text>
+                            {item.last_checked_date
+                              ? dateLabel(item.last_checked_date)
+                              : "—"}
+                          </Text>
+                        ),
+                      },
+                      ...(d.consignment_form_default
+                        ? [
+                            {
+                              key: "action",
+                              header: "Tindakan",
+                              renderCell: (item: Row) => (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  label="Cek / isi ulang"
+                                  onClick={() => {
+                                    setConsignRetry(false);
+                                    setSelectedProductId(
+                                      String(item.product_id),
+                                    );
+                                    setConsignOpen(true);
+                                  }}
+                                />
+                              ),
+                            },
+                          ]
+                        : []),
+                    ]}
+                  />
+                  {(d.consignment?.recent_entries || []).length > 0 && (
+                    <VStack gap={3}>
+                      <Heading level={3}>
+                        Riwayat pengecekan & mutasi titip jual
+                      </Heading>
+                      <List hasDividers density="balanced">
+                        {(d.consignment?.recent_entries || []).map(
+                          (entry: Row) => (
+                            <ListItem
+                              key={entry.id}
+                              label={`${entry.product_name} (${entry.product_sku}) · ${dateLabel(entry.visit_date)}`}
+                              description={
+                                  <VStack gap={2}>
+                                    <HStack gap={2} wrap="wrap" vAlign="center">
+                                      {entry.billing_status && (
+                                        <Status
+                                          value={entry.billing_status}
+                                          label={entry.billing_status_label}
+                                        />
+                                      )}
+                                      {Number(entry.net_billed_rupiah) > 0 && (
+                                        <Text weight="semibold" hasTabularNumbers>
+                                          Tagihan bersih:{" "}
+                                          {money(entry.net_billed_rupiah)}{" "}
+                                          (diskon {entry.discount_percent}%)
+                                        </Text>
+                                      )}
+                                      {entry.return_reason &&
+                                        entry.return_reason !== "NONE" && (
+                                          <Status
+                                            value={entry.return_reason}
+                                            label={entry.return_reason_label}
+                                          />
+                                        )}
+                                    </HStack>
+                                    <Text>
+                                      Stok awal {quantity(entry.previous_stock)}{" "}
+                                      {entry.unit} → laku{" "}
+                                      <Text weight="semibold" hasTabularNumbers>
+                                        {quantity(entry.sold_quantity)}{" "}
+                                        {entry.unit}
+                                      </Text>
+                                      , sisa fisik{" "}
+                                      {quantity(entry.remaining_stock)}{" "}
+                                      {entry.unit}
+                                      {Number(entry.added_quantity) > 0
+                                        ? `, +titip baru ${quantity(entry.added_quantity)} ${entry.unit}`
+                                        : ""}
+                                      {Number(entry.returned_quantity) > 0
+                                        ? `, ditarik ${quantity(entry.returned_quantity)} ${entry.unit}`
+                                        : ""}{" "}
+                                      → stok akhir{" "}
+                                      <Text weight="semibold" hasTabularNumbers>
+                                        {quantity(entry.closing_stock)}{" "}
+                                        {entry.unit}
+                                      </Text>
+                                      .
+                                    </Text>
+                                    <Text type="supporting">
+                                      Sales: {entry.sales_name}
+                                      {entry.physical_stamp_verified
+                                        ? " · Cap & TTD apotek lengkap"
+                                        : ""}
+                                      {entry.note ? ` · ${entry.note}` : ""}
+                                    </Text>
+                                  </VStack>
+                              }
+                            />
+                          ),
+                        )}
+                      </List>
+                    </VStack>
+                  )}
+                </MotionStack>
+              ) : tab === "samples" ? (
                 <MotionStack
                   motionKey={tab}
                   id="customer-samples-panel"
@@ -829,5 +1138,153 @@ export default function CustomerDetail() {
         </LayoutContent>
       }
     />
+      {isNarrow && (
+        <FormDialog
+          isOpen={narrowInfoOpen}
+          onOpenChange={setNarrowInfoOpen}
+          title={`Informasi · ${customer.name}`}
+        >
+          <VStack padding={4} gap={4}>
+            {customerInfoFacts}
+          </VStack>
+        </FormDialog>
+      )}
+      {d.consignment_form_default && (
+        <FormDialog
+          isOpen={consignOpen}
+          onOpenChange={(open) => {
+            if (!open && !busy) {
+              setConsignOpen(false);
+              setConsignRetry(false);
+            }
+          }}
+          title={`Catat kunjungan titip jual · ${customer.name}`}
+          footer={
+            <HStack hAlign="end">
+              <Button
+                form="customer-consignment-form"
+                type="submit"
+                variant="primary"
+                isLoading={busy}
+                label="Simpan kunjungan titip jual"
+              />
+            </HStack>
+          }
+        >
+          <VStack padding={6} gap={4}>
+            <Text color="secondary">
+              Catat hasil pemeriksaan fisik barang titip jual di apotek. Sistem
+              otomatis memperbarui saldo stok apotek, memotong/mengembalikan
+              stok gudang, dan mencatat presensi kunjungan harian Anda.
+            </Text>
+            <SimpleForm
+              spec={
+                consignRetry
+                  ? d.consignment_form
+                  : {
+                      ...d.consignment_form_default,
+                      fields: d.consignment_form_default.fields.map((f: Row) => {
+                        const existing = (d.consignment?.items || []).find(
+                          (i: Row) =>
+                            String(i.product_id) === String(selectedProductId),
+                        );
+                        if (f.key === "product_id" && selectedProductId)
+                          return { ...f, value: selectedProductId };
+                        if (f.key === "remaining_stock" && existing)
+                          return {
+                            ...f,
+                            value: String(existing.quantity_on_display),
+                          };
+                        return f;
+                      }),
+                    }
+              }
+              onValuesChange={(
+                name,
+                value,
+                values,
+              ): Record<string, string | boolean> => {
+                if (name === "product_id") {
+                  const found = (d.consignment?.items || []).find(
+                    (i: Row) => String(i.product_id) === String(value),
+                  );
+                  return {
+                    sold_quantity: "0",
+                    remaining_stock: found
+                      ? String(found.quantity_on_display)
+                      : "0",
+                  };
+                }
+                if (name === "sold_quantity") {
+                  const found = (d.consignment?.items || []).find(
+                    (i: Row) =>
+                      String(i.product_id) === String(values.product_id),
+                  );
+                  if (!found) return {};
+                  const prev = Number(found.quantity_on_display || 0);
+                  const sold = Math.max(0, Number(value || 0));
+                  return {
+                    remaining_stock: String(Math.max(0, prev - sold)),
+                  };
+                }
+                return {};
+              }}
+              preview={(values) => {
+                const found = (d.consignment?.items || []).find(
+                  (i: Row) =>
+                    String(i.product_id) === String(values.product_id),
+                );
+                const directive = (d.carry_directives || []).find(
+                  (item: Row) =>
+                    String(item.product_id) === String(values.product_id) &&
+                    item.directive,
+                );
+                const prev = Number(found?.quantity_on_display || 0);
+                const sold = Number(values.sold_quantity || 0);
+                const rem = Number(values.remaining_stock || 0);
+                const added = Number(values.added_quantity || 0);
+                const ret = Number(values.returned_quantity || 0);
+                const closing = Math.max(0, rem - ret + added);
+                const unitPrice = Number(found?.price_rupiah || 0);
+                const discountPct = Number(customer.discount_percent ?? 16);
+                const grossRp = sold * unitPrice;
+                const netRp =
+                  sold > 2
+                    ? Math.floor((grossRp * (100 - discountPct)) / 100)
+                    : 0;
+                return (
+                  <VStack gap={3}>
+                    {directive && (
+                      <Banner
+                        status={
+                          directive.directive.code === "STOP"
+                            ? "error"
+                            : "warning"
+                        }
+                        title={`Arahan Manajer (${directive.directive.label})`}
+                        description={`${directive.directive.reason}${directive.directive.substitute_name ? ` · Produk pengganti: ${directive.directive.substitute_name}` : ""}`}
+                      />
+                    )}
+                    <Fact label="Ringkasan perubahan stok apotek">
+                      Stok awal di apotek: {quantity(prev)} → Stok akhir setelah
+                      kunjungan: {quantity(closing)} unit.
+                    </Fact>
+                    <Fact label="Aturan tagihan titip jual (> 2 item) & diskon mitra">
+                      {sold <= 2
+                        ? `Terjual ${quantity(sold)} item (≤ 2 item): Belum ditagih pada kunjungan ini (menunggu akumulasi kunjungan berikutnya).`
+                        : `Terjual ${quantity(sold)} item (> 2 item): Wajib ditagih · Diskon ${customer.outlet_type_label || "Apotek"} ${discountPct}%${unitPrice > 0 ? ` → Tagihan bersih ${money(netRp)}` : ""}.`}
+                    </Fact>
+                  </VStack>
+                );
+              }}
+              id="customer-consignment-form"
+              hideSubmit
+              action={`/customers/${customer.id}/consignment/`}
+              label="Simpan kunjungan titip jual"
+            />
+          </VStack>
+        </FormDialog>
+      )}
+    </>
   );
 }

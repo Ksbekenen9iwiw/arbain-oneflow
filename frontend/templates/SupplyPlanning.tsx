@@ -44,7 +44,7 @@ export default function SupplyPlanning({
         }}
       >
         <FilterRow>
-          <StackItem size="fill">
+          <StackItem size="fill" style={{ minWidth: "14rem" }}>
             <TextInput
               label="Cari produk"
               placeholder="Nama produk atau SKU"

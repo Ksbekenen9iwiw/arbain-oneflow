@@ -36,6 +36,7 @@ import {
   dateLabel,
   money,
   quantity,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import type { Row } from "../types";
@@ -48,6 +49,7 @@ export const orderLabels: Record<string, string> = {
 export const orderContext = withReturn;
 export default function Orders() {
   const { page, navigate, busy, refreshing } = useApp();
+  const { contentPadding } = useResponsive();
   const d = page.data;
   const back = listReturn(page.url);
   const resetUrl = back ? withReturn("/orders/", back) : "/orders/";
@@ -250,7 +252,7 @@ export default function Orders() {
         />
       }
       content={
-        <LayoutContent padding={6} data-oneflow-scroll>
+        <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={4}>
             <TabList
               hasDivider
@@ -282,7 +284,7 @@ export default function Orders() {
             >
               <VStack gap={3}>
                 <FilterRow>
-                  <StackItem size="fill">
+                  <StackItem size="fill" style={{ minWidth: "14rem" }}>
                     <TextInput
                       label="Cari pesanan"
                       startIcon="search"

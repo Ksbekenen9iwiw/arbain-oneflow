@@ -43,12 +43,15 @@ import {
   FormDialog,
   ServerForm,
   Banner,
+  useResponsive,
 } from "../ui";
 import { useApp } from "../router";
 import { orderContext, orderLabels } from "./Orders";
 import type { Row } from "../types";
 export default function Detail() {
   const { page, busy, navigate, clearDirty } = useApp();
+  const { isNarrow, contentPadding } = useResponsive();
+  const [narrowPanelOpen, setNarrowPanelOpen] = useState(false);
   const d = page.data,
     order = d.order;
   const [dialog, setDialog] = useState(d.dialog || ""),
@@ -94,6 +97,54 @@ export default function Detail() {
         })),
       )
     : [];
+  const customerPanelContent = (
+    <VStack gap={6}>
+      <VStack gap={4}>
+        <Heading level={2}>Pelanggan</Heading>
+        <MetadataList label={{ position: "top" }}>
+          <MetadataListItem label="Nama">
+            {page.role === "WAREHOUSE" ? (
+              order.customer.name
+            ) : (
+              <Link
+                href={withReturn(
+                  `/customers/${order.customer.id}/`,
+                  page.url,
+                )}
+                weight="medium"
+              >
+                {order.customer.name}
+              </Link>
+            )}
+          </MetadataListItem>
+          <MetadataListItem label="Kontak pemenuhan">
+            {order.customer.phone || "Nomor belum diisi"}
+          </MetadataListItem>
+          <MetadataListItem label="Alamat pengiriman">
+            {order.customer.address || "Alamat belum diisi"}
+          </MetadataListItem>
+        </MetadataList>
+      </VStack>
+      <Divider />
+      <VStack gap={4}>
+        <Heading level={2}>Penanggung jawab</Heading>
+        <HStack gap={2} vAlign="center">
+          <Avatar name={order.sales.name} size="sm" />
+          <Text>{order.sales.name}</Text>
+        </HStack>
+        {page.role !== "WAREHOUSE" && (
+          <Button
+            label="Pesanan pelanggan"
+            variant="secondary"
+            href={withReturn(
+              `/customers/${order.customer.id}/?tab=orders`,
+              page.url,
+            )}
+          />
+        )}
+      </VStack>
+    </VStack>
+  );
   return (
     <>
       <Layout
@@ -101,14 +152,14 @@ export default function Detail() {
         contentWidth={1000}
         defaultHasDividers
         header={
-          <LayoutHeader padding={6}>
+          <LayoutHeader padding={contentPadding}>
             <VStack gap={3}>
               <Link href={d.back_url} color="secondary">
                 ← {backLabel(d.back_url)}
               </Link>
               <HStack gap={4} hAlign="between" vAlign="center" wrap="wrap">
                 <StackItem size="fill">
-                  <VStack gap={2}>
+                  <VStack gap={1}>
                     <HStack gap={3} vAlign="center" wrap="wrap">
                       <Heading level={1}>{order.number}</Heading>
                       <Status
@@ -165,14 +216,19 @@ export default function Detail() {
                   )}
                   <IconButton
                     label={
-                      panel
-                        ? "Sembunyikan detail pelanggan"
-                        : "Tampilkan detail pelanggan"
+                      isNarrow
+                        ? "Tampilkan detail pelanggan"
+                        : panel
+                          ? "Sembunyikan detail pelanggan"
+                          : "Tampilkan detail pelanggan"
                     }
                     variant="secondary"
                     icon={<Icon icon={ViewColumnsIcon} />}
-                    aria-expanded={panel}
-                    onClick={() => setPanel(!panel)}
+                    aria-expanded={isNarrow ? narrowPanelOpen : panel}
+                    onClick={() => {
+                      if (isNarrow) setNarrowPanelOpen(true);
+                      else setPanel(!panel);
+                    }}
                   />
                 </HStack>
               </HStack>
@@ -180,64 +236,19 @@ export default function Detail() {
           </LayoutHeader>
         }
         end={
-          panel ? (
+          !isNarrow && panel ? (
             <MotionPanel
               width={320}
               padding={4}
               role="complementary"
               aria-label="Pelanggan dan pengiriman"
             >
-              <VStack gap={6}>
-                <VStack gap={4}>
-                  <Heading level={2}>Pelanggan</Heading>
-                  <MetadataList label={{ position: "top" }}>
-                    <MetadataListItem label="Nama">
-                      {page.role === "WAREHOUSE" ? (
-                        order.customer.name
-                      ) : (
-                        <Link
-                          href={withReturn(
-                            `/customers/${order.customer.id}/`,
-                            page.url,
-                          )}
-                          weight="medium"
-                        >
-                          {order.customer.name}
-                        </Link>
-                      )}
-                    </MetadataListItem>
-                    <MetadataListItem label="Kontak pemenuhan">
-                      {order.customer.phone || "Nomor belum diisi"}
-                    </MetadataListItem>
-                    <MetadataListItem label="Alamat pengiriman">
-                      {order.customer.address || "Alamat belum diisi"}
-                    </MetadataListItem>
-                  </MetadataList>
-                </VStack>
-                <Divider />
-                <VStack gap={4}>
-                  <Heading level={2}>Penanggung jawab</Heading>
-                  <HStack gap={2} vAlign="center">
-                    <Avatar name={order.sales.name} size="sm" />
-                    <Text>{order.sales.name}</Text>
-                  </HStack>
-                  {page.role !== "WAREHOUSE" && (
-                    <Button
-                      label="Pesanan pelanggan"
-                      variant="secondary"
-                      href={withReturn(
-                        `/customers/${order.customer.id}/?tab=orders`,
-                        page.url,
-                      )}
-                    />
-                  )}
-                </VStack>
-              </VStack>
+              {customerPanelContent}
             </MotionPanel>
           ) : undefined
         }
         content={
-          <LayoutContent padding={6} data-oneflow-scroll>
+          <LayoutContent padding={contentPadding} data-oneflow-scroll>
             <VStack gap={6}>
               {d.error && (
                 <Banner
@@ -529,6 +540,17 @@ export default function Detail() {
           </LayoutContent>
         }
       />
+      {isNarrow && (
+        <FormDialog
+          isOpen={narrowPanelOpen}
+          onOpenChange={setNarrowPanelOpen}
+          title={`Pelanggan · ${order.number}`}
+        >
+          <VStack padding={4} gap={4}>
+            {customerPanelContent}
+          </VStack>
+        </FormDialog>
+      )}
       <FormDialog
         isOpen={!!dialog}
         onOpenChange={close}
