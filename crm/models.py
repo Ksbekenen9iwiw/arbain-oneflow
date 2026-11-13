@@ -5,8 +5,21 @@ from django.db.models import Q
 
 
 class Customer(models.Model):
+    class OutletType(models.TextChoices):
+        APOTEK = 'APOTEK', 'Apotek (Potongan 16%)'
+        MINIMARKET = 'MINIMARKET', 'Minimarket (Potongan 20%)'
+        DISTRIBUTOR = 'DISTRIBUTOR', 'Distributor (Potongan 25%–50% · Tempo 1 bulan)'
+
+    DEFAULT_DISCOUNTS = {
+        'APOTEK': 16,
+        'MINIMARKET': 20,
+        'DISTRIBUTOR': 25,
+    }
+
     code = models.CharField('Kode pelanggan', max_length=40, unique=True)
     name = models.CharField('Nama pelanggan', max_length=160)
+    outlet_type = models.CharField('Kategori mitra', max_length=20, choices=OutletType.choices, default=OutletType.APOTEK)
+    discount_percent = models.PositiveSmallIntegerField('Potongan harga mitra (%)', default=16)
     phone = models.CharField('Nomor kontak', max_length=40, blank=True)
     address = models.TextField('Alamat', blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='customers', verbose_name='Sales penanggung jawab')
@@ -412,3 +425,100 @@ class SalesTarget(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['sales', 'month'], name='unique_sales_month_target'), models.CheckConstraint(condition=Q(month__day=1), name='target_first_day_of_month')]
+
+
+class ConsignmentStock(models.Model):
+    """Consignment ('titip jual') stock balance currently placed at a customer/pharmacy."""
+
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='consignment_stocks')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='consignment_stocks')
+    quantity_on_display = models.PositiveIntegerField('Stok di apotek', default=0)
+    total_placed = models.PositiveBigIntegerField('Total dititipkan', default=0)
+    total_sold = models.PositiveBigIntegerField('Total terjual di apotek', default=0)
+    total_returned = models.PositiveBigIntegerField('Total ditarik kembali', default=0)
+    nearest_expiry_date = models.DateField('Tanggal kedaluwarsa terdekat di apotek', null=True, blank=True)
+    last_checked_date = models.DateField('Tanggal cek terakhir', null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['customer__code', 'product__sku']
+        constraints = [
+            models.UniqueConstraint(fields=['customer', 'product'], name='unique_customer_product_consignment'),
+        ]
+
+
+class ConsignmentVisitEntry(models.Model):
+    """Per-visit consignment check: sold units, remaining stock on shelf, top-up, or return."""
+
+    class BillingStatus(models.TextChoices):
+        NOT_BILLED = 'NOT_BILLED', 'Belum ditagih (laku ≤ 2 item)'
+        BILLED_PAID = 'BILLED_PAID', 'Ditagih & dibayar (> 2 item)'
+        DEFERRED = 'DEFERRED', 'Penagihan tunda (petugas penagihan)'
+
+    class ReturnReason(models.TextChoices):
+        NONE = 'NONE', 'Tidak ada penarikan'
+        NEAR_EXPIRY = 'NEAR_EXPIRY', 'Tarik ≤ 6 bulan sebelum kedaluwarsa (tukar baru)'
+        DAMAGED = 'DAMAGED', 'Tarik karena rusak (rework)'
+        SLOW_MOVING = 'SLOW_MOVING', 'Tarik karena kurang laku'
+
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='consignment_entries')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='consignment_entries')
+    sales = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='consignment_entries')
+    activity = models.ForeignKey(Activity, on_delete=models.PROTECT, related_name='consignment_entries', null=True, blank=True)
+    visit_date = models.DateField('Tanggal kunjungan')
+    previous_stock = models.PositiveIntegerField('Stok awal di apotek', default=0)
+    sold_quantity = models.PositiveIntegerField('Jumlah laku terjual', default=0)
+    remaining_stock = models.PositiveIntegerField('Sisa stok fisik di apotek', default=0)
+    added_quantity = models.PositiveIntegerField('Tambahan titipan baru', default=0)
+    returned_quantity = models.PositiveIntegerField('Jumlah ditarik kembali', default=0)
+    closing_stock = models.PositiveIntegerField('Stok akhir di apotek', default=0)
+    return_reason = models.CharField('Alasan penarikan', max_length=20, choices=ReturnReason.choices, default=ReturnReason.NONE)
+    nearest_expiry_date = models.DateField('Kedaluwarsa terdekat stok di apotek', null=True, blank=True)
+    billing_status = models.CharField('Status penagihan', max_length=20, choices=BillingStatus.choices, default=BillingStatus.NOT_BILLED)
+    gross_rupiah = models.PositiveBigIntegerField('Nilai kotor terjual (Rp)', default=0)
+    discount_percent = models.PositiveSmallIntegerField('Potongan harga (%)', default=16)
+    net_billed_rupiah = models.PositiveBigIntegerField('Nilai tagihan bersih setelah diskon (Rp)', default=0)
+    physical_stamp_verified = models.BooleanField('Cap basah & tanda tangan Form Kunjungan fisik lengkap', default=True)
+    note = models.TextField('Catatan kunjungan titip jual', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-visit_date', '-created_at', '-pk']
+
+
+class ProductCarryDirective(models.Model):
+    """Manager instruction for sales on whether to stop carrying or prioritize a product."""
+
+    class Directive(models.TextChoices):
+        STOP = 'STOP', 'Jangan dibawa (kurang laku)'
+        PRIORITY = 'PRIORITY', 'Prioritaskan bawa (laku keras)'
+        REDUCE = 'REDUCE', 'Kurangi bawaan'
+
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='carry_directive')
+    directive = models.CharField('Arahan manajer', max_length=16, choices=Directive.choices)
+    substitute_product = models.ForeignKey(
+        Product, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='substitute_directives', verbose_name='Produk pengganti yang dibawa',
+    )
+    reason = models.TextField('Instruksi untuk sales', blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='updated_carry_directives')
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class RawMaterial(models.Model):
+    """Raw material / primary ingredient with early-warning threshold tied to fast-moving products."""
+
+    code = models.CharField('Kode bahan baku', max_length=40, unique=True)
+    name = models.CharField('Nama bahan pokok / baku', max_length=160)
+    unit = models.CharField('Satuan', max_length=30, default='kg')
+    on_hand = models.PositiveBigIntegerField('Stok tersedia', default=0)
+    min_threshold = models.PositiveBigIntegerField('Batas minimum standar', default=100)
+    fast_moving_threshold = models.PositiveBigIntegerField('Target stok saat produk laku keras', default=1000)
+    products = models.ManyToManyField(Product, related_name='raw_materials', blank=True, verbose_name='Produk jadi terkait')
+    note = models.TextField('Catatan pasokan', blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='updated_raw_materials', null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['code']
+

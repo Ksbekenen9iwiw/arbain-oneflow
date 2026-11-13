@@ -79,6 +79,8 @@ def encode(value, role):
                         phone=value.phone, address=value.address)
         return dict(id=str(value.pk), code=value.code, name=value.name, phone=value.phone,
                     address=value.address, owner=person(value.owner), is_active=value.is_active,
+                    outlet_type=value.outlet_type, outlet_type_label=value.get_outlet_type_display(),
+                    discount_percent=str(value.discount_percent),
                     summary=encode(getattr(value, "summary", None), role))
     if isinstance(value, Product):
         from crm.stock_workspace import stock_state

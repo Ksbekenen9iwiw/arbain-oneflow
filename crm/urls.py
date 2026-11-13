@@ -41,4 +41,7 @@ urlpatterns = [
     path('samples/<int:sample_id>/receive/', views.sample_receive, name='sample_receive'),
     path('samples/<int:sample_id>/schedule/', views.sample_schedule, name='sample_schedule'),
     path('samples/<int:sample_id>/outcome/', views.sample_outcome, name='sample_outcome'),
+    path('customers/<int:customer_id>/consignment/', views.consignment_visit_record, name='consignment_visit_record'),
+    path('directives/save/', views.carry_directive_save, name='carry_directive_save'),
+    path('raw-materials/save/', views.raw_material_save, name='raw_material_save'),
 ]
