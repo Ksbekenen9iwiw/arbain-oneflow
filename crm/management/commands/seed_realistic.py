@@ -308,6 +308,8 @@ class Simulation:
                 function()
         with patch('django.utils.timezone.now', return_value=self.at(self.as_of, 8)):
             self.finish()
+            from crm.services.consignment import seed_consignment_and_alarms
+            seed_consignment_and_alarms(self.as_of)
         return self.credentials
 
 

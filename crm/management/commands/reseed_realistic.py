@@ -12,7 +12,8 @@ from crm.management.commands.seed_realistic import Command as SeedCommand, valid
 
 
 # Child-first for PROTECT foreign keys. Auth users/groups are never removed.
-DELETE_ORDER = ['BatchSwap', 'BatchAllocation', 'SampleAllocation', 'SampleFollowUp',
+DELETE_ORDER = ['ConsignmentVisitEntry', 'ConsignmentStock', 'ProductCarryDirective', 'RawMaterial',
+                'BatchSwap', 'BatchAllocation', 'SampleAllocation', 'SampleFollowUp',
                 'ActionDecision', 'StockMovement', 'SampleRequestLine', 'SampleRequest',
                 'OrderLine', 'Order', 'Activity', 'PurchaseOrder', 'ProductSupplySetting',
                 'SamplePolicy', 'SalesTarget', 'InventoryBalance', 'StockBatch', 'Product', 'Customer']

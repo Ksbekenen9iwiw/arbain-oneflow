@@ -1,7 +1,7 @@
 import re
 from django import forms
 from crm.access import active_sales, customers_for, orders_for, require_role, role_of
-from crm.models import Activity, Customer, Order, Product, ProductSupplySetting, SampleRequest, StockBatch
+from crm.models import Activity, ConsignmentVisitEntry, Customer, Order, Product, ProductCarryDirective, ProductSupplySetting, SampleRequest, StockBatch
 
 
 class CustomerForm(forms.ModelForm):
@@ -309,3 +309,103 @@ class ReceivePurchaseForm(StockReceiptForm):
         super().__init__(*args, **kwargs)
         del self.fields['reason']
         self.fields['quantity'].label = 'Jumlah diterima sekarang'
+
+
+class ConsignmentVisitForm(forms.Form):
+    customer_id = StrictIntegerField(label='Apotek / Pelanggan', min_value=1, max_value=2**63 - 1, widget=forms.HiddenInput())
+    product_id = forms.ChoiceField(label='Produk titip jual', choices=[])
+    sold_quantity = StrictIntegerField(label='Jumlah laku terjual di apotek', min_value=0, max_value=2**63 - 1, initial=0, help_text='Selisih stok awal dikurangi sisa fisik. Ditagih bila laku > 2 item.')
+    remaining_stock = StrictIntegerField(label='Sisa stok fisik di apotek', min_value=0, max_value=2**63 - 1, initial=0, help_text='Sisa fisik di rak apotek setelah dicek dan dibersihkan.')
+    added_quantity = StrictIntegerField(label='Tambahan barang titipan baru (dari gudang)', min_value=0, max_value=2**63 - 1, initial=0, help_text='Memotong stok bebas gudang dan menambah stok titipan di apotek.')
+    returned_quantity = StrictIntegerField(label='Barang ditarik kembali (retur/tukar ke gudang)', min_value=0, max_value=2**63 - 1, initial=0, help_text='Tarik barang mendekati ED (≤ 6 bulan), rusak, atau kurang laku.')
+    return_reason = forms.ChoiceField(
+        label='Alasan penarikan barang',
+        choices=ConsignmentVisitEntry.ReturnReason.choices,
+        initial=ConsignmentVisitEntry.ReturnReason.NONE,
+        required=False,
+        help_text='Kebijakan CV Arba’in: barang ditarik maksimal 6 bulan sebelum kedaluwarsa untuk ditukar produk baru.',
+    )
+    nearest_expiry_date = forms.DateField(
+        label='Tanggal kedaluwarsa terdekat di rak apotek (opsional)',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        help_text='Isi untuk memantau batas penarikan 6 bulan sebelum kedaluwarsa.',
+    )
+    billing_status = forms.ChoiceField(
+        label='Status penagihan (aturan > 2 item)',
+        choices=ConsignmentVisitEntry.BillingStatus.choices,
+        initial=ConsignmentVisitEntry.BillingStatus.BILLED_PAID,
+        required=False,
+        help_text='Otomatis Belum ditagih bila laku ≤ 2 item. Pilih Penagihan tunda bila apotek membayar beberapa hari kemudian melalui petugas penagihan.',
+    )
+    physical_stamp_verified = forms.BooleanField(
+        label='Cap basah & tanda tangan apotek pada Form Kunjungan fisik sudah lengkap',
+        required=False,
+        initial=True,
+        help_text='Wajib sesuai kebijakan kantor (belum menggunakan tanda tangan digital di HP).',
+    )
+    visit_date = forms.DateField(label='Tanggal kunjungan', widget=forms.DateInput(attrs={'type': 'date'}))
+    note = forms.CharField(label='Catatan kunjungan titip jual', required=False, widget=forms.Textarea(attrs={'rows': 2}))
+
+    def __init__(self, *args, actor, customer=None, **kwargs):
+        from django.utils import timezone
+        require_role(actor, {'SALES', 'MANAGER'})
+        super().__init__(*args, **kwargs)
+        if not self.initial.get('visit_date'):
+            self.fields['visit_date'].initial = timezone.localdate()
+        if customer is not None:
+            self.fields['customer_id'].initial = customer.pk
+        products = Product.objects.filter(is_active=True).select_related('balance', 'carry_directive').order_by('sku')
+        choices = [('', 'Pilih produk')]
+        for p in products:
+            directive = getattr(p, 'carry_directive', None)
+            tag = f' · [{directive.get_directive_display()}]' if directive else ''
+            choices.append((str(p.pk), f'{p.sku} · {p.name} (Gudang: {p.balance.available} {p.unit}){tag}'))
+        self.fields['product_id'].choices = choices
+
+
+class CarryDirectiveForm(forms.Form):
+    product_id = forms.ChoiceField(label='Produk yang diatur arahannya', choices=[])
+    directive = forms.ChoiceField(
+        label='Arahan bawaan untuk sales',
+        choices=[
+            ('', 'Pilih arahan'),
+            *ProductCarryDirective.Directive.choices,
+            ('CLEAR', 'Hapus arahan khusus (kembali normal)'),
+        ],
+    )
+    substitute_product_id = forms.ChoiceField(
+        label='Produk pengganti yang disarankan dibawa (opsional)',
+        required=False,
+        choices=[],
+        help_text='Pilih produk laku keras sebagai pengganti saat produk utama dihentikan.',
+    )
+    reason = forms.CharField(
+        label='Instruksi & alasan untuk sales',
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 2}),
+        help_text='Contoh: Hampir di seluruh apotek kurang laku; sales tidak usah bawa dulu, ganti bawa Madu Hutan 250 ml.',
+    )
+
+    def __init__(self, *args, actor, **kwargs):
+        require_role(actor, {'MANAGER'})
+        super().__init__(*args, **kwargs)
+        products = list(Product.objects.filter(is_active=True).order_by('sku'))
+        self.fields['product_id'].choices = [('', 'Pilih produk')] + [(str(p.pk), f'{p.sku} · {p.name}') for p in products]
+        self.fields['substitute_product_id'].choices = [('', 'Tanpa produk pengganti')] + [(str(p.pk), f'{p.sku} · {p.name}') for p in products]
+
+
+class RawMaterialForm(forms.Form):
+    material_id = forms.ChoiceField(label='Bahan pokok / baku', choices=[])
+    on_hand = StrictIntegerField(label='Stok fisik saat ini', min_value=0, max_value=2**63 - 1)
+    min_threshold = StrictIntegerField(label='Batas minimum standar', min_value=1, max_value=2**63 - 1)
+    fast_moving_threshold = StrictIntegerField(label='Target wajib saat produk laku keras', min_value=1, max_value=2**63 - 1, help_text='Contoh: 1000 kg (1 ton) untuk bahan baku produk yang sedang laris.')
+    note = forms.CharField(label='Catatan pasokan / pemasok', required=False, widget=forms.Textarea(attrs={'rows': 2}))
+
+    def __init__(self, *args, actor, **kwargs):
+        from crm.models import RawMaterial
+        require_role(actor, {'MANAGER', 'WAREHOUSE'})
+        super().__init__(*args, **kwargs)
+        materials = list(RawMaterial.objects.order_by('code'))
+        self.fields['material_id'].choices = [(str(m.pk), f'{m.code} · {m.name} ({m.unit})') for m in materials]
+

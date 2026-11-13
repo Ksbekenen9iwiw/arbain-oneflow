@@ -13,10 +13,11 @@ from crm.stock_workspace import stock_records, stock_return_url, product_workspa
 from crm.sample_workspace import sample_context, sample_records, sample_tasks
 from crm.errors import BusinessError
 from crm.navigation import return_url
-from crm.forms import ActionDecisionForm, ActivityCompletionForm, ActivityForm, BatchStatusForm, BatchSwapForm, CancelOrderForm, CancelSampleForm, ConfirmOrderForm, CustomerForm, OrderForm, OrderLineFormSet, ProductEditForm, ProductForm, PurchaseOrderForm, ReceivePurchaseForm, SampleDecisionForm, SampleLineFormSet, SampleOutcomeForm, SamplePolicyForm, SampleRequestForm, SampleScheduleForm, StockCountForm, StockReceiptForm, SupplySettingForm
+from crm.forms import ActionDecisionForm, ActivityCompletionForm, ActivityForm, BatchStatusForm, BatchSwapForm, CancelOrderForm, CancelSampleForm, CarryDirectiveForm, ConfirmOrderForm, ConsignmentVisitForm, CustomerForm, OrderForm, OrderLineFormSet, ProductEditForm, ProductForm, PurchaseOrderForm, RawMaterialForm, ReceivePurchaseForm, SampleDecisionForm, SampleLineFormSet, SampleOutcomeForm, SamplePolicyForm, SampleRequestForm, SampleScheduleForm, StockCountForm, StockReceiptForm, SupplySettingForm
 from crm.models import Activity, InventoryBalance, Product, PurchaseOrder, SalesTarget, SamplePolicy, SampleRequest, StockMovement
 from crm.selectors import order_records, customer_records, customer_history, dashboard_metrics, dashboard_sales, dashboard_activities
 from crm.forms import SalesTargetForm
+from crm.services.consignment import pharmacy_consignment_overview, product_traction_analysis, raw_material_alerts, record_consignment_visit, sales_attendance_recap, save_carry_directive, save_raw_material
 from crm.services.inventory import receive_stock, reconcile_stock, set_batch_status
 from crm.services.orders import cancel_order, confirm_order, create_draft, ship_order, swap_batch, update_draft, draft_version
 from crm.services.actions import list_actions, record_action
@@ -79,10 +80,18 @@ def _today_page(request, overrides=None, status=200):
     context['action_orders'] = list(orders_for(request.user).exclude(status='CANCELLED')) if role != 'WAREHOUSE' else []
     context['sample_tasks'] = sample_tasks(request.user)
     context['supply_alerts'] = supply_alerts(request.user)
+    context['attendance_recaps'] = sales_attendance_recap(request.user, as_of, selected_sales or None)
+    context['consignment_outlets'] = pharmacy_consignment_overview(request.user, selected_sales or None)
+    context['product_traction'] = product_traction_analysis(as_of)
+    context['raw_material_alerts'] = raw_material_alerts(as_of)
     if role == 'MANAGER':
         context['saved_targets'] = [{'sales': str(t.sales_id), 'month': t.month.strftime('%Y-%m'), 'amount': str(t.target_rupiah)} for t in SalesTarget.objects.filter(sales__in=sales_options)]
-    if role == 'MANAGER':
         context['target_form_default'] = context['target_form']
+        context['directive_form'] = CarryDirectiveForm(actor=request.user)
+        context['directive_form_default'] = context['directive_form']
+    if role in {'MANAGER', 'WAREHOUSE'}:
+        context['raw_material_form'] = RawMaterialForm(actor=request.user)
+        context['raw_material_form_default'] = context['raw_material_form']
     if overrides:
         context.update(overrides)
         if 'action_form' in overrides:
@@ -801,3 +810,92 @@ def supply_order_receive(request, purchase_order_id):
 @require_POST
 def supply_order_cancel(request, purchase_order_id):
     return _supply_order_action(request, purchase_order_id, cancel_purchase_order, CancelOrderForm)
+
+
+@login_required
+@require_POST
+def consignment_visit_record(request, customer_id):
+    customer = get_object_or_404(customers_for(request.user), pk=customer_id)
+    form = ConsignmentVisitForm(request.POST, actor=request.user, customer=customer)
+    if not form.is_valid():
+        context = customer_history(request.user, customer.id)
+        context['back_url'] = customer_return_url(request)
+        context['consignment_form'] = form
+        context['dialog'] = 'consignment'
+        context['canonical_url'] = f'/customers/{customer.id}/?tab=consignment'
+        return page(request, 'crm/customer_detail.html', context, status=400)
+    try:
+        entry = record_consignment_visit(
+            request.user,
+            customer.id,
+            int(form.cleaned_data['product_id']),
+            form.cleaned_data['sold_quantity'],
+            form.cleaned_data['remaining_stock'],
+            form.cleaned_data['added_quantity'],
+            form.cleaned_data['returned_quantity'],
+            form.cleaned_data['visit_date'],
+            form.cleaned_data.get('note', ''),
+            return_reason=form.cleaned_data.get('return_reason') or 'NONE',
+            nearest_expiry_date=form.cleaned_data.get('nearest_expiry_date'),
+            billing_status=form.cleaned_data.get('billing_status') or 'BILLED_PAID',
+            physical_stamp_verified=bool(form.cleaned_data.get('physical_stamp_verified')),
+        )
+    except BusinessError as error:
+        context = customer_history(request.user, customer.id)
+        context['back_url'] = customer_return_url(request)
+        context['consignment_form'] = form
+        context['error'] = error
+        context['dialog'] = 'consignment'
+        context['canonical_url'] = f'/customers/{customer.id}/?tab=consignment'
+        return page(request, 'crm/customer_detail.html', context, status=400)
+    messages.success(
+        request,
+        f'Kunjungan titip jual {entry.product.name} di {customer.name} tercatat (stok akhir di apotek: {entry.closing_stock} {entry.product.unit}).',
+    )
+    return redirect(f'/customers/{customer.id}/?tab=consignment')
+
+
+@login_required
+@require_POST
+def carry_directive_save(request):
+    form = CarryDirectiveForm(request.POST, actor=request.user)
+    if not form.is_valid():
+        return _dashboard_error(request, {'directive_form': form, 'directive_dialog': True})
+    try:
+        sub_id = form.cleaned_data.get('substitute_product_id')
+        directive = save_carry_directive(
+            request.user,
+            int(form.cleaned_data['product_id']),
+            form.cleaned_data['directive'],
+            int(sub_id) if sub_id else None,
+            form.cleaned_data.get('reason', ''),
+        )
+    except BusinessError as error:
+        return _dashboard_error(request, {'directive_form': form, 'directive_dialog': True, 'error': error})
+    if directive is None:
+        messages.success(request, 'Arahan khusus produk dihapus.')
+    else:
+        messages.success(request, f'Arahan bawaan sales untuk {directive.product.name} tersimpan ({directive.get_directive_display()}).')
+    return redirect(_dashboard_return(request))
+
+
+@login_required
+@require_POST
+def raw_material_save(request):
+    form = RawMaterialForm(request.POST, actor=request.user)
+    if not form.is_valid():
+        return _dashboard_error(request, {'raw_material_form': form, 'raw_material_dialog': True})
+    try:
+        mat = save_raw_material(
+            request.user,
+            int(form.cleaned_data['material_id']),
+            form.cleaned_data['on_hand'],
+            form.cleaned_data['min_threshold'],
+            form.cleaned_data['fast_moving_threshold'],
+            form.cleaned_data.get('note', ''),
+        )
+    except BusinessError as error:
+        return _dashboard_error(request, {'raw_material_form': form, 'raw_material_dialog': True, 'error': error})
+    messages.success(request, f'Stok & batas alarm bahan baku {mat.name} diperbarui ({mat.on_hand} {mat.unit}).')
+    return redirect(_dashboard_return(request))
+

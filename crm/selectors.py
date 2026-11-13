@@ -110,6 +110,21 @@ def customer_history(actor, customer_id):
     context['next_actions'] = customer_next_actions(
         actor, customer, opened, context['reorder_patterns'], orders, timezone.localdate())
     context['samples'] = customer_samples(actor, customer)
+    from crm.forms import ConsignmentVisitForm
+    from crm.services.consignment import pharmacy_consignment_overview, product_traction_analysis
+    outlet_rows = pharmacy_consignment_overview(actor, customer_id=customer.id)
+    context['consignment'] = outlet_rows[0] if outlet_rows else {
+        'customer_id': str(customer.pk), 'code': customer.code, 'name': customer.name,
+        'total_on_display': 0, 'total_sold': 0, 'weak_items': [], 'last_checked_date': None,
+        'items': [], 'recent_entries': [],
+    }
+    if role_of(actor) in {'SALES', 'MANAGER'}:
+        context['consignment_form'] = ConsignmentVisitForm(actor=actor, customer=customer)
+        context['consignment_form_default'] = context['consignment_form']
+    context['carry_directives'] = [
+        r for r in product_traction_analysis(timezone.localdate())
+        if r['directive'] or r['movement'] in {'DEAD', 'SLOW', 'FAST'}
+    ]
     return dict(context, customer=customer, activities=activities, open_activities=opened,
                 completed_activities=sorted((a for a in activities if a.status == 'DONE'), key=lambda a: (a.completed_at or a.created_at, a.pk), reverse=True), orders=orders)
 

@@ -98,6 +98,8 @@ class Command(BaseCommand):
             Activity.objects.create(customer=customers[1], sales=users['nadia'], kind='INTERACTION', stage='INTERESTED', status='DONE', note='Pelanggan meminta informasi ketersediaan.', result='Kebutuhan dicatat untuk tindak lanjut.')
             for username, target in [('nadia', 2000000), ('rafi', 1500000)]:
                 SalesTarget.objects.create(sales=users[username], month=as_of.replace(day=1), target_rupiah=target)
+            from crm.services.consignment import seed_consignment_and_alarms
+            seed_consignment_and_alarms(as_of)
         self.stdout.write(self.style.SUCCESS(f'Data simulasi siap: 12 pelanggan, 8 SKU, 4 akun. Tanggal acuan {as_of}.'))
         if options['fefo_demo']:
             self.stdout.write('Skenario FEFO simulasi: HERBAL03 memiliki DEMO-A 20 unit (kedaluwarsa lebih dekat) dan DEMO-B 50 unit; pesanan 25 unit dialokasikan 20 + 5. Seluruh angka berlabel simulasi.')
@@ -147,7 +149,7 @@ class Command(BaseCommand):
         ship_order(users['gudang'], order.id)
         self._backdate_shipment(order, timezone.make_aware(datetime.combine(as_of - timedelta(days=5), time(12))))
         save_settings(users['manajer'], herbal.id, 30, 5, 10, 3)
-        create_purchase_order(users['manajer'], herbal.id, 10, as_of + timedelta(days=40), 'Simulasi pemasok lambat')
+        create_purchase_order(users['manajer'], herbal.id, 10, as_of + timedelta(days=40), 'Simulasi pemasok lambat', as_of=as_of)
 
         cosm = products['COSM03']
         order = create_draft(customers[6].owner, customers[6].id, [{'product_id': cosm.id, 'quantity': 12}])
@@ -169,7 +171,7 @@ class Command(BaseCommand):
             confirm_order(customer.owner, order.id)
             ship_order(users['gudang'], order.id)
             self._backdate_shipment(order, timezone.make_aware(datetime.combine(as_of - timedelta(days=days), time(12))))
-        create_purchase_order(users['manajer'], product.id, 50, as_of + timedelta(days=10), 'Simulasi pengadaan berjalan untuk pengingat pembelian ulang')
+        create_purchase_order(users['manajer'], product.id, 50, as_of + timedelta(days=10), 'Simulasi pengadaan berjalan untuk pengingat pembelian ulang', as_of=as_of)
 
     def _seed_samples_demo(self, as_of, users, customers, products):
         """Three labeled scenarios; policy values are simulation only."""
