@@ -206,11 +206,11 @@ def save_settings(actor, product_id, analysis_period_days, lead_time_days, cover
 
 
 @atomic_write
-def create_purchase_order(actor, product_id, quantity, expected_date=None, note=''):
+def create_purchase_order(actor, product_id, quantity, expected_date=None, note='', *, as_of=None):
     require_role(actor, {'MANAGER'})
     integer_input(quantity, 1)
     product = get_object_or_404(Product, pk=product_id, is_active=True)
-    if expected_date is not None and expected_date < timezone.localdate():
+    if expected_date is not None and expected_date < (as_of or timezone.localdate()):
         raise BusinessError('INVALID_INPUT', 'Estimasi kedatangan tidak boleh sebelum hari ini.')
     return PurchaseOrder.objects.create(
         product=product, quantity_ordered=quantity, expected_date=expected_date,
