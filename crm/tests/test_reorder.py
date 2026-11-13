@@ -46,7 +46,7 @@ class ReorderReminderTests(TestCase):
     def test_empty_stock_keeps_reminder_with_inbound_info(self):
         self.product.balance.on_hand = 0
         self.product.balance.save()
-        po = create_purchase_order(self.manager, self.product.id, 50, self.as_of + timedelta(days=10), 'Simulasi')
+        po = create_purchase_order(self.manager, self.product.id, 50, self.as_of + timedelta(days=10), 'Simulasi', as_of=self.as_of)
         (candidate,) = compute_candidates(self.sales, self.as_of)
         self.assertEqual(candidate.state, 'WAITING_STOCK')
         self.assertEqual(candidate.reasons['inbound'], [{'number': po.number, 'remaining': 50, 'expected_date': (self.as_of + timedelta(days=10)).isoformat()}])
