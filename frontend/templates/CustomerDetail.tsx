@@ -36,7 +36,7 @@ import {
   useResponsive,
 } from "../ui";
 import { useApp, useQueryState } from "../router";
-import { OrderTable } from "./Records";
+import { OrderTable } from "./OrderTable";
 import type { Row } from "../types";
 
 export default function CustomerDetail() {
