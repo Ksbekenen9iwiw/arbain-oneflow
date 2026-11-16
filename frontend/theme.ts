@@ -106,12 +106,12 @@ export const oneflowTheme = defineTheme({
     },
     card: {
       base: {
-        borderRadius: "var(--radius-lg)",
+        borderRadius: "var(--radius-container)",
       },
     },
     dialog: {
       base: {
-        borderRadius: "var(--radius-xl)",
+        borderRadius: "var(--radius-container)",
       },
     },
   },
