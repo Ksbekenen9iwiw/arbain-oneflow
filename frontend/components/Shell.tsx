@@ -42,6 +42,7 @@ import {
 } from "../ui";
 import { useApp } from "../router";
 import Walkthrough, { canStartTour } from "../Walkthrough";
+import { ThemeSwitch } from "../ThemeSwitch";
 
 function SidebarItem({
   label,
@@ -228,6 +229,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             footer={
               !isMobile && isCollapsed ? (
                 <VStack gap={3} hAlign="center" paddingBlock={2}>
+                  <ThemeSwitch compact />
                   <Avatar
                     name={accountName}
                     size="sm"
@@ -236,24 +238,29 @@ export default function Shell({ children }: { children: ReactNode }) {
                   {logoutButton}
                 </VStack>
               ) : (
-                <Card padding={2}>
-                  <HStack gap={2} vAlign="center">
-                    <StackItem>
-                      <Avatar name={accountName} size="md" tooltip={false} />
-                    </StackItem>
-                    <StackItem size="fill">
-                      <VStack gap={0.5}>
-                        <Text weight="semibold" maxLines={1}>
-                          {accountName}
-                        </Text>
-                        <Text type="supporting" maxLines={1}>
-                          {roleLabel}
-                        </Text>
-                      </VStack>
-                    </StackItem>
-                    <StackItem>{logoutButton}</StackItem>
+                <VStack gap={2}>
+                  <HStack paddingInline={2} paddingBlock={1}>
+                    <ThemeSwitch spread />
                   </HStack>
-                </Card>
+                  <Card padding={2}>
+                    <HStack gap={2} vAlign="center">
+                      <StackItem>
+                        <Avatar name={accountName} size="md" tooltip={false} />
+                      </StackItem>
+                      <StackItem size="fill">
+                        <VStack gap={0.5}>
+                          <Text weight="semibold" maxLines={1}>
+                            {accountName}
+                          </Text>
+                          <Text type="supporting" maxLines={1}>
+                            {roleLabel}
+                          </Text>
+                        </VStack>
+                      </StackItem>
+                      <StackItem>{logoutButton}</StackItem>
+                    </HStack>
+                  </Card>
+                </VStack>
               )
             }
           >

@@ -12,8 +12,7 @@ import "@astryxdesign/core/reset.css";
 import "@astryxdesign/core/astryx.css";
 import { InternationalizationProvider } from "@astryxdesign/core/i18n";
 import { indonesian } from "./locale";
-import { Theme } from "@astryxdesign/core/theme";
-import { oneflowTheme } from "./theme";
+import { ThemeModeProvider } from "./ThemeSwitch";
 import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { VStack, Button, Banner, PageHeader, Text } from "./ui";
@@ -72,18 +71,25 @@ function prefetchRoute(pathname: string) {
   if (pathname === "/samples/") return prefetchLoader("samples");
   if (pathname === "/stock/") return prefetchLoader("stock");
   if (pathname === "/login/") return prefetchLoader("login");
-  if (/^\/customers\/\d+\/activities\/new\/$/.test(pathname) || pathname === "/customers/new/")
+  if (
+    /^\/customers\/\d+\/activities\/new\/$/.test(pathname) ||
+    pathname === "/customers/new/"
+  )
     return prefetchLoader("crm_form");
-  if (/^\/customers\/\d+\/$/.test(pathname)) return prefetchLoader("customer_detail");
-  if (/^\/activities\/\d+\//.test(pathname)) return prefetchLoader("activity_detail");
+  if (/^\/customers\/\d+\/$/.test(pathname))
+    return prefetchLoader("customer_detail");
+  if (/^\/activities\/\d+\//.test(pathname))
+    return prefetchLoader("activity_detail");
   if (pathname === "/orders/new/" || /^\/orders\/\d+\/edit\/$/.test(pathname))
     return prefetchLoader("order_form");
   if (/^\/orders\/\d+\/$/.test(pathname)) return prefetchLoader("order_detail");
   if (pathname === "/samples/new/" || /^\/samples\/\d+\/edit\/$/.test(pathname))
     return prefetchLoader("sample_form");
-  if (/^\/samples\/\d+\/$/.test(pathname)) return prefetchLoader("sample_detail");
+  if (/^\/samples\/\d+\/$/.test(pathname))
+    return prefetchLoader("sample_detail");
   if (pathname.startsWith("/products/") || pathname.startsWith("/stock/")) {
-    if (/^\/products\/\d+\/$/.test(pathname)) return prefetchLoader("product_detail");
+    if (/^\/products\/\d+\/$/.test(pathname))
+      return prefetchLoader("product_detail");
     return prefetchLoader("stock_form");
   }
 }
@@ -108,7 +114,12 @@ function DelayedFallback() {
       }
       content={
         <LayoutContent padding={6}>
-          <VStack gap={4} role="status" aria-label="Memuat halaman" aria-busy="true">
+          <VStack
+            gap={4}
+            role="status"
+            aria-label="Memuat halaman"
+            aria-busy="true"
+          >
             <Skeleton height="var(--spacing-10)" />
             <Skeleton height="calc(var(--spacing-8) * 3)" index={1} />
             <Skeleton height="var(--spacing-10)" index={2} />
@@ -321,10 +332,10 @@ createRoot(document.getElementById("oneflow-root")!).render(
     locale="id-ID"
     messages={{ "id-ID": indonesian }}
   >
-    <Theme theme={oneflowTheme}>
+    <ThemeModeProvider>
       <Router initial={initial} onPrefetch={prefetchRoute}>
         <App />
       </Router>
-    </Theme>
+    </ThemeModeProvider>
   </InternationalizationProvider>,
 );

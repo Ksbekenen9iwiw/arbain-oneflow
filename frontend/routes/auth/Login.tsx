@@ -26,6 +26,7 @@ import coverUrl from "../../assets/arbain-honey-herbal.jpg";
 import { DemoAccess } from "../../DemoAccess";
 import { useContentMotion } from "../../motion";
 import { RequestFeedback, usePendingFeedback } from "../../RequestFeedback";
+import { ThemeSwitch } from "../../ThemeSwitch";
 
 const coverStyle: CSSProperties = {
   position: "absolute",
@@ -128,6 +129,7 @@ export default function Login() {
       align="stretch"
       style={
         {
+          backgroundColor: "var(--color-background-surface)",
           padding: isMobile ? "var(--spacing-4)" : "var(--spacing-6)",
           minHeight: "100dvh",
           "--size-element-lg": "calc(var(--spacing-12) + var(--spacing-2))",
@@ -139,11 +141,14 @@ export default function Login() {
         padding={isMobile ? 2 : 6}
         minHeight={isMobile ? "auto" : "calc(100dvh - var(--spacing-12))"}
       >
-        <HStack gap={2} vAlign="center">
-          <Icon icon={CubeIcon} />
-          <Text weight="bold" size="xl">
-            OneFlow
-          </Text>
+        <HStack gap={3} vAlign="center" hAlign="between" wrap="wrap">
+          <HStack gap={2} vAlign="center">
+            <Icon icon={CubeIcon} />
+            <Text weight="bold" size="xl">
+              OneFlow
+            </Text>
+          </HStack>
+          <ThemeSwitch />
         </HStack>
         <StackItem size="fill">
           <Center height="100%">
