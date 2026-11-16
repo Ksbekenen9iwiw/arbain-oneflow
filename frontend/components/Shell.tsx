@@ -9,6 +9,7 @@ import { AppShell } from "@astryxdesign/core/AppShell";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Card } from "@astryxdesign/core/Card";
 import { IconButton } from "@astryxdesign/core/IconButton";
+import { Tooltip } from "@astryxdesign/core/Tooltip";
 import { StackItem } from "@astryxdesign/core/Stack";
 import {
   SideNav,
@@ -31,6 +32,7 @@ import {
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
 import {
+  Button,
   VStack,
   HStack,
   Text,
@@ -40,6 +42,75 @@ import {
 } from "../ui";
 import { useApp } from "../router";
 import Walkthrough, { canStartTour } from "../Walkthrough";
+
+function SidebarItem({
+  label,
+  tooltip,
+  icon,
+  href,
+  isSelected,
+  isDisabled,
+  onClick,
+  collapsed,
+  isMobile,
+  tourId,
+}: {
+  label: string;
+  tooltip: string;
+  icon: typeof CalendarDaysIcon;
+  href?: string;
+  isSelected?: boolean;
+  isDisabled?: boolean;
+  onClick?: () => void;
+  collapsed: boolean;
+  isMobile: boolean;
+  tourId?: string;
+}) {
+  if (collapsed) {
+    return (
+      <Tooltip
+        content={`${label} — ${tooltip}`}
+        placement="end"
+        touchTrigger="none"
+        hasHoverIndication={false}
+      >
+        <VStack hAlign="center">
+          <Button
+            data-tour={tourId}
+            isIconOnly
+            size="md"
+            variant={isSelected ? "primary" : "ghost"}
+            label={label}
+            icon={<Icon icon={icon} />}
+            href={href}
+            isDisabled={isDisabled}
+            onClick={onClick}
+          />
+        </VStack>
+      </Tooltip>
+    );
+  }
+  return (
+    <Tooltip
+      content={tooltip}
+      placement="end"
+      touchTrigger="none"
+      hasHoverIndication={false}
+      isEnabled={!isMobile}
+    >
+      <SideNavItem
+        data-tour={tourId}
+        label={label}
+        icon={icon}
+        href={href}
+        isSelected={isSelected}
+        isDisabled={isDisabled}
+        onClick={onClick}
+      />
+    </Tooltip>
+  );
+}
+
 export default function Shell({ children }: { children: ReactNode }) {
   const { page, revision, busy, issue, requestKind, leaveAndSubmit } = useApp();
   const { isMobile } = useResponsive();
@@ -48,7 +119,6 @@ export default function Shell({ children }: { children: ReactNode }) {
   const path = page.url.split("?")[0];
   useContentMotion(contentRef, `${page.screen}:${path}`, "page");
   const pendingStage = usePendingFeedback(busy);
-  const pendingBusy = pendingStage !== "idle";
   const pendingLabel =
     requestKind === "write" ? "Menyimpan perubahan" : "Memuat halaman";
   const slowLabel =
@@ -56,6 +126,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       ? "Masih menunggu konfirmasi. Jangan kirim ulang atau tutup halaman."
       : "Memuat lebih lama dari biasanya. Halaman sebelumnya tetap tersedia.";
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const collapsed = !isMobile && isCollapsed;
   const sidebarWidth = useRef<number | null>(null);
   const changeCollapsed = (collapsed: boolean) => {
     sidebarWidth.current =
@@ -112,7 +183,6 @@ export default function Shell({ children }: { children: ReactNode }) {
         icon={<Icon icon={ArrowRightStartOnRectangleIcon} />}
         variant="secondary"
         size="sm"
-        isDisabled={pendingBusy}
       />
     </ServerForm>
   );
@@ -188,55 +258,77 @@ export default function Shell({ children }: { children: ReactNode }) {
             }
           >
             <SideNavSection title="Workspace">
-              <SideNavItem
-                data-tour="nav-dashboard"
+              <SidebarItem
+                tourId="nav-dashboard"
                 label="Dashboard"
+                tooltip="Ringkasan kerja harian, prioritas & pantauan apotek"
                 icon={CalendarDaysIcon}
                 href="/"
                 isSelected={path === "/"}
+                collapsed={collapsed}
+                isMobile={isMobile}
               />
               {page.role !== "WAREHOUSE" && (
-                <SideNavItem
-                  data-tour="nav-customers"
+                <SidebarItem
+                  tourId="nav-customers"
                   label="Pelanggan"
+                  tooltip="Daftar apotek & mitra, aktivitas, serta stok titipan"
                   icon={UsersIcon}
                   href="/customers/"
                   isSelected={
                     path.startsWith("/customers") ||
                     path.startsWith("/activities")
                   }
+                  collapsed={collapsed}
+                  isMobile={isMobile}
                 />
               )}
-              <SideNavItem
-                data-tour="nav-orders"
+              <SidebarItem
+                tourId="nav-orders"
                 label="Pesanan"
+                tooltip="Daftar pesanan, konfirmasi, dan status pengiriman"
                 icon={ClipboardDocumentListIcon}
                 href="/orders/"
                 isSelected={path.startsWith("/orders")}
+                collapsed={collapsed}
+                isMobile={isMobile}
               />
-              <SideNavItem
+              <SidebarItem
+                tourId="nav-samples"
                 label="Pengajuan sampel"
+                tooltip="Pengajuan, pengiriman & hasil evaluasi sampel"
                 icon={BeakerIcon}
-                data-tour="nav-samples"
                 href="/samples/"
                 isSelected={path.startsWith("/samples")}
+                collapsed={collapsed}
+                isMobile={isMobile}
               />
-              <SideNavItem
-                data-tour="nav-stock"
+              <SidebarItem
+                tourId="nav-stock"
                 label="Produk & stok"
+                tooltip="Stok produk gudang, pengadaan & riwayat mutasi"
                 icon={ArchiveBoxIcon}
                 href="/stock/"
                 isSelected={
                   path.startsWith("/stock") || path.startsWith("/products")
                 }
+                collapsed={collapsed}
+                isMobile={isMobile}
               />
             </SideNavSection>
             <SideNavSection title="Bantuan">
-              <SideNavItem
-                data-tour="help"
+              <SidebarItem
+                tourId="help"
                 label="Panduan aplikasi"
+                tooltip={
+                  canStartTour(page.screen)
+                    ? "Buka tur interaktif cara memakai halaman ini"
+                    : "Tur tersedia di Dashboard, Pelanggan, Pesanan, Sampel & Stok"
+                }
                 icon={QuestionMarkCircleIcon}
-                isDisabled={pendingBusy || !canStartTour(page.screen)}
+                isDisabled={!canStartTour(page.screen)}
+                collapsed={collapsed}
+                isMobile={isMobile}
                 onClick={() => {
                   changeCollapsed(false);
                   setTourRequest((v) => v + 1);
