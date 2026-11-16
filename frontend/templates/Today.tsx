@@ -45,7 +45,7 @@ import {
   useResponsive,
 } from "../ui";
 import { StockCondition } from "./StockParts";
-import { OrderTable } from "./Records";
+import { OrderTable } from "./OrderTable";
 import {
   ConsignmentAndAttendanceHub,
   DashboardAlarmPanel,
