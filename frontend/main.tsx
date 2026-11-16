@@ -1,4 +1,12 @@
-import { Component, useLayoutEffect, type ReactNode } from "react";
+import {
+  Component,
+  Suspense,
+  lazy,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { createRoot } from "react-dom/client";
 import "@astryxdesign/core/reset.css";
 import "@astryxdesign/core/astryx.css";
@@ -6,32 +14,122 @@ import { InternationalizationProvider } from "@astryxdesign/core/i18n";
 import { indonesian } from "./locale";
 import { Theme } from "@astryxdesign/core/theme";
 import { oneflowTheme } from "./theme";
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
+import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
+import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { VStack, Button, Banner, PageHeader, Text } from "./ui";
 import { Router, useApp } from "./router";
 import Shell from "./templates/Shell";
-import Login from "./templates/Login";
-import Customers from "./templates/Customers";
-import CustomerDetail from "./templates/CustomerDetail";
-import CrmForm from "./templates/CrmForm";
-import Orders from "./templates/Orders";
-import Stock from "./templates/Stock";
-import ProductDetail from "./templates/ProductDetail";
-import StockForm from "./templates/StockForm";
-import Detail from "./templates/Detail";
-import ActivityDetail from "./templates/ActivityDetail";
-import Today from "./templates/Today";
-import Samples from "./templates/Samples";
-import SampleForm from "./templates/SampleForm";
-import SampleDetail from "./templates/SampleDetail";
-import FormPage from "./templates/Form";
-import OrderWizard from "./templates/OrderWizard";
 import type { Page } from "./types";
 import { playMotion } from "./motion";
-class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+
+const loaders = {
+  login: () => import("./templates/Login"),
+  today: () => import("./templates/Today"),
+  customers: () => import("./templates/Customers"),
+  customer_detail: () => import("./templates/CustomerDetail"),
+  crm_form: () => import("./templates/CrmForm"),
+  orders: () => import("./templates/Orders"),
+  stock: () => import("./templates/Stock"),
+  product_detail: () => import("./templates/ProductDetail"),
+  stock_form: () => import("./templates/StockForm"),
+  order_detail: () => import("./templates/Detail"),
+  activity_detail: () => import("./templates/ActivityDetail"),
+  samples: () => import("./templates/Samples"),
+  sample_form: () => import("./templates/SampleForm"),
+  sample_detail: () => import("./templates/SampleDetail"),
+  form: () => import("./templates/Form"),
+  order_form: () => import("./templates/OrderWizard"),
+} as const;
+
+const Login = lazy(loaders.login);
+const Today = lazy(loaders.today);
+const Customers = lazy(loaders.customers);
+const CustomerDetail = lazy(loaders.customer_detail);
+const CrmForm = lazy(loaders.crm_form);
+const Orders = lazy(loaders.orders);
+const Stock = lazy(loaders.stock);
+const ProductDetail = lazy(loaders.product_detail);
+const StockForm = lazy(loaders.stock_form);
+const Detail = lazy(loaders.order_detail);
+const ActivityDetail = lazy(loaders.activity_detail);
+const Samples = lazy(loaders.samples);
+const SampleForm = lazy(loaders.sample_form);
+const SampleDetail = lazy(loaders.sample_detail);
+const FormPage = lazy(loaders.form);
+const OrderWizard = lazy(loaders.order_form);
+
+const prefetched = new Set<string>();
+function prefetchLoader(key: keyof typeof loaders) {
+  if (prefetched.has(key)) return;
+  prefetched.add(key);
+  void loaders[key]();
+}
+
+function prefetchRoute(pathname: string) {
+  if (pathname === "/") return prefetchLoader("today");
+  if (pathname === "/customers/") return prefetchLoader("customers");
+  if (pathname === "/orders/") return prefetchLoader("orders");
+  if (pathname === "/samples/") return prefetchLoader("samples");
+  if (pathname === "/stock/") return prefetchLoader("stock");
+  if (pathname === "/login/") return prefetchLoader("login");
+  if (/^\/customers\/\d+\/activities\/new\/$/.test(pathname) || pathname === "/customers/new/")
+    return prefetchLoader("crm_form");
+  if (/^\/customers\/\d+\/$/.test(pathname)) return prefetchLoader("customer_detail");
+  if (/^\/activities\/\d+\//.test(pathname)) return prefetchLoader("activity_detail");
+  if (pathname === "/orders/new/" || /^\/orders\/\d+\/edit\/$/.test(pathname))
+    return prefetchLoader("order_form");
+  if (/^\/orders\/\d+\/$/.test(pathname)) return prefetchLoader("order_detail");
+  if (pathname === "/samples/new/" || /^\/samples\/\d+\/edit\/$/.test(pathname))
+    return prefetchLoader("sample_form");
+  if (/^\/samples\/\d+\/$/.test(pathname)) return prefetchLoader("sample_detail");
+  if (pathname.startsWith("/products/") || pathname.startsWith("/stock/")) {
+    if (/^\/products\/\d+\/$/.test(pathname)) return prefetchLoader("product_detail");
+    return prefetchLoader("stock_form");
+  }
+}
+
+function DelayedFallback() {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShown(true), 180);
+    return () => window.clearTimeout(timer);
+  }, []);
+  if (!shown) return null;
+  return (
+    <Layout
+      height="fill"
+      header={
+        <LayoutHeader padding={6}>
+          <VStack gap={3}>
+            <Skeleton width="30%" height="var(--spacing-8)" />
+            <Skeleton width="45%" height="var(--spacing-4)" index={1} />
+          </VStack>
+        </LayoutHeader>
+      }
+      content={
+        <LayoutContent padding={6}>
+          <VStack gap={4} role="status" aria-label="Memuat halaman" aria-busy="true">
+            <Skeleton height="var(--spacing-10)" />
+            <Skeleton height="calc(var(--spacing-8) * 3)" index={1} />
+            <Skeleton height="var(--spacing-10)" index={2} />
+          </VStack>
+        </LayoutContent>
+      }
+    />
+  );
+}
+class Boundary extends Component<
+  { children: ReactNode; resetKey?: number },
+  { failed: boolean }
+> {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+  componentDidUpdate(prevProps: { resetKey?: number }) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.failed) {
+      this.setState({ failed: false });
+    }
   }
   render() {
     return this.state.failed ? (
@@ -68,12 +166,32 @@ function App() {
     const root = document.getElementById("oneflow-root")!;
     const animation = playMotion(
       root.firstElementChild as HTMLElement,
-      [{ opacity: 0.8 }, { opacity: 1 }],
+      [{ opacity: 0.94 }, { opacity: 1 }],
       "fast",
     );
     return () => animation?.cancel();
   }, []);
-  if (page.screen === "login") return <Login key={revision} />;
+  useEffect(() => {
+    if (page.screen === "login") return;
+    const warm = () => {
+      (["today", "customers", "orders", "samples", "stock"] as const).forEach(
+        prefetchLoader,
+      );
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(warm, { timeout: 1500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const timer = globalThis.setTimeout(warm, 800);
+    return () => globalThis.clearTimeout(timer);
+  }, [page.screen === "login"]);
+  if (page.screen === "login") {
+    return (
+      <Suspense fallback={null}>
+        <Login key={revision} />
+      </Suspense>
+    );
+  }
   const d = page.data;
   let content: ReactNode;
   switch (page.screen) {
@@ -172,9 +290,26 @@ function App() {
         />
       );
   }
+  const path = page.url.split("?")[0];
+  const remountOnRevision = [
+    "form",
+    "product_edit",
+    "order_form",
+    "sample_form",
+    "sample_policy",
+  ].includes(page.screen);
   return (
     <Shell>
-      <Boundary key={revision}>{content}</Boundary>
+      <Boundary
+        key={
+          remountOnRevision
+            ? `${page.screen}:${path}:${revision}`
+            : `${page.screen}:${path}`
+        }
+        resetKey={revision}
+      >
+        <Suspense fallback={<DelayedFallback />}>{content}</Suspense>
+      </Boundary>
     </Shell>
   );
 }
@@ -187,7 +322,7 @@ createRoot(document.getElementById("oneflow-root")!).render(
     messages={{ "id-ID": indonesian }}
   >
     <Theme theme={oneflowTheme}>
-      <Router initial={initial}>
+      <Router initial={initial} onPrefetch={prefetchRoute}>
         <App />
       </Router>
     </Theme>

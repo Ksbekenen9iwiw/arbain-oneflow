@@ -33,9 +33,11 @@ const Context = createContext<AppContext>(null!);
 export const useApp = () => useContext(Context);
 export function Router({
   initial,
+  onPrefetch,
   children,
 }: {
   initial: Page;
+  onPrefetch?: (pathname: string) => void;
   children: ReactNode;
 }) {
   const [page, setPage] = useState(initial),
@@ -139,6 +141,8 @@ export function Router({
           historyIndex.current += 1;
           history.pushState({ oneflowIndex: historyIndex.current }, "", target);
         }
+        const samePath =
+          !data && url.split("?")[0] === previous.url.split("?")[0];
         requestAnimationFrame(() => {
           const invalid =
             !response.ok && data
@@ -151,6 +155,7 @@ export function Router({
             invalid.scrollIntoView({ block: "center" });
             return;
           }
+          if (samePath) return;
           const heading = document.querySelector("h1");
           if (heading instanceof HTMLElement) {
             heading.tabIndex = -1;
@@ -264,15 +269,32 @@ export function Router({
       e.preventDefault();
       void navigate(url.pathname + url.search);
     };
+    const prefetch = (e: Event) => {
+      if (!onPrefetch) return;
+      const anchor = (e.target as Element)?.closest("a");
+      if (!anchor || anchor.target || anchor.hasAttribute("download")) return;
+      try {
+        const url = new URL(anchor.href);
+        if (url.origin === location.origin && url.pathname.startsWith("/")) {
+          onPrefetch(url.pathname);
+        }
+      } catch {
+        // ignore invalid href
+      }
+    };
     window.addEventListener("beforeunload", beforeUnload);
     window.addEventListener("popstate", pop);
     document.addEventListener("click", click);
+    document.addEventListener("pointerenter", prefetch, true);
+    document.addEventListener("focusin", prefetch, true);
     return () => {
       window.removeEventListener("beforeunload", beforeUnload);
       window.removeEventListener("popstate", pop);
       document.removeEventListener("click", click);
+      document.removeEventListener("pointerenter", prefetch, true);
+      document.removeEventListener("focusin", prefetch, true);
     };
-  }, [navigate]);
+  }, [navigate, onPrefetch]);
   useEffect(() => {
     document.title =
       (page.data.heading ||
