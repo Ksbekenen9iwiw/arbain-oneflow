@@ -1,8 +1,19 @@
 import { useState } from "react";
+import { Avatar } from "@astryxdesign/core/Avatar";
 import { Card } from "@astryxdesign/core/Card";
+import { Divider } from "@astryxdesign/core/Divider";
+import { Icon } from "@astryxdesign/core/Icon";
 import { List, ListItem } from "@astryxdesign/core/List";
-import { VStack, HStack, Text, Button, FormDialog } from "./ui";
+import { Token } from "@astryxdesign/core/Token";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { VStack, HStack, Text, Button, FormDialog, useResponsive } from "./ui";
 import type { Row } from "./types";
+
+const ROLE_COLOR: Record<string, "blue" | "orange" | "green"> = {
+  Sales: "blue",
+  Gudang: "orange",
+  Manajer: "green",
+};
 
 export function DemoAccess({
   accounts,
@@ -13,16 +24,26 @@ export function DemoAccess({
   onSelect: (account: Row) => void;
   disabled: boolean;
 }) {
+  const { contentPadding, isMobile } = useResponsive();
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Row | null>(null);
+  const [selected, setSelected] = useState<Row | null>(accounts[0] ?? null);
   const [copied, setCopied] = useState("");
+
+  function openDialog() {
+    if (!selected && accounts.length > 0) {
+      setSelected(accounts[0]);
+    }
+    setCopied("");
+    setOpen(true);
+  }
+
   return (
     <VStack gap={2} paddingBlockStart={3}>
       <HStack>
         <Button
           label="Akses demo untuk juri"
           variant="secondary"
-          onClick={() => setOpen(true)}
+          onClick={openDialog}
         />
       </HStack>
       <Text type="supporting">
@@ -34,58 +55,105 @@ export function DemoAccess({
         title="Pilih akun demo"
         width="38rem"
         footer={
-          selected && (
+          <HStack gap={2} justify="end" width="100%" wrap="wrap">
             <Button
-              label={`Gunakan akun ${selected.username}`}
-              variant="primary"
-              isDisabled={disabled}
-              onClick={() => {
-                onSelect(selected);
-                setOpen(false);
-              }}
+              label="Tutup"
+              variant="secondary"
+              width={isMobile ? "100%" : undefined}
+              onClick={() => setOpen(false)}
             />
-          )
+            {selected && (
+              <Button
+                label={`Gunakan akun ${selected.username}`}
+                variant="primary"
+                width={isMobile ? "100%" : undefined}
+                isDisabled={disabled}
+                onClick={() => {
+                  onSelect(selected);
+                  setOpen(false);
+                }}
+              />
+            )}
+          </HStack>
         }
       >
-        <VStack gap={4} paddingBlock={4}>
+        <VStack gap={3} paddingInline={contentPadding} paddingBlock={3}>
           <Text color="secondary">
-            Setiap peran memiliki tugas dan akses berbeda. Pilih akun untuk
-            melihat kredensialnya.
+            Setiap peran memiliki tugas dan akses berbeda. Klik salah satu akun
+            untuk melihat kredensial atau langsung mengisi formulir masuk.
           </Text>
           <List hasDividers density="balanced">
-            {accounts.map((account) => (
-              <ListItem
-                key={account.username}
-                label={`${account.role} · ${account.name || account.username}`}
-                description={
-                  <Text type="supporting">{account.description}</Text>
-                }
-                endContent={
-                  <Button
-                    size="sm"
-                    label={
-                      selected?.username === account.username
-                        ? "Dipilih"
-                        : `Pilih ${account.username}`
-                    }
-                    isDisabled={disabled}
-                    onClick={() => {
-                      setSelected(account);
-                      setCopied("");
-                    }}
-                  />
-                }
-              />
-            ))}
+            {accounts.map((account) => {
+              const isSelected = selected?.username === account.username;
+              const roleColor = ROLE_COLOR[account.role] ?? "blue";
+              const displayName = account.name || account.username;
+              return (
+                <ListItem
+                  key={account.username}
+                  isSelected={isSelected}
+                  isDisabled={disabled}
+                  onClick={() => {
+                    setSelected(account);
+                    setCopied("");
+                  }}
+                  startContent={
+                    <Avatar name={displayName} size="sm" tooltip={false} />
+                  }
+                  label={
+                    <HStack gap={2} vAlign="center" wrap="wrap">
+                      <Token label={account.role} color={roleColor} size="sm" />
+                      <Text weight="semibold">{displayName}</Text>
+                      <Text type="supporting" color="secondary">
+                        @{account.username}
+                      </Text>
+                    </HStack>
+                  }
+                  description={
+                    <Text type="supporting" color="secondary">
+                      {account.description}
+                    </Text>
+                  }
+                  endContent={
+                    isSelected ? (
+                      <Icon icon={CheckCircleIcon} color="accent" size="md" />
+                    ) : undefined
+                  }
+                />
+              );
+            })}
           </List>
           {selected && (
-            <Card>
-              <VStack gap={2} padding={4}>
-                <Text>Username: {selected.username}</Text>
-                <Text wordBreak="break-all">Sandi: {selected.password}</Text>
-                <HStack>
+            <Card padding={3}>
+              <VStack gap={2}>
+                <HStack justify="between" vAlign="center" gap={2} wrap="wrap">
+                  <Text weight="semibold">
+                    Kredensial · {selected.name || selected.username}
+                  </Text>
+                  <Token
+                    label={selected.role}
+                    color={ROLE_COLOR[selected.role] ?? "blue"}
+                    size="sm"
+                  />
+                </HStack>
+                <Divider />
+                <HStack justify="between" vAlign="center" gap={2} wrap="wrap">
+                  <Text type="supporting" color="secondary">
+                    Username
+                  </Text>
+                  <Text weight="semibold">{selected.username}</Text>
+                </HStack>
+                <HStack justify="between" vAlign="center" gap={2} wrap="wrap">
+                  <VStack gap={0.5}>
+                    <Text type="supporting" color="secondary">
+                      Sandi
+                    </Text>
+                    <Text weight="semibold" wordBreak="break-all">
+                      {selected.password}
+                    </Text>
+                  </VStack>
                   <Button
                     size="sm"
+                    variant="secondary"
                     label={copied === "ok" ? "Tersalin" : "Salin sandi"}
                     onClick={async () => {
                       try {
@@ -97,10 +165,10 @@ export function DemoAccess({
                     }}
                   />
                 </HStack>
-                <Text type="supporting" aria-live="polite">
+                <Text type="supporting" color="secondary" aria-live="polite">
                   {copied === "failed"
-                    ? "Pilih dan salin teks sandi di atas jika salin otomatis tidak tersedia."
-                    : "Tombol di bawah mengisi formulir. Tekan Masuk untuk melanjutkan."}
+                    ? "Salin manual teks sandi di atas jika salin otomatis tidak tersedia."
+                    : `Klik "Gunakan akun ${selected.username}" di bawah untuk mengisi formulir otomatis.`}
                 </Text>
               </VStack>
             </Card>
