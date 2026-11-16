@@ -1,6 +1,6 @@
-import { MotionPanel } from "../motion";
+import { MotionPanel } from "../../motion";
 
-import { withReturn } from "../navigation";
+import { withReturn } from "../../navigation";
 import { useState } from "react";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Selector } from "@astryxdesign/core/Selector";
@@ -18,10 +18,10 @@ import {
   FormDialog,
   useFields,
   useResponsive,
-} from "../ui";
-import { QuantityInput } from "../QuantityInput";
-import { useApp } from "../router";
-import type { Field, FormSpec, Row } from "../types";
+} from "../../ui";
+import { QuantityInput } from "../../QuantityInput";
+import { useApp } from "../../router";
+import type { Field, FormSpec, Row } from "../../types";
 
 type Line = {
   id: string;

@@ -1,6 +1,6 @@
 import SupplyPlanning from "./SupplyPlanning";
-import { ProductIdentity } from "../ProductIdentity";
-import { stockTabUrl, listReturn, backLabel, withReturn } from "../navigation";
+import { ProductIdentity } from "../../ProductIdentity";
+import { stockTabUrl, listReturn, backLabel, withReturn } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Keeps the Astryx table-page frame; separates products from paginated history.
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
@@ -29,15 +29,15 @@ import {
   useResponsive,
   useSearchInput,
   resetLabel,
-} from "../ui";
-import { useApp } from "../router";
+} from "../../ui";
+import { useApp } from "../../router";
 import {
   ServerTable,
   StockCondition,
   MovementView,
   stockContext,
 } from "./StockParts";
-import type { Row } from "../types";
+import type { Row } from "../../types";
 export default function Stock() {
   const { page, navigate, revision } = useApp();
   const { contentPadding } = useResponsive();

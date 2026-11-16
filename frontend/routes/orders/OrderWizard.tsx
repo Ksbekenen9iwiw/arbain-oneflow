@@ -1,5 +1,5 @@
-import { ProductIdentity } from "../ProductIdentity";
-import { useContentMotion, useListMotion, MotionStack } from "../motion";
+import { ProductIdentity } from "../../ProductIdentity";
+import { useContentMotion, useListMotion, MotionStack } from "../../motion";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 form-wizard. Frame, stepper and pinned footer
 // retain the original template; the fields submit to Django's order formset.
@@ -13,7 +13,7 @@ import {
 import { FormLayout } from "@astryxdesign/core/FormLayout";
 import { Step, Stepper } from "@astryxdesign/core/Stepper";
 import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
-import { QuantityInput } from "../QuantityInput";
+import { QuantityInput } from "../../QuantityInput";
 import { proportional } from "@astryxdesign/core/Table";
 import { Divider } from "@astryxdesign/core/Divider";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -30,8 +30,8 @@ import {
   money,
   quantity,
   useResponsive,
-} from "../ui";
-import { useApp } from "../router";
+} from "../../ui";
+import { useApp } from "../../router";
 import {
   initialLines,
   initialStep,
@@ -40,7 +40,7 @@ import {
   validQuantity,
   validateOrder,
   type WizardData,
-} from "../orderWizard";
+} from "../../orderWizard";
 
 const STEPS = ["Pelanggan", "Produk & jumlah", "Tinjau pesanan"];
 const footerZone: CSSProperties = { flexBasis: 0 };

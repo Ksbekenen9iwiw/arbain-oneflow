@@ -1,7 +1,7 @@
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { MotionPanel } from "../motion";
-import { ProductIdentity } from "../ProductIdentity";
-import { withReturn, backLabel } from "../navigation";
+import { MotionPanel } from "../../motion";
+import { ProductIdentity } from "../../ProductIdentity";
+import { withReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 detail-page: status header, line items, totals,
 // chronological history and a hideable customer panel.
@@ -44,10 +44,10 @@ import {
   ServerForm,
   Banner,
   useResponsive,
-} from "../ui";
-import { useApp } from "../router";
+} from "../../ui";
+import { useApp } from "../../router";
 import { orderContext, orderLabels } from "./Orders";
-import type { Row } from "../types";
+import type { Row } from "../../types";
 export default function Detail() {
   const { page, busy, navigate, clearDirty, revision } = useApp();
   const { isNarrow, contentPadding } = useResponsive();

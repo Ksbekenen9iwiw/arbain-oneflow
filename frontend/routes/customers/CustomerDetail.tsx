@@ -1,9 +1,9 @@
 import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { useEffect, useState } from "react";
-import { ProductIdentity, ProductThumbnail } from "../ProductIdentity";
-import { MotionPanel } from "../motion";
-import { MotionStack } from "../motion";
-import { withReturn, backLabel } from "../navigation";
+import { ProductIdentity, ProductThumbnail } from "../../ProductIdentity";
+import { MotionPanel } from "../../motion";
+import { MotionStack } from "../../motion";
+import { withReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Astryx detail-page frame: record header, chronological List, and context rail.
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
@@ -34,10 +34,10 @@ import {
   SimpleForm,
   FormDialog,
   useResponsive,
-} from "../ui";
-import { useApp, useQueryState } from "../router";
-import { OrderTable } from "./OrderTable";
-import type { Row } from "../types";
+} from "../../ui";
+import { useApp, useQueryState } from "../../router";
+import { OrderTable } from "../orders/OrderTable";
+import type { Row } from "../../types";
 
 export default function CustomerDetail() {
   const { page, busy, revision } = useApp();

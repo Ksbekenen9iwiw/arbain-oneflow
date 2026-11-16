@@ -1,8 +1,8 @@
 import { proportional } from "@astryxdesign/core/Table";
 import { Grid } from "@astryxdesign/core/Grid";
-import { MotionPanel } from "../motion";
-import { ProductIdentity } from "../ProductIdentity";
-import { withReturn, backLabel } from "../navigation";
+import { MotionPanel } from "../../motion";
+import { ProductIdentity } from "../../ProductIdentity";
+import { withReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from the scaffolded Astryx detail-page: header, content and end panel.
 import { useState } from "react";
@@ -27,11 +27,11 @@ import {
   quantity,
   dateLabel,
   useResponsive,
-} from "../ui";
-import { useApp } from "../router";
+} from "../../ui";
+import { useApp } from "../../router";
 import { Collapsible } from "@astryxdesign/core/Collapsible";
-import { FormDialog, SimpleForm } from "../ui";
-import type { Row } from "../types";
+import { FormDialog, SimpleForm } from "../../ui";
+import type { Row } from "../../types";
 import { StockCondition, MovementView, stockContext } from "./StockParts";
 export default function ProductDetail() {
   const { page, navigate, busy, clearDirty } = useApp();

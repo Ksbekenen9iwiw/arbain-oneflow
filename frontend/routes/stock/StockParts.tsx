@@ -1,5 +1,5 @@
-import { ProductIdentity } from "../ProductIdentity";
-import { withReturn } from "../navigation";
+import { ProductIdentity } from "../../ProductIdentity";
+import { withReturn } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Astryx TablePaginatedTable pattern, with pagination and sorting owned by Django.
 import { useEffect, useState } from "react";
@@ -28,10 +28,10 @@ import {
   Banner,
   quantity,
   dateLabel,
-} from "../ui";
-import { useApp } from "../router";
-import { useDelayedBusy } from "../RequestFeedback";
-import type { Row } from "../types";
+} from "../../ui";
+import { useApp } from "../../router";
+import { useDelayedBusy } from "../../RequestFeedback";
+import type { Row } from "../../types";
 export const stockContext = withReturn;
 export function StockCondition({ product }: { product: Row }) {
   const labels: Record<string, string> = {

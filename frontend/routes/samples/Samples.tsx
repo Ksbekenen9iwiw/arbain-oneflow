@@ -1,10 +1,10 @@
-import type { Row } from "../types";
-import { sampleStage } from "../sampleJourney";
+import type { Row } from "../../types";
+import { sampleStage } from "../../sampleJourney";
 import { proportional } from "@astryxdesign/core/Table";
 import { TabList, Tab } from "@astryxdesign/core/TabList";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Collapsible } from "@astryxdesign/core/Collapsible";
-import { RecordIdentity } from "../RecordIdentity";
+import { RecordIdentity } from "../../RecordIdentity";
 import { useEffect, useState } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Selector } from "@astryxdesign/core/Selector";
@@ -30,10 +30,10 @@ import {
   useResponsive,
   useSearchInput,
   resetLabel,
-} from "../ui";
-import { useApp } from "../router";
-import { useDelayedBusy } from "../RequestFeedback";
-import { withReturn, listReturn, backLabel } from "../navigation";
+} from "../../ui";
+import { useApp } from "../../router";
+import { useDelayedBusy } from "../../RequestFeedback";
+import { withReturn, listReturn, backLabel } from "../../navigation";
 
 const requestLabels: Record<string, string> = {
   DRAFT: "Draf",

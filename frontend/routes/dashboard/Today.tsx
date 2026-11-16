@@ -1,12 +1,12 @@
-import { MotionStack } from "../motion";
-import { RecordIdentity } from "../RecordIdentity";
-import { ProductIdentity } from "../ProductIdentity";
-import { withReturn } from "../navigation";
+import { MotionStack } from "../../motion";
+import { RecordIdentity } from "../../RecordIdentity";
+import { ProductIdentity } from "../../ProductIdentity";
+import { withReturn } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from original Astryx 0.7 dashboard + dashboard-scorecard templates.
 // Native scorecards, trend, goal progress and work table; all records supplied by Django.
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
-import { ChartSkeleton } from "../Loading";
+import { ChartSkeleton } from "../../Loading";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
@@ -43,22 +43,22 @@ import {
   FormDialog,
   Empty,
   useResponsive,
-} from "../ui";
-import { StockCondition } from "./StockParts";
-import { OrderTable } from "./OrderTable";
+} from "../../ui";
+import { StockCondition } from "../stock/StockParts";
+import { OrderTable } from "../orders/OrderTable";
 import {
   ConsignmentAndAttendanceHub,
   DashboardAlarmPanel,
 } from "./TodayConsignment";
-import { useApp, useQueryState } from "../router";
-import { useDelayedBusy } from "../RequestFeedback";
+import { useApp, useQueryState } from "../../router";
+import { useDelayedBusy } from "../../RequestFeedback";
 import {
   dashboardQueue,
   activityMatches,
   recommendationEffect,
   recommendationSubmitLabel,
-} from "../dashboard";
-import type { Row, FormSpec } from "../types";
+} from "../../dashboard";
+import type { Row, FormSpec } from "../../types";
 const ShipmentTrend = lazy(() => import("./ShipmentTrend"));
 
 function Metric({

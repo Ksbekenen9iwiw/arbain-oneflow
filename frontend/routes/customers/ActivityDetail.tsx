@@ -31,10 +31,10 @@ import {
   FormDialog,
   dateLabel,
   useResponsive,
-} from "../ui";
-import { useApp } from "../router";
-import { withReturn, backLabel } from "../navigation";
-import type { Row } from "../types";
+} from "../../ui";
+import { useApp } from "../../router";
+import { withReturn, backLabel } from "../../navigation";
+import type { Row } from "../../types";
 
 export default function ActivityDetail() {
   const { page, busy } = useApp();
