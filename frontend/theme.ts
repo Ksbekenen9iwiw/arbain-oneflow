@@ -88,13 +88,9 @@ export const oneflowTheme = defineTheme({
   components: {
     token: {
       "color:red": {
-        backgroundColor: "var(--color-error)",
-        color: "var(--color-on-error)",
         fontWeight: "var(--font-weight-semibold)",
       },
       "color:orange": {
-        backgroundColor: "var(--color-warning)",
-        color: "var(--color-on-warning)",
         fontWeight: "var(--font-weight-semibold)",
       },
       "color:green": {
@@ -116,4 +112,3 @@ export const oneflowTheme = defineTheme({
     },
   },
 });
-
