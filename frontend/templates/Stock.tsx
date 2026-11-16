@@ -3,7 +3,6 @@ import { ProductIdentity } from "../ProductIdentity";
 import { stockTabUrl, listReturn, backLabel, withReturn } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Keeps the Astryx table-page frame; separates products from paginated history.
-import { useState } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Selector } from "@astryxdesign/core/Selector";
@@ -28,6 +27,8 @@ import {
   quantity,
   Status,
   useResponsive,
+  useSearchInput,
+  resetLabel,
 } from "../ui";
 import { useApp } from "../router";
 import {
@@ -38,22 +39,27 @@ import {
 } from "./StockParts";
 import type { Row } from "../types";
 export default function Stock() {
-  const { page, navigate, busy, refreshing } = useApp();
+  const { page, navigate, revision } = useApp();
   const { contentPadding } = useResponsive();
   const d = page.data,
     manage = page.role !== "SALES",
     history = d.selected_tab === "movements";
   const back = listReturn(page.url);
-  const resetUrl = back ? withReturn("/stock/", back) : "/stock/";
-  const [query, setQuery] = useState(d.query || "");
   const update = (changes: Record<string, string>) => {
     const params = new URLSearchParams(page.url.split("?")[1] || "");
     for (const [k, v] of Object.entries(changes))
       v ? params.set(k, v) : params.delete(k);
     void navigate("/stock/" + (params.size ? "?" + params : ""));
   };
-  const filtered =
-    d.query || d.stock_filter || d.selected_status || d.selected_sort !== "sku";
+  const [query, setQuery] = useSearchInput(d.query || "", revision, (q) =>
+    update({ q }),
+  );
+  const filtered = Boolean(
+    d.query ||
+      d.stock_filter ||
+      d.selected_status ||
+      (d.selected_sort && d.selected_sort !== "sku"),
+  );
   const columns: TableColumn<Row>[] = [
     {
       key: "name",
@@ -240,6 +246,7 @@ export default function Stock() {
                         label="Cari produk"
                         placeholder="Nama produk atau SKU"
                         startIcon="search"
+                        hasClear
                         width="100%"
                         value={query}
                         onChange={setQuery}
@@ -284,17 +291,25 @@ export default function Stock() {
                       ]}
                       onChange={(filter) => update({ filter, q: query })}
                     />
-                    <Button
-                      variant="secondary"
-                      label="Cari"
-                      type="submit"
-                      isLoading={refreshing}
-                      isDisabled={busy}
-                    />
                   </FilterRow>
                 </form>
                 <ResultsSummary
-                  reset={filtered ? { href: resetUrl } : undefined}
+                  reset={
+                    filtered
+                      ? {
+                          label: resetLabel(
+                            d.query,
+                            d.stock_filter ||
+                              d.selected_status ||
+                              (d.selected_sort && d.selected_sort !== "sku"),
+                          ),
+                          onClick: () => {
+                            setQuery("");
+                            update({ q: "", status: "", filter: "", sort: "sku" });
+                          },
+                        }
+                      : undefined
+                  }
                 >
                   {d.products.length} produk · Stok bebas = fisik − reservasi.
                   Kelayakan kirim diperiksa per batch.

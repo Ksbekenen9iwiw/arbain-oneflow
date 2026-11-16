@@ -29,22 +29,22 @@ import {
   dateLabel,
   Status,
   useResponsive,
+  useSearchInput,
+  resetLabel,
 } from "../ui";
 import { useApp } from "../router";
 import type { Row } from "../types";
 export const customerContext = withReturn;
 export default function Customers() {
-  const { page, navigate, busy, refreshing } = useApp();
+  const { page, navigate, revision } = useApp();
   const { contentPadding } = useResponsive();
   const d = page.data;
   const back = listReturn(page.url);
-  const resetUrl = back ? withReturn("/customers/", back) : "/customers/";
-  const [query, setQuery] = useState(d.query);
   const manager = page.role === "MANAGER";
-  const update = (changes: Record<string, string>) => {
+  const update = (changes: Record<string, string>, nextQuery = query) => {
     const params = new URLSearchParams({
       return_to: back || "",
-      q: query,
+      q: nextQuery,
       sales: d.selected_sales,
       status: d.selected_status,
       view: d.selected_view,
@@ -55,6 +55,9 @@ export default function Customers() {
       if (!value || (key === "sort" && value === "name")) params.delete(key);
     void navigate("/customers/" + (params.size ? "?" + params : ""));
   };
+  const [query, setQuery] = useSearchInput(d.query || "", revision, (nextQuery) =>
+    update({ q: nextQuery }, nextQuery),
+  );
   const sort: TableSortState = [
     {
       sortKey: d.selected_sort.replace("-", ""),
@@ -167,8 +170,7 @@ export default function Customers() {
       ),
     },
   ];
-  const filtered =
-    d.query || d.selected_sales || d.selected_status || d.selected_view;
+  const filtered = Boolean(d.query || d.selected_sales || d.selected_status);
   return (
     <Layout
       height="fill"
@@ -220,6 +222,7 @@ export default function Customers() {
                     onChange={setQuery}
                     placeholder="Nama, kode, atau nomor telepon"
                     startIcon="search"
+                    hasClear
                     width="100%"
                   />
                 </StackItem>
@@ -246,20 +249,24 @@ export default function Customers() {
                   ]}
                   onChange={(v) => update({ status: v })}
                 />
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  label="Cari"
-                  isLoading={refreshing}
-                  isDisabled={busy}
-                />
               </FilterRow>
             </form>
 
             <ResultsSummary
               reset={
                 filtered || d.selected_sort !== "name"
-                  ? { href: resetUrl }
+                  ? {
+                      label: resetLabel(
+                        d.query,
+                        d.selected_sales ||
+                          d.selected_status ||
+                          d.selected_sort !== "name",
+                      ),
+                      onClick: () => {
+                        setQuery("");
+                        update({ q: "", sales: "", status: "", sort: "name" }, "");
+                      },
+                    }
                   : undefined
               }
             >

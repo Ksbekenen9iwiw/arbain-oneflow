@@ -5,7 +5,7 @@ import { TabList, Tab } from "@astryxdesign/core/TabList";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { RecordIdentity } from "../RecordIdentity";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Selector } from "@astryxdesign/core/Selector";
 import { DateInput } from "@astryxdesign/core/DateInput";
@@ -28,8 +28,11 @@ import {
   dateLabel,
   quantity,
   useResponsive,
+  useSearchInput,
+  resetLabel,
 } from "../ui";
 import { useApp } from "../router";
+import { useDelayedBusy } from "../RequestFeedback";
 import { withReturn, listReturn, backLabel } from "../navigation";
 
 const requestLabels: Record<string, string> = {
@@ -41,18 +44,25 @@ const requestLabels: Record<string, string> = {
 };
 
 export default function Samples() {
-  const { page, navigate, busy, refreshing } = useApp();
+  const { page, navigate, busy, refreshing, revision } = useApp();
+  const delayedBusy = useDelayedBusy(busy);
+  const delayedRefreshing = useDelayedBusy(refreshing);
   const { contentPadding } = useResponsive();
   const d = page.data;
   const back = listReturn(page.url);
-  const resetUrl = back ? withReturn("/samples/", back) : "/samples/";
-  const [query, setQuery] = useState(d.query || "");
   const [from, setFrom] = useState(d.date_from || "");
   const [to, setTo] = useState(d.date_to || "");
-  const update = (changes: Record<string, string> = {}) => {
+  useEffect(() => {
+    setFrom(d.date_from || "");
+    setTo(d.date_to || "");
+  }, [revision]);
+  const update = (
+    changes: Record<string, string> = {},
+    nextQuery = query,
+  ) => {
     const params = new URLSearchParams({
       return_to: back || "",
-      q: query,
+      q: nextQuery,
       status: d.selected_status || "",
       fulfillment: d.selected_fulfillment || "",
       customer: d.selected_customer || "",
@@ -65,14 +75,17 @@ export default function Samples() {
     for (const [key, value] of [...params]) if (!value) params.delete(key);
     void navigate("/samples/" + (params.size ? "?" + params : ""));
   };
-  const filtered =
+  const [query, setQuery] = useSearchInput(d.query || "", revision, (nextQuery) =>
+    update({ q: nextQuery, page: "1" }, nextQuery),
+  );
+  const filtered = Boolean(
     d.query ||
-    d.selected_status ||
-    d.selected_fulfillment ||
-    d.selected_customer ||
-    d.selected_sales ||
-    from ||
-    to;
+      d.selected_fulfillment ||
+      d.selected_customer ||
+      d.selected_sales ||
+      d.date_from ||
+      d.date_to,
+  );
   return (
     <Layout
       height="fill"
@@ -142,18 +155,12 @@ export default function Samples() {
                     label="Cari pengajuan"
                     placeholder="Nomor pengajuan atau nama pelanggan"
                     startIcon="search"
+                    hasClear
                     width="100%"
                     value={query}
                     onChange={setQuery}
                   />
                 </StackItem>
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  label="Cari"
-                  isLoading={refreshing}
-                  isDisabled={busy}
-                />
               </FilterRow>
             </form>
             <Collapsible
@@ -231,14 +238,46 @@ export default function Samples() {
                     variant="secondary"
                     label="Terapkan periode"
                     onClick={() => update({ page: "1" })}
-                    isLoading={refreshing}
-                    isDisabled={busy}
+                    isLoading={delayedRefreshing}
+                    isDisabled={delayedBusy}
                   />
                 </FilterRow>
               </VStack>
             </Collapsible>
             {d.date_error && <Banner status="warning" title={d.date_error} />}
-            <ResultsSummary reset={filtered ? { href: resetUrl } : undefined}>
+            <ResultsSummary
+              reset={
+                filtered
+                  ? {
+                      label: resetLabel(
+                        d.query,
+                        d.selected_fulfillment ||
+                          d.selected_customer ||
+                          d.selected_sales ||
+                          d.date_from ||
+                          d.date_to,
+                      ),
+                      onClick: () => {
+                        setQuery("");
+                        setFrom("");
+                        setTo("");
+                        update(
+                          {
+                            q: "",
+                            fulfillment: "",
+                            customer: "",
+                            sales: "",
+                            from: "",
+                            to: "",
+                            page: "1",
+                          },
+                          "",
+                        );
+                      },
+                    }
+                  : undefined
+              }
+            >
               {quantity(d.total)} pengajuan
             </ResultsSummary>
             <DataTable
@@ -364,7 +403,7 @@ export default function Samples() {
                 totalItems={Number(d.total)}
                 pageSize={20}
                 onChange={(pageNumber) => update({ page: String(pageNumber) })}
-                isDisabled={busy}
+                isDisabled={delayedBusy}
                 label="Halaman pengajuan sampel"
               />
             )}

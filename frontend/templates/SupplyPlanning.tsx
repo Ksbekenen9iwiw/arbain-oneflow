@@ -1,6 +1,5 @@
 // Uses the existing Astryx table-page frame in Stock.
 import { proportional } from "@astryxdesign/core/Table";
-import { useState } from "react";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Selector } from "@astryxdesign/core/Selector";
 import {
@@ -16,6 +15,8 @@ import {
   Empty,
   Status,
   quantity,
+  useSearchInput,
+  resetLabel,
 } from "../ui";
 import { ProductIdentity } from "../ProductIdentity";
 import { useApp } from "../router";
@@ -29,8 +30,10 @@ export default function SupplyPlanning({
   data: Row;
   update: (values: Record<string, string>) => void;
 }) {
-  const { page, busy, refreshing } = useApp();
-  const [query, setQuery] = useState(d.query || "");
+  const { page, revision } = useApp();
+  const [query, setQuery] = useSearchInput(d.query || "", revision, (q) =>
+    update({ q }),
+  );
   return (
     <VStack gap={4} data-tour="supply-planning">
       <Text type="supporting">
@@ -50,6 +53,7 @@ export default function SupplyPlanning({
               placeholder="Nama produk atau SKU"
               startIcon="search"
               width="100%"
+              hasClear
               value={query}
               onChange={setQuery}
             />
@@ -67,19 +71,18 @@ export default function SupplyPlanning({
             ]}
             onChange={(risk) => update({ risk, q: query })}
           />
-          <Button
-            type="submit"
-            variant="secondary"
-            label="Cari"
-            isLoading={refreshing}
-            isDisabled={busy}
-          />
         </FilterRow>
       </form>
       <ResultsSummary
         reset={
           d.query || d.selected_risk
-            ? { onClick: () => update({ q: "", risk: "" }) }
+            ? {
+                label: resetLabel(d.query, d.selected_risk),
+                onClick: () => {
+                  setQuery("");
+                  update({ q: "", risk: "" });
+                },
+              }
             : undefined
         }
       >

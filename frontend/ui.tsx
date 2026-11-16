@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
   type FormEvent,
@@ -323,12 +324,44 @@ export function FilterRow({ children }: { children: ReactNode }) {
   );
 }
 
+export function useSearchInput(
+  serverQuery: string,
+  revision: number,
+  onSearch: (nextQuery: string) => void,
+  delay = 250,
+): [string, (value: string) => void] {
+  const [query, setQuery] = useState(serverQuery || "");
+  const lastServer = useRef(serverQuery || "");
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
+  useEffect(() => {
+    const nextServer = serverQuery || "";
+    const prevServer = lastServer.current;
+    lastServer.current = nextServer;
+    if (nextServer !== prevServer && (nextServer === "" || query === prevServer)) {
+      setQuery(nextServer);
+    }
+  }, [revision, serverQuery]);
+  useEffect(() => {
+    if (query.trim() === (serverQuery || "").trim()) return;
+    const timer = window.setTimeout(() => onSearchRef.current(query), delay);
+    return () => window.clearTimeout(timer);
+  }, [query, serverQuery, delay]);
+  return [query, setQuery];
+}
+
+export function resetLabel(hasSearch: unknown, hasFilter: unknown) {
+  if (hasSearch && hasFilter) return "Reset pencarian & filter";
+  if (hasSearch) return "Reset pencarian";
+  return "Reset filter";
+}
+
 export function ResultsSummary({
   children,
   reset,
 }: {
   children: ReactNode;
-  reset?: { href?: string; onClick?: () => void };
+  reset?: { href?: string; onClick?: () => void; label?: string };
 }) {
   return (
     <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
@@ -336,7 +369,13 @@ export function ResultsSummary({
         {children}
       </Text>
       {reset && (
-        <Button label="Reset filter" size="sm" variant="secondary" {...reset} />
+        <Button
+          label={reset.label || "Reset filter"}
+          size="sm"
+          variant="secondary"
+          href={reset.href}
+          onClick={reset.onClick}
+        />
       )}
     </HStack>
   );
@@ -821,7 +860,7 @@ export function FormDialog({
         content={
           <LayoutContent
             padding={0}
-            style={{ maxHeight: "60dvh", overflowY: "auto" }}
+            style={{ maxHeight: "calc(85dvh - 9rem)", overflowY: "auto" }}
           >
             <section hidden={discard}>
               <RequestFeedback />

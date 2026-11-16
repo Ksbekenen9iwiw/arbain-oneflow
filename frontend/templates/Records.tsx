@@ -1,6 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 table-page: header, scoped search and full-width data rows.
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Selector } from "@astryxdesign/core/Selector";
@@ -21,6 +21,8 @@ import {
   dateLabel,
   Banner,
   Heading,
+  useSearchInput,
+  resetLabel,
 } from "../ui";
 import { withReturn } from "../navigation";
 import { useApp } from "../router";
@@ -125,12 +127,15 @@ export function OrderTable({
   );
 }
 export default function Records() {
-  const { page, navigate, busy, refreshing } = useApp();
+  const { page, navigate, revision } = useApp();
   const d = page.data,
     screen = page.screen,
     canManage = page.role !== "SALES";
-  const [query, setQuery] = useState(d.query || "");
   const [scope, setScope] = useState(d.selected_status || d.stock_filter || "");
+  useEffect(() => {
+    setScope(d.selected_status || d.stock_filter || "");
+    setOwner(d.selected_sales || "");
+  }, [revision]);
   const isOrders = screen === "orders",
     isStock = screen === "stock";
   const title = isOrders ? "Pesanan" : isStock ? "Produk & stok" : "Pelanggan";
@@ -164,20 +169,23 @@ export default function Records() {
         { value: "low", label: "Stok menipis" },
         { value: "conflict", label: "Konflik stok" },
       ];
-  const search = (newScope = scope, newOwner = owner) => {
+  const search = (newScope = scope, newOwner = owner, nextQuery = query) => {
     const q = new URLSearchParams();
     if (isOrders && newOwner) q.set("sales", newOwner);
     if (isOrders && newScope === "SHIPPED" && d.shipped_from && d.shipped_to) {
       q.set("shipped_from", d.shipped_from);
       q.set("shipped_to", d.shipped_to);
     }
-    if (query) q.set("q", query);
+    if (nextQuery) q.set("q", nextQuery);
     if (newScope) q.set(isOrders ? "status" : "filter", newScope);
     void navigate(
       (isOrders ? "/orders/" : isStock ? "/stock/" : "/customers/") +
         (q.size ? "?" + q : ""),
     );
   };
+  const [query, setQuery] = useSearchInput(d.query || "", revision, (nextQuery) =>
+    search(scope, owner, nextQuery),
+  );
   const columns: TableColumn<Row>[] = isStock
     ? [
         {
@@ -408,6 +416,7 @@ export default function Records() {
                     }
                     width="100%"
                     startIcon="search"
+                    hasClear
                   />
                 </StackItem>
                 {(isOrders || isStock) && (
@@ -422,17 +431,9 @@ export default function Records() {
                     width="16rem"
                   />
                 )}
-                <StackItem>
-                  <Button
-                    type="submit"
-                    label="Cari"
-                    isLoading={refreshing}
-                    isDisabled={busy}
-                  />
-                </StackItem>
                 {(d.query || scope) && (
                   <Button
-                    label="Reset"
+                    label={resetLabel(d.query, scope)}
                     variant="ghost"
                     href={
                       isOrders
