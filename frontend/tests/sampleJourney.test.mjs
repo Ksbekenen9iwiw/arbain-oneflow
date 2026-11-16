@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sampleJourney, sampleStage } from "./sampleJourney.ts";
+import { sampleJourney, sampleStage } from "../sampleJourney.ts";
 test("cancelled and rejected requests never suggest shipping, regardless of stored fulfillment state", () => {
   for (const status of ["CANCELLED", "REJECTED"]) {
     const result = sampleJourney({

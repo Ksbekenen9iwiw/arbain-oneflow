@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { activityMatches, dashboardQueue } from "./dashboard.ts";
+import { activityMatches, dashboardQueue } from "../dashboard.ts";
 
 test("work queue includes overdue and today; excludes future and undated until requested", () => {
   const dates = ["2026-10-13", "2026-10-14", "2026-10-15", null];

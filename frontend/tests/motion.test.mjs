@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { playMotion } from "./motionRuntime.ts";
+import { playMotion } from "../motionRuntime.ts";
 
 test("motion respects live reduced-motion changes, tokens, and completed animation cleanup", () => {
   const originalWindow = globalThis.window;

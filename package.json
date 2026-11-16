@@ -25,8 +25,8 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run build",
     "format": "prettier --write frontend vite.config.ts tsconfig.json",
-    "test:wizard": "node --experimental-strip-types --test frontend/orderWizard.test.mjs",
-    "test:frontend": "node --experimental-strip-types --test frontend/*.test.mjs",
+    "test:wizard": "node --experimental-strip-types --test frontend/tests/orderWizard.test.mjs",
+    "test:frontend": "node --experimental-strip-types --test frontend/tests/*.test.mjs",
     "build:loading": "node scripts/build-loading.mjs"
   },
   "type": "module",

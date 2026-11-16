@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { tourSteps, stepCompleted, placeHint } from "./tourSteps.ts";
+import { tourSteps, stepCompleted, placeHint } from "../tourSteps.ts";
 test("warehouse walkthrough never routes into CRM; manager and sales keep customer journey", () => {
   const warehouse = tourSteps("WAREHOUSE");
   assert.equal(warehouse[0].destination, "orders");
