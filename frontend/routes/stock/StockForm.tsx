@@ -17,10 +17,10 @@ import {
   money,
   quantity,
   useResponsive,
-} from "../ui";
-import { useApp } from "../router";
-import type { Field, FormSpec } from "../types";
-import { ProductThumbnail } from "../ProductIdentity";
+} from "../../ui";
+import { useApp } from "../../router";
+import type { Field, FormSpec } from "../../types";
+import { ProductThumbnail } from "../../ProductIdentity";
 export default function StockForm() {
   const { page, busy } = useApp();
   const { contentPadding } = useResponsive();

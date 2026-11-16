@@ -18,27 +18,27 @@ import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { VStack, Button, Banner, PageHeader, Text } from "./ui";
 import { Router, useApp } from "./router";
-import Shell from "./templates/Shell";
+import Shell from "./components/Shell";
 import type { Page } from "./types";
 import { playMotion } from "./motion";
 
 const loaders = {
-  login: () => import("./templates/Login"),
-  today: () => import("./templates/Today"),
-  customers: () => import("./templates/Customers"),
-  customer_detail: () => import("./templates/CustomerDetail"),
-  crm_form: () => import("./templates/CrmForm"),
-  orders: () => import("./templates/Orders"),
-  stock: () => import("./templates/Stock"),
-  product_detail: () => import("./templates/ProductDetail"),
-  stock_form: () => import("./templates/StockForm"),
-  order_detail: () => import("./templates/Detail"),
-  activity_detail: () => import("./templates/ActivityDetail"),
-  samples: () => import("./templates/Samples"),
-  sample_form: () => import("./templates/SampleForm"),
-  sample_detail: () => import("./templates/SampleDetail"),
-  form: () => import("./templates/Form"),
-  order_form: () => import("./templates/OrderWizard"),
+  login: () => import("./routes/auth/Login"),
+  today: () => import("./routes/dashboard/Today"),
+  customers: () => import("./routes/customers/Customers"),
+  customer_detail: () => import("./routes/customers/CustomerDetail"),
+  crm_form: () => import("./routes/customers/CrmForm"),
+  orders: () => import("./routes/orders/Orders"),
+  stock: () => import("./routes/stock/Stock"),
+  product_detail: () => import("./routes/stock/ProductDetail"),
+  stock_form: () => import("./routes/stock/StockForm"),
+  order_detail: () => import("./routes/orders/Detail"),
+  activity_detail: () => import("./routes/customers/ActivityDetail"),
+  samples: () => import("./routes/samples/Samples"),
+  sample_form: () => import("./routes/samples/SampleForm"),
+  sample_detail: () => import("./routes/samples/SampleDetail"),
+  form: () => import("./routes/shared/Form"),
+  order_form: () => import("./routes/orders/OrderWizard"),
 } as const;
 
 const Login = lazy(loaders.login);

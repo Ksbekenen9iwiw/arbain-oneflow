@@ -14,9 +14,9 @@ import {
   ServerForm,
   useFields,
   useResponsive,
-} from "../ui";
-import { useApp } from "../router";
-import type { Field, FormSpec } from "../types";
+} from "../../ui";
+import { useApp } from "../../router";
+import type { Field, FormSpec } from "../../types";
 export default function CrmForm() {
   const { page, busy } = useApp();
   const { contentPadding } = useResponsive();

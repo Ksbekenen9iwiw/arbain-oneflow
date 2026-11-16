@@ -1,5 +1,5 @@
-import { RecordIdentity } from "../RecordIdentity";
-import { withReturn, listReturn, backLabel } from "../navigation";
+import { RecordIdentity } from "../../RecordIdentity";
+import { withReturn, listReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 table-page: unified toolbar, scoped tabs, full-width table.
 import { useState } from "react";
@@ -31,9 +31,9 @@ import {
   useResponsive,
   useSearchInput,
   resetLabel,
-} from "../ui";
-import { useApp } from "../router";
-import type { Row } from "../types";
+} from "../../ui";
+import { useApp } from "../../router";
+import type { Row } from "../../types";
 export const customerContext = withReturn;
 export default function Customers() {
   const { page, navigate, revision } = useApp();

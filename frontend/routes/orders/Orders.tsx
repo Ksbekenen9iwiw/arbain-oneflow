@@ -1,7 +1,7 @@
-import { MotionStack } from "../motion";
-import { RecordIdentity } from "../RecordIdentity";
-import { ProductIdentity } from "../ProductIdentity";
-import { withReturn, listReturn, backLabel } from "../navigation";
+import { MotionStack } from "../../motion";
+import { RecordIdentity } from "../../RecordIdentity";
+import { ProductIdentity } from "../../ProductIdentity";
+import { withReturn, listReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 table-page: one toolbar and one filtered table.
 import { useEffect, useState } from "react";
@@ -39,10 +39,10 @@ import {
   useResponsive,
   useSearchInput,
   resetLabel,
-} from "../ui";
-import { useApp } from "../router";
-import { useDelayedBusy } from "../RequestFeedback";
-import type { Row } from "../types";
+} from "../../ui";
+import { useApp } from "../../router";
+import { useDelayedBusy } from "../../RequestFeedback";
+import type { Row } from "../../types";
 export const orderLabels: Record<string, string> = {
   DRAFT: "Draf",
   CONFIRMED: "Menunggu pengiriman",

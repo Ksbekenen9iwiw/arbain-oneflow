@@ -1,8 +1,8 @@
-import { useQueryState } from "../router";
+import { useQueryState } from "../../router";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Recharts composition from Astryx dashboard and dashboard-scorecard templates.
 import { useRef, useState } from "react";
-import { useContentMotion } from "../motion";
+import { useContentMotion } from "../../motion";
 import {
   LineChart,
   Line,
@@ -29,8 +29,8 @@ import {
   DataTable,
   money,
   dateLabel,
-} from "../ui";
-import type { Row } from "../types";
+} from "../../ui";
+import type { Row } from "../../types";
 
 export default function ShipmentTrend({
   days,

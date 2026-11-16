@@ -19,13 +19,13 @@ import {
   Banner,
   ServerForm,
   useResponsive,
-} from "../ui";
-import { useApp } from "../router";
-import type { Field } from "../types";
-import coverUrl from "../assets/arbain-honey-herbal.jpg";
-import { DemoAccess } from "../DemoAccess";
-import { useContentMotion } from "../motion";
-import { RequestFeedback, usePendingFeedback } from "../RequestFeedback";
+} from "../../ui";
+import { useApp } from "../../router";
+import type { Field } from "../../types";
+import coverUrl from "../../assets/arbain-honey-herbal.jpg";
+import { DemoAccess } from "../../DemoAccess";
+import { useContentMotion } from "../../motion";
+import { RequestFeedback, usePendingFeedback } from "../../RequestFeedback";
 
 const coverStyle: CSSProperties = {
   position: "absolute",

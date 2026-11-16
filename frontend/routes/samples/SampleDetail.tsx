@@ -3,10 +3,10 @@ import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { TabList, Tab } from "@astryxdesign/core/TabList";
-import { MotionPanel, MotionStack } from "../motion";
-import { ProductIdentity } from "../ProductIdentity";
-import { sampleJourney, sampleStage } from "../sampleJourney";
-import { useQueryState } from "../router";
+import { MotionPanel, MotionStack } from "../../motion";
+import { ProductIdentity } from "../../ProductIdentity";
+import { sampleJourney, sampleStage } from "../../sampleJourney";
+import { useQueryState } from "../../router";
 import { useEffect, useState } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Divider } from "@astryxdesign/core/Divider";
@@ -33,10 +33,10 @@ import {
   money,
   quantity,
   useResponsive,
-} from "../ui";
-import { useApp } from "../router";
-import { withReturn, backLabel } from "../navigation";
-import type { Row } from "../types";
+} from "../../ui";
+import { useApp } from "../../router";
+import { withReturn, backLabel } from "../../navigation";
+import type { Row } from "../../types";
 
 export default function SampleDetail() {
   const { page, busy, clearDirty, revision } = useApp();
@@ -998,7 +998,7 @@ function SampleEvaluationForm({
   action,
   label,
 }: {
-  spec: import("../types").FormSpec;
+  spec: import("../../types").FormSpec;
   action: string;
   label: string;
 }) {

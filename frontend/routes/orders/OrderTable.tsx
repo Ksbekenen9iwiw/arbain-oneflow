@@ -9,10 +9,10 @@ import {
   Empty,
   money,
   dateLabel,
-} from "../ui";
-import { withReturn } from "../navigation";
-import { useApp } from "../router";
-import type { Row } from "../types";
+} from "../../ui";
+import { withReturn } from "../../navigation";
+import { useApp } from "../../router";
+import type { Row } from "../../types";
 
 export function OrderTable({
   rows,

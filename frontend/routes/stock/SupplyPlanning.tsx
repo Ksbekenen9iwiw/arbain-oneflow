@@ -17,11 +17,11 @@ import {
   quantity,
   useSearchInput,
   resetLabel,
-} from "../ui";
-import { ProductIdentity } from "../ProductIdentity";
-import { useApp } from "../router";
-import { withReturn } from "../navigation";
-import type { Row } from "../types";
+} from "../../ui";
+import { ProductIdentity } from "../../ProductIdentity";
+import { useApp } from "../../router";
+import { withReturn } from "../../navigation";
+import type { Row } from "../../types";
 
 export default function SupplyPlanning({
   data: d,

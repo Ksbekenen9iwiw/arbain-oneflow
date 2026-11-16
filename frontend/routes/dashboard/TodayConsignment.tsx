@@ -2,13 +2,13 @@ import { useState } from "react";
 import { Card } from "@astryxdesign/core/Card";
 import { Grid } from "@astryxdesign/core/Grid";
 import { TabList, Tab } from "@astryxdesign/core/TabList";
-import type { Row } from "../types";
-import { Banner, Heading, HStack, money, quantity, Status, Text, VStack } from "../ui";
-import { AttendanceRecapTab } from "./today/AttendanceRecapTab";
-import { DashboardAlarmPanel } from "./today/DashboardAlarmPanel";
-import { OutletsConsignmentTab } from "./today/OutletsConsignmentTab";
-import { ProductTractionTab } from "./today/ProductTractionTab";
-import { RawMaterialAlertsTab } from "./today/RawMaterialAlertsTab";
+import type { Row } from "../../types";
+import { Banner, Heading, HStack, money, quantity, Status, Text, VStack } from "../../ui";
+import { AttendanceRecapTab } from "./AttendanceRecapTab";
+import { DashboardAlarmPanel } from "./DashboardAlarmPanel";
+import { OutletsConsignmentTab } from "./OutletsConsignmentTab";
+import { ProductTractionTab } from "./ProductTractionTab";
+import { RawMaterialAlertsTab } from "./RawMaterialAlertsTab";
 
 export { DashboardAlarmPanel };
 
