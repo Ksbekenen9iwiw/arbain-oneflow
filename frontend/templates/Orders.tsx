@@ -4,7 +4,7 @@ import { ProductIdentity } from "../ProductIdentity";
 import { withReturn, listReturn, backLabel } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 table-page: one toolbar and one filtered table.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Selector } from "@astryxdesign/core/Selector";
@@ -37,8 +37,11 @@ import {
   money,
   quantity,
   useResponsive,
+  useSearchInput,
+  resetLabel,
 } from "../ui";
 import { useApp } from "../router";
+import { useDelayedBusy } from "../RequestFeedback";
 import type { Row } from "../types";
 export const orderLabels: Record<string, string> = {
   DRAFT: "Draf",
@@ -48,21 +51,24 @@ export const orderLabels: Record<string, string> = {
 };
 export const orderContext = withReturn;
 export default function Orders() {
-  const { page, navigate, busy, refreshing } = useApp();
+  const { page, navigate, busy, revision } = useApp();
+  const delayedBusy = useDelayedBusy(busy);
   const { contentPadding } = useResponsive();
   const d = page.data;
   const back = listReturn(page.url);
-  const resetUrl = back ? withReturn("/orders/", back) : "/orders/";
-  const [query, setQuery] = useState(d.query);
   const [from, setFrom] = useState(d.date_from_input || ""),
     [to, setTo] = useState(d.date_to_input || "");
+  useEffect(() => {
+    setFrom(d.date_from_input || "");
+    setTo(d.date_to_input || "");
+  }, [revision]);
   const manager = page.role === "MANAGER",
     warehouse = page.role === "WAREHOUSE",
     shipped = d.selected_status === "SHIPPED";
-  const update = (changes: Record<string, string> = {}) => {
+  const update = (changes: Record<string, string> = {}, nextQuery = query) => {
     const params = new URLSearchParams({
       return_to: back || "",
-      q: query,
+      q: nextQuery,
       sales: d.selected_sales,
       status: d.selected_status,
       sort: d.selected_sort,
@@ -77,6 +83,9 @@ export default function Orders() {
     for (const [key, value] of [...params]) if (!value) params.delete(key);
     void navigate("/orders/" + (params.size ? "?" + params : ""));
   };
+  const [query, setQuery] = useSearchInput(d.query || "", revision, (nextQuery) =>
+    update({ q: nextQuery }, nextQuery),
+  );
   const sort: TableSortState = [
     {
       sortKey: d.selected_sort.replace("-", ""),
@@ -226,8 +235,9 @@ export default function Orders() {
       renderCell: (r) => <Text hasTabularNumbers>{money(r.total)}</Text>,
     },
   ];
-  const filtered =
-    d.query || d.selected_status || d.selected_sales || from || to;
+  const filtered = Boolean(
+    d.query || d.selected_sales || d.shipped_from || d.shipped_to,
+  );
   return (
     <Layout
       height="fill"
@@ -288,9 +298,10 @@ export default function Orders() {
                     <TextInput
                       label="Cari pesanan"
                       startIcon="search"
-                      placeholder="Nomor pesanan atau nama pelanggan"
+                      placeholder="Nomor pesanan atau pelanggan"
                       value={query}
                       onChange={setQuery}
+                      hasClear
                       width="100%"
                     />
                   </StackItem>
@@ -306,13 +317,6 @@ export default function Orders() {
                       onChange={(sales) => update({ sales })}
                     />
                   )}
-                  <Button
-                    variant="secondary"
-                    label="Cari"
-                    type="submit"
-                    isLoading={refreshing}
-                    isDisabled={busy}
-                  />
                 </FilterRow>
                 {shipped && (
                   <FilterRow>
@@ -340,7 +344,7 @@ export default function Orders() {
                       variant="secondary"
                       label="Terapkan periode"
                       type="submit"
-                      isDisabled={busy}
+                      isDisabled={delayedBusy}
                     />
                     {(from || to) && (
                       <Button
@@ -361,7 +365,31 @@ export default function Orders() {
               reset={
                 filtered ||
                 d.selected_sort !== (shipped ? "-shipped_at" : "-created_at")
-                  ? { href: resetUrl }
+                  ? {
+                      label: resetLabel(
+                        d.query,
+                        d.selected_sales ||
+                          d.shipped_from ||
+                          d.shipped_to ||
+                          d.selected_sort !==
+                            (shipped ? "-shipped_at" : "-created_at"),
+                      ),
+                      onClick: () => {
+                        setQuery("");
+                        setFrom("");
+                        setTo("");
+                        update(
+                          {
+                            q: "",
+                            sales: "",
+                            shipped_from: "",
+                            shipped_to: "",
+                            sort: shipped ? "-shipped_at" : "-created_at",
+                          },
+                          "",
+                        );
+                      },
+                    }
                   : undefined
               }
             >
