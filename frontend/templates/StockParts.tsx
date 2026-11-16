@@ -2,7 +2,7 @@ import { ProductIdentity } from "../ProductIdentity";
 import { withReturn } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Astryx TablePaginatedTable pattern, with pagination and sorting owned by Django.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   proportional,
@@ -30,6 +30,7 @@ import {
   dateLabel,
 } from "../ui";
 import { useApp } from "../router";
+import { useDelayedBusy } from "../RequestFeedback";
 import type { Row } from "../types";
 export const stockContext = withReturn;
 export function StockCondition({ product }: { product: Row }) {
@@ -112,9 +113,15 @@ export function MovementView({
   update: (changes: Record<string, string>) => void;
   singleProduct?: boolean;
 }) {
-  const { page, busy, refreshing } = useApp();
+  const { page, busy, refreshing, revision } = useApp();
+  const delayedBusy = useDelayedBusy(busy);
+  const delayedRefreshing = useDelayedBusy(refreshing);
   const [from, setFrom] = useState(d.date_from || ""),
     [to, setTo] = useState(d.date_to || "");
+  useEffect(() => {
+    setFrom(d.date_from || "");
+    setTo(d.date_to || "");
+  }, [revision]);
   const filtered =
     d.query ||
     d.selected_kind ||
@@ -174,8 +181,8 @@ export function MovementView({
               variant="secondary"
               label="Terapkan periode"
               type="submit"
-              isLoading={refreshing}
-              isDisabled={busy}
+              isLoading={delayedRefreshing}
+              isDisabled={delayedBusy}
             />
           </FilterRow>
         </VStack>
@@ -315,7 +322,7 @@ export function MovementView({
           totalItems={Number(d.movement_total)}
           pageSize={Number(d.page_size)}
           onChange={(n) => update({ page: String(n) })}
-          isDisabled={busy}
+          isDisabled={delayedBusy}
           label="Halaman riwayat mutasi"
         />
       )}

@@ -5,7 +5,7 @@ import { withReturn } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from original Astryx 0.7 dashboard + dashboard-scorecard templates.
 // Native scorecards, trend, goal progress and work table; all records supplied by Django.
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { ChartSkeleton } from "../Loading";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -51,6 +51,7 @@ import {
   DashboardAlarmPanel,
 } from "./TodayConsignment";
 import { useApp, useQueryState } from "../router";
+import { useDelayedBusy } from "../RequestFeedback";
 import {
   dashboardQueue,
   activityMatches,
@@ -86,7 +87,8 @@ function Metric({
 }
 
 export default function Today() {
-  const { page, busy, navigate } = useApp();
+  const { page, busy, navigate, revision } = useApp();
+  const delayedBusy = useDelayedBusy(busy);
   const { isMobile, isNarrow, contentPadding } = useResponsive();
   const [narrowAlarmOpen, setNarrowAlarmOpen] = useState(false);
   const d = page.data,
@@ -131,6 +133,20 @@ export default function Today() {
       d.raw_material_dialog
     ),
   );
+  useEffect(() => {
+    setSelected(d.action_dialog || null);
+    setTarget(!!d.target_dialog);
+    setDirectiveOpen(!!d.directive_dialog);
+    setRawMaterialOpen(!!d.raw_material_dialog);
+    setRetryDialog(
+      !!(
+        d.action_dialog ||
+        d.target_dialog ||
+        d.directive_dialog ||
+        d.raw_material_dialog
+      ),
+    );
+  }, [revision]);
   const [alarmPanelState, setAlarmPanelState] = useQueryState(
     "alarm",
     "shown",
@@ -1011,7 +1027,7 @@ export default function Today() {
                       { value: "", label: "Seluruh tim" },
                       ...d.sales_options,
                     ]}
-                    isDisabled={busy}
+                    isDisabled={delayedBusy}
                     onChange={(sales) => void navigate(dashboardUrl({ sales }))}
                   />
                 )}
