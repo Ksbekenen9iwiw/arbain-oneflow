@@ -40,7 +40,7 @@ import { OrderTable } from "./Records";
 import type { Row } from "../types";
 
 export default function CustomerDetail() {
-  const { page, busy } = useApp();
+  const { page, busy, revision } = useApp();
   const { isNarrow, contentPadding } = useResponsive();
   const [narrowInfoOpen, setNarrowInfoOpen] = useState(false);
   const d = page.data,
@@ -52,6 +52,10 @@ export default function CustomerDetail() {
   const [consignOpen, setConsignOpen] = useState(d.dialog === "consignment");
   const [consignRetry, setConsignRetry] = useState(d.dialog === "consignment");
   const [selectedProductId, setSelectedProductId] = useState("");
+  useEffect(() => {
+    setConsignOpen(d.dialog === "consignment");
+    setConsignRetry(d.dialog === "consignment");
+  }, [revision]);
   useEffect(() => {
     if (!["samples", "orders", "consignment"].includes(requestedTab)) return;
     const frame = requestAnimationFrame(() => {

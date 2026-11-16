@@ -7,7 +7,7 @@ import { MotionPanel, MotionStack } from "../motion";
 import { ProductIdentity } from "../ProductIdentity";
 import { sampleJourney, sampleStage } from "../sampleJourney";
 import { useQueryState } from "../router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Divider } from "@astryxdesign/core/Divider";
 import {
@@ -39,7 +39,7 @@ import { withReturn, backLabel } from "../navigation";
 import type { Row } from "../types";
 
 export default function SampleDetail() {
-  const { page, busy, clearDirty } = useApp();
+  const { page, busy, clearDirty, revision } = useApp();
   const { isNarrow, contentPadding } = useResponsive();
   const [narrowPanelOpen, setNarrowPanelOpen] = useState(false);
   const d = page.data;
@@ -65,6 +65,9 @@ export default function SampleDetail() {
     ? requestedTab
     : "products";
   const [dialog, setDialog] = useState(d.dialog || "");
+  useEffect(() => {
+    setDialog(d.dialog || "");
+  }, [revision]);
   const actionUrl = (action: string) =>
     withReturn(`/samples/${sample.id}/${action}/`, d.back_url);
   const close = (open: boolean) => {

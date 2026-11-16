@@ -22,6 +22,10 @@ export function usePendingFeedback(busy: boolean) {
   return busy ? stage : "idle";
 }
 
+export function useDelayedBusy(active: boolean) {
+  return usePendingFeedback(active) !== "idle";
+}
+
 export function RequestFeedback({
   container = "card",
 }: {

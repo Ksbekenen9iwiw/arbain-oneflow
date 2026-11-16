@@ -5,7 +5,7 @@ import { withReturn, backLabel } from "../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 detail-page: status header, line items, totals,
 // chronological history and a hideable customer panel.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout, LayoutHeader, LayoutContent } from "@astryxdesign/core/Layout";
 import {
   MetadataList,
@@ -49,13 +49,16 @@ import { useApp } from "../router";
 import { orderContext, orderLabels } from "./Orders";
 import type { Row } from "../types";
 export default function Detail() {
-  const { page, busy, navigate, clearDirty } = useApp();
+  const { page, busy, navigate, clearDirty, revision } = useApp();
   const { isNarrow, contentPadding } = useResponsive();
   const [narrowPanelOpen, setNarrowPanelOpen] = useState(false);
   const d = page.data,
     order = d.order;
   const [dialog, setDialog] = useState(d.dialog || ""),
     [panel, setPanel] = useState(true);
+  useEffect(() => {
+    setDialog(d.dialog || "");
+  }, [revision]);
   const close = (open: boolean) => {
     if (!open && !busy) {
       clearDirty();

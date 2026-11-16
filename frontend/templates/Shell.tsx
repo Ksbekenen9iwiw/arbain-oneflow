@@ -45,17 +45,10 @@ export default function Shell({ children }: { children: ReactNode }) {
   const { isMobile } = useResponsive();
   const [tourRequest, setTourRequest] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
-  const lastPath = useRef(page.url.split("?")[0]);
-  const pathChanged = lastPath.current !== page.url.split("?")[0];
-  useContentMotion(
-    contentRef,
-    `${revision}:${page.url}`,
-    pathChanged ? "page" : "fade",
-  );
-  useLayoutEffect(() => {
-    lastPath.current = page.url.split("?")[0];
-  }, [revision, page.url]);
+  const path = page.url.split("?")[0];
+  useContentMotion(contentRef, `${page.screen}:${path}`, "page");
   const pendingStage = usePendingFeedback(busy);
+  const pendingBusy = pendingStage !== "idle";
   const pendingLabel =
     requestKind === "write" ? "Menyimpan perubahan" : "Memuat halaman";
   const slowLabel =
@@ -82,7 +75,6 @@ export default function Shell({ children }: { children: ReactNode }) {
     return () => animation?.cancel();
   }, [isCollapsed]);
   const collapseButtonRef = useRef<HTMLButtonElement>(null);
-  const path = page.url.split("?")[0];
   const accountName = page.user?.name || "Pengguna";
   const roleLabel =
     page.role === "MANAGER"
@@ -120,7 +112,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         icon={<Icon icon={ArrowRightStartOnRectangleIcon} />}
         variant="secondary"
         size="sm"
-        isDisabled={busy}
+        isDisabled={pendingBusy}
       />
     </ServerForm>
   );
@@ -244,7 +236,7 @@ export default function Shell({ children }: { children: ReactNode }) {
                 data-tour="help"
                 label="Panduan aplikasi"
                 icon={QuestionMarkCircleIcon}
-                isDisabled={busy || !canStartTour(page.screen)}
+                isDisabled={pendingBusy || !canStartTour(page.screen)}
                 onClick={() => {
                   changeCollapsed(false);
                   setTourRequest((v) => v + 1);

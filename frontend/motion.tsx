@@ -26,12 +26,8 @@ export function useContentMotion(
     if ((!initial && before === undefined) || before === change || !ref.current)
       return;
     const element = ref.current;
-    let frames: Keyframe[] = [{ opacity: 0.5 }, { opacity: 1 }];
-    if (preset === "page")
-      frames = [
-        { opacity: 0.6, transform: "translateY(var(--spacing-1))" },
-        { opacity: 1, transform: "translateY(0)" },
-      ];
+    let frames: Keyframe[] = [{ opacity: 0.94 }, { opacity: 1 }];
+    if (preset === "page") frames = [{ opacity: 0.94 }, { opacity: 1 }];
     if (preset === "step") {
       const backwards =
         typeof before === "number" &&
@@ -69,7 +65,7 @@ export function MotionStack({
   preset?: Preset;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useContentMotion(ref, motionKey, preset, true);
+  useContentMotion(ref, motionKey, preset, motionKey !== "entry");
   return <VStack {...props} ref={ref} />;
 }
 
@@ -77,7 +73,7 @@ export function MotionPanel(
   props: Omit<ComponentProps<typeof LayoutPanel>, "ref">,
 ) {
   const ref = useRef<HTMLDivElement>(null);
-  useContentMotion(ref, "entry", "page", true);
+  useContentMotion(ref, "entry", "page", false);
   return <LayoutPanel {...props} ref={ref} />;
 }
 
