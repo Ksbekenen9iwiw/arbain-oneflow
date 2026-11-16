@@ -100,29 +100,40 @@ export default function Customers() {
       key: "next_due",
       header: "Aktivitas berikutnya",
       sortable: true,
-      width: proportional(2),
+      width: proportional(1.4),
       renderCell: (r) => {
         const next = r.summary.next_activity;
         return next ? (
           <VStack gap={1}>
             <Text>{next.kind}</Text>
-            <HStack gap={2} vAlign="center" wrap="wrap">
-              <Text type="supporting">
-                {next.due ? dateLabel(next.due) : "Belum dijadwalkan"}
-              </Text>
-              {Number(r.summary.overdue_count) > 0 ? (
-                <Status
-                  value="OVERDUE"
-                  label={`${r.summary.overdue_count} terlambat`}
-                />
-              ) : next.due === page.today ? (
-                <Status value="DUE_TODAY" />
-              ) : null}
-            </HStack>
+            <Text type="supporting" hasTabularNumbers>
+              {next.due ? dateLabel(next.due) : "Belum dijadwalkan"}
+            </Text>
           </VStack>
         ) : (
           <Text color="secondary">Tidak ada aktivitas terbuka</Text>
         );
+      },
+    },
+    {
+      key: "activity_status",
+      header: "Status",
+      width: proportional(1.2),
+      renderCell: (r) => {
+        const next = r.summary.next_activity;
+        if (!next) return <Text color="secondary">—</Text>;
+        if (Number(r.summary.overdue_count) > 0) {
+          return (
+            <Status
+              value="OVERDUE"
+              label={`${r.summary.overdue_count} terlambat`}
+            />
+          );
+        }
+        if (next.due === page.today) {
+          return <Status value="DUE_TODAY" />;
+        }
+        return <Status value="PLANNED" label="Terjadwal" />;
       },
     },
     {
