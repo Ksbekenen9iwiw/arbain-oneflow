@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { MAX_QUANTITY, steppedQuantity } from "./quantityStep.ts";
+import { MAX_QUANTITY, steppedQuantity } from "../quantityStep.ts";
 
 test("quantity controls respect different order and physical-count lower bounds", () => {
   assert.equal(steppedQuantity("", 1, "1"), "1");

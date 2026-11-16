@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { requestIssue } from "./requestState.ts";
+import { requestIssue } from "../requestState.ts";
 
 test("read recovery preserves filters, return context and history replacement", () => {
   const url = "/orders/?status=CONFIRMED&return_to=%2F%3Fview%3Dshipping";

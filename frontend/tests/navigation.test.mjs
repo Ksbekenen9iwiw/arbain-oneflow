@@ -5,7 +5,7 @@ import {
   backLabel,
   stockTabUrl,
   listReturn,
-} from "./navigation.ts";
+} from "../navigation.ts";
 test("prefilled wizard keeps customer and complete parent tab/filter context", () => {
   const back =
     "/customers/1/?tab=orders&return_to=%2Fcustomers%2F%3Fq%3DApotek";

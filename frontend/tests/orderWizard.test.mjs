@@ -7,7 +7,7 @@ import {
   orderTotal,
   validQuantity,
   validateOrder,
-} from "./orderWizard.ts";
+} from "../orderWizard.ts";
 const product = {
   id: "7",
   name: "Produk",
