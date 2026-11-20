@@ -12,10 +12,10 @@ from django.contrib.auth.models import User
 from django.conf import settings
 
 JUDGING_ACCOUNTS = [
-    {'username': 'nadia', 'password': 'zn_cvCjg9jHDpq5gmfen8hFq', 'name': 'Nadia', 'role': 'Sales', 'description': 'Pelanggan, pembelian ulang, pesanan, dan pengajuan sampel.'},
-    {'username': 'rafi', 'password': 'eAI4R-k9G9GzZFVYO1U1POsI', 'name': 'Rafi', 'role': 'Sales', 'description': 'Coba cakupan pelanggan milik sales yang berbeda.'},
-    {'username': 'gudang', 'password': '6ZspPfmGtBIcQT_kPMBYND-K', 'name': 'Dewi', 'role': 'Gudang', 'description': 'Batch FEFO, penerimaan stok, pengiriman pesanan dan sampel.'},
-    {'username': 'manajer', 'password': '1SEJlbK1fDURRIxi3ws8yLIA', 'name': 'Arif', 'role': 'Manajer', 'description': 'Tinjau sampel, rencana pengadaan, dan capaian seluruh tim.'},
+    {'username': 'nadia', 'password': 'zn_cvCjg9jHDpq5gmfen8hFq', 'name': 'Sales Endri', 'role': 'Sales', 'description': 'Wilayah Surakarta, Sukoharjo, Sragen, Wonogiri, Karanganyar & Klaten.'},
+    {'username': 'rafi', 'password': 'eAI4R-k9G9GzZFVYO1U1POsI', 'name': 'Sales Monic', 'role': 'Sales', 'description': 'Wilayah Surakarta, Sukoharjo, Boyolali, Karanganyar & Klaten.'},
+    {'username': 'gudang', 'password': '6ZspPfmGtBIcQT_kPMBYND-K', 'name': 'Gudang Arba\'in', 'role': 'Gudang', 'description': 'Batch FEFO, penerimaan stok, pengiriman pesanan dan sampel.'},
+    {'username': 'manajer', 'password': '1SEJlbK1fDURRIxi3ws8yLIA', 'name': 'Manajer Arba\'in', 'role': 'Manajer', 'description': 'Tinjau sampel, rencana pengadaan, dan capaian seluruh tim.'},
 ]
 
 
