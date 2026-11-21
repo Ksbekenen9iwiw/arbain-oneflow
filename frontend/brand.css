@@ -171,3 +171,24 @@
     transform: translateY(var(--spacing-2));
   }
 }
+
+/* Row actions stay visible but quiet until the row is hovered or focused. */
+@media (hover: hover) {
+  .astryx-table-row .astryx-table-cell:last-child .astryx-button {
+    opacity: 0.85;
+  }
+  .astryx-table-row:hover .astryx-table-cell:last-child .astryx-button,
+  .astryx-table-row:focus-within .astryx-table-cell:last-child .astryx-button {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .astryx-table-row .astryx-table-cell:last-child .astryx-button {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast-min, 100ms) var(--ease-standard);
+  }
+  [data-honeycomb] {
+    animation: oneflow-pop var(--duration-medium) var(--ease-standard);
+  }
+}

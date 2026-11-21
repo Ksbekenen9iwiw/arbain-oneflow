@@ -277,7 +277,8 @@ export function Router({
       void navigate(url, true);
     };
     const click = (e: MouseEvent) => {
-      const anchor = (e.target as Element)?.closest("a");
+      const anchor =
+        e.target instanceof Element ? e.target.closest("a") : null;
       if (
         !anchor ||
         e.defaultPrevented ||
@@ -302,7 +303,8 @@ export function Router({
     };
     const prefetch = (e: Event) => {
       if (!onPrefetch) return;
-      const anchor = (e.target as Element)?.closest("a");
+      const anchor =
+        e.target instanceof Element ? e.target.closest("a") : null;
       if (!anchor || anchor.target || anchor.hasAttribute("download")) return;
       try {
         const url = new URL(anchor.href);
