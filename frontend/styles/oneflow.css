@@ -56,6 +56,8 @@
   --color-chart-9-active: var(--color-status-lime-text);
 }
 .dark {
+  /* Inputs sit on the primary ground here, so the field fill must differ from it. */
+  --color-background-tertiary-default: var(--color-neutral-700);
   --color-accent: var(--color-accent-300);
   --color-text-accent: var(--color-accent-300);
   --color-on-light: #ffffff;
