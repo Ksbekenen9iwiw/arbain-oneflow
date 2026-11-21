@@ -22,6 +22,7 @@ import type { Page } from "./types";
 import { playMotion } from "./motion";
 
 const loaders = {
+  company_archive: () => import("./routes/company/CompanyArchive"),
   login: () => import("./routes/auth/Login"),
   today: () => import("./routes/dashboard/Today"),
   customers: () => import("./routes/customers/Customers"),
@@ -40,6 +41,7 @@ const loaders = {
   order_form: () => import("./routes/orders/OrderWizard"),
 } as const;
 
+const CompanyArchive = lazy(loaders.company_archive);
 const Login = lazy(loaders.login);
 const Today = lazy(loaders.today);
 const Customers = lazy(loaders.customers);
@@ -65,6 +67,7 @@ function prefetchLoader(key: keyof typeof loaders) {
 }
 
 function prefetchRoute(pathname: string) {
+  if (pathname === "/company-data/") return prefetchLoader("company_archive");
   if (pathname === "/") return prefetchLoader("today");
   if (pathname === "/customers/") return prefetchLoader("customers");
   if (pathname === "/orders/") return prefetchLoader("orders");
@@ -206,6 +209,9 @@ function App() {
   const d = page.data;
   let content: ReactNode;
   switch (page.screen) {
+    case "company_archive":
+      content = <CompanyArchive />;
+      break;
     case "today":
       content = <Today />;
       break;

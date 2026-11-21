@@ -32,8 +32,9 @@ class Command(BaseCommand):
             raise CommandError('Perlu ONEFLOW_DEMO=1 dan --confirm-demo-reset; hanya gunakan pada database demo.')
         validate_accounts()
         models = {model.__name__: model for model in apps.get_app_config('crm').get_models()}
-        if set(models) != set(DELETE_ORDER):
+        if set(models) != set(DELETE_ORDER) | {'CompanyReport', 'CompanyReportRow'}:
             raise CommandError('Skema CRM berubah; urutan reset harus ditinjau sebelum berjalan.')
+        # A demo refresh must preserve privately imported company reports.
         backup = Path(options['backup']).expanduser().resolve()
         backup.parent.mkdir(parents=True, exist_ok=True)
         try:

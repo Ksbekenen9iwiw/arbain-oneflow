@@ -175,6 +175,7 @@ def render_page(request, template, context=None, status=200, screen=None):
     if template == 'crm/today.html' and role != 'WAREHOUSE':
         data['action_form_default'] = form_data(ActionDecisionForm())
         data.setdefault('action_form', data['action_form_default'])
+    data['can_view_company_archive'] = role == 'MANAGER' and settings.ONEFLOW_COMPANY_ARCHIVE
     payload = {'screen': screen or Path(template).stem, 'url': page_url, 'data': data,
                'role': role, 'user': person(user) if user and user.is_authenticated else None,
                'csrf': get_token(request), 'demo': settings.ONEFLOW_DEMO, 'today': timezone.localdate().isoformat(),

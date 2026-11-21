@@ -166,6 +166,23 @@ $env:ONEFLOW_DB = "$PWD\runtime\latihan-02.sqlite3"
 
 Gunakan environment yang sama untuk ketiga perintah. Jangan menjalankan seed pada database mitra. `ONEFLOW_DEMO=0` hanya mematikan penanda simulasi; tidak mengubah atau membersihkan data.
 
+## Arsip data perusahaan
+
+Menu **Data perusahaan** memuat dokumen historis, kunjungan, penjualan, rekap per outlet, stok outlet, dan catatan setor. Menu dan dokumen asli tersedia bagi peran Manajer pada instance yang menggunakan `ONEFLOW_COMPANY_ARCHIVE=1`. Gunakan database dan akun terkontrol ketika arsip berisi data asli.
+
+Siapkan paket dari folder laporan Oktober 2026 menggunakan Python dengan `pdfplumber` dan `python-docx`. Lalu jalankan perintah Django dengan `ONEFLOW_DB` atau `DATABASE_URL` yang menunjuk ke database tujuan.
+
+```sh
+mkdir -p runtime/company
+python scripts/prepare_arbain_archive.py "/path/ke/SALES ARBAIN 2026" runtime/company/october.json
+python manage.py migrate
+python manage.py import_company_archive runtime/company/october.json "/path/ke/SALES ARBAIN 2026"
+python manage.py import_company_archive runtime/company/october.json "/path/ke/SALES ARBAIN 2026" --apply
+ONEFLOW_COMPANY_ARCHIVE=1 python manage.py runserver 127.0.0.1:8000
+```
+
+Perintah pertama tanpa `--apply` memvalidasi sumber. Impor menyimpan alamat baris dan halaman sumber beserta dokumen asli, menjaga sel kosong, serta menandai nilai yang perlu diperiksa. Tanggal gabungan dan angka sumber yang berselisih tetap tersedia untuk ditinjau. Rekap global dan wilayah dapat mencakup stok yang sama. Master SKU, harga, batch, dan saldo operasional perlu dikonfirmasi sebelum arsip dipakai sebagai data pembuka. Simpan paket, dokumen perusahaan, dan database di penyimpanan privat.
+
 ## Batas MVP
 
 Satu organisasi, satu gudang, produk jadi, pengiriman penuh. Belum ada maklon/produksi, batch/FEFO/kedaluwarsa, retur, pengiriman sebagian, pajak, pembayaran, akuntansi, impor CSV, pengiriman WhatsApp, atau model ML. Koreksi dan jejak stok tersedia, tetapi kondisi fisik tetap memerlukan pemeriksaan gudang.
