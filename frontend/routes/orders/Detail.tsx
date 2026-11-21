@@ -427,7 +427,7 @@ export default function Detail() {
               </VStack>
               {(allocationRows.length > 0 || d.can_swap) && (
                 <VStack gap={4} data-tour="order-allocations">
-                  <HStack gap={3} hAlign="between" vAlign="center">
+                  <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
                     <VStack gap={1}>
                       <Heading level={2}>Daftar ambil barang</Heading>
                       <Text type="supporting">
@@ -478,8 +478,8 @@ export default function Detail() {
                       },
                       {
                         key: "status",
-                        width: proportional(2, { minWidth: 240 }),
-                        header: "Kondisi batch saat ini",
+                        width: proportional(1.5, { minWidth: 120 }),
+                        header: "Kondisi batch",
                         renderCell: (r) => (
                           <BatchStatus batch={r} today={page.today} />
                         ),
