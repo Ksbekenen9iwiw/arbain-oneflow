@@ -1,3 +1,4 @@
+import { flushSync } from "react-dom";
 import {
   createContext,
   useContext,
@@ -26,7 +27,12 @@ type AppContext = {
   markDirty: () => void;
   clearDirty: () => void;
   leaveAndSubmit: (url: string, data: FormData) => Promise<void>;
-  navigate: (url: string, replace?: boolean) => Promise<void>;
+  /** `optimistic` patches page data immediately; it is rolled back if the request fails. */
+  navigate: (
+    url: string,
+    replace?: boolean,
+    optimistic?: Record<string, unknown>,
+  ) => Promise<void>;
   submit: (url: string, data: FormData) => Promise<void>;
 };
 const Context = createContext<AppContext>(null!);
@@ -72,7 +78,12 @@ export function Router({
     posting = useRef(false),
     controller = useRef<AbortController | null>(null);
   const load = useCallback(
-    async (url: string, data?: FormData, replace = false) => {
+    async (
+      url: string,
+      data?: FormData,
+      replace = false,
+      optimistic?: Record<string, unknown>,
+    ) => {
       if (posting.current) return;
       controller.current?.abort();
       const abort = new AbortController();
@@ -88,6 +99,8 @@ export function Router({
             (el) => el.scrollTop,
           ),
         );
+      if (optimistic)
+        setPage({ ...previous, data: { ...previous.data, ...optimistic } });
       setBusy(true);
       setRequestKind(data ? "write" : "read");
       setRefreshing(!data && url.split("?")[0] === previous.url.split("?")[0]);
@@ -128,8 +141,20 @@ export function Router({
           next.screen !== "login" ? listScroll.current.get(next.url) || [] : [];
         if (next.screen === "login") listScroll.current.clear();
         currentPage.current = next;
-        setPage(next);
-        setRevision((v) => v + 1);
+        const commit = () => {
+          setPage(next);
+          setRevision((v) => v + 1);
+        };
+        const changedView =
+          next.screen !== previous.screen ||
+          next.url.split("?")[0] !== previous.url.split("?")[0];
+        if (
+          changedView &&
+          typeof document.startViewTransition === "function" &&
+          !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        )
+          document.startViewTransition(() => flushSync(commit));
+        else commit();
         const target = next.url;
         if (replace)
           history.replaceState(
@@ -166,8 +191,10 @@ export function Router({
         if (
           id === sequence.current &&
           !(e instanceof DOMException && e.name === "AbortError")
-        )
+        ) {
+          if (optimistic) setPage(currentPage.current);
           setIssue(requestIssue(url, !!data, replace));
+        }
       } finally {
         if (id === sequence.current) {
           posting.current = false;
@@ -189,13 +216,17 @@ export function Router({
     history.replaceState({ oneflowIndex: historyIndex.current }, "", next.url);
   }, []);
   const navigate = useCallback(
-    async (url: string, replace = false) => {
+    async (
+      url: string,
+      replace = false,
+      optimistic?: Record<string, unknown>,
+    ) => {
       if (posting.current) return;
       if (dirty.current) {
         setPending({ url, replace });
         return;
       }
-      await load(url, undefined, replace);
+      await load(url, undefined, replace, optimistic);
     },
     [load],
   );
@@ -246,7 +277,8 @@ export function Router({
       void navigate(url, true);
     };
     const click = (e: MouseEvent) => {
-      const anchor = (e.target as Element)?.closest("a");
+      const anchor =
+        e.target instanceof Element ? e.target.closest("a") : null;
       if (
         !anchor ||
         e.defaultPrevented ||
@@ -271,7 +303,8 @@ export function Router({
     };
     const prefetch = (e: Event) => {
       if (!onPrefetch) return;
-      const anchor = (e.target as Element)?.closest("a");
+      const anchor =
+        e.target instanceof Element ? e.target.closest("a") : null;
       if (!anchor || anchor.target || anchor.hasAttribute("download")) return;
       try {
         const url = new URL(anchor.href);

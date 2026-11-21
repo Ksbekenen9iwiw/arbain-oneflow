@@ -1,6 +1,15 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 shell-side-nav: application frame and navigation.
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useToast } from "@astryxdesign/core/Toast";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { BrandMark } from "../BrandMark";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { MotionStack, playMotion, useContentMotion } from "../motion";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { VisuallyHidden } from "@astryxdesign/core/VisuallyHidden";
@@ -20,7 +29,6 @@ import {
 import { Icon } from "@astryxdesign/core/Icon";
 import { NavIcon } from "@astryxdesign/core/NavIcon";
 import {
-  CubeIcon,
   CalendarDaysIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
@@ -118,6 +126,20 @@ export default function Shell({ children }: { children: ReactNode }) {
   const { isMobile } = useResponsive();
   const [tourRequest, setTourRequest] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
+  // Successful saves confirm themselves in a toast and never push content down.
+  useEffect(() => {
+    for (const message of page.messages)
+      if (message.type === "success")
+        toast({
+          body: (
+            <HStack gap={2} vAlign="center">
+              <Icon icon={CheckCircleIcon} color="success" />
+              <Text>{message.text}</Text>
+            </HStack>
+          ),
+        });
+  }, [revision]);
   const path = page.url.split("?")[0];
   useContentMotion(contentRef, `${page.screen}:${path}`, "page");
   const pendingStage = usePendingFeedback(busy);
@@ -210,7 +232,7 @@ export default function Shell({ children }: { children: ReactNode }) {
                   <SideNavHeading
                     heading="OneFlow"
                     headingHref="/"
-                    icon={<NavIcon icon={<Icon icon={CubeIcon} />} />}
+                    icon={<NavIcon icon={<Icon icon={BrandMark} />} />}
                   />
                 </VStack>
               ) : (
@@ -220,7 +242,7 @@ export default function Shell({ children }: { children: ReactNode }) {
                       heading="OneFlow"
                       headingHref="/"
                       subheading={page.demo ? "Workspace demo" : undefined}
-                      icon={<NavIcon icon={<Icon icon={CubeIcon} />} />}
+                      icon={<NavIcon icon={<Icon icon={BrandMark} />} />}
                     />
                   </StackItem>
                   {!isMobile && <StackItem>{collapseButton}</StackItem>}
@@ -396,7 +418,8 @@ export default function Shell({ children }: { children: ReactNode }) {
               />
             </VStack>
           )}
-          {page.messages.map((m, i) => (
+          {page.messages.map((m, i) =>
+            m.type === "success" ? null : (
             <Banner
               key={`${revision}:${i}`}
               status={
@@ -414,7 +437,8 @@ export default function Shell({ children }: { children: ReactNode }) {
               isDismissable={m.type !== "error"}
               dismissLabel="Tutup pemberitahuan"
             />
-          ))}
+            ),
+          )}
           {children}
         </VStack>
       </AppShell>

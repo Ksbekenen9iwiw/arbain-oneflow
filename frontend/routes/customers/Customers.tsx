@@ -54,7 +54,11 @@ export default function Customers() {
     });
     for (const [key, value] of [...params])
       if (!value || (key === "sort" && value === "next_due")) params.delete(key);
-    void navigate("/customers/" + (params.size ? "?" + params : ""));
+    void navigate(
+      "/customers/" + (params.size ? "?" + params : ""),
+      false,
+      "view" in changes ? { selected_view: changes.view } : undefined,
+    );
   };
   const [query, setQuery] = useSearchInput(
     d.query || "",

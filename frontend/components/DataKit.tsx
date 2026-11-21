@@ -1,3 +1,4 @@
+import { HoneycombArt } from "../BrandMark";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { HStack, VStack } from "@astryxdesign/core/Layout";
 import { Text, Heading } from "@astryxdesign/core/Text";
@@ -108,17 +109,11 @@ export function Empty({
 }) {
   return (
     <MotionStack gap={3} hAlign="center" padding={8} motionKey={title}>
-      <Icon
-        icon={
-          kind === "search"
-            ? MagnifyingGlassIcon
-            : kind === "complete"
-              ? CheckCircleIcon
-              : InboxIcon
-        }
-        color="secondary"
-        size="lg"
-      />
+      {kind === "search" ? (
+        <Icon icon={MagnifyingGlassIcon} color="accent" size="lg" />
+      ) : (
+        <HoneycombArt tone={kind === "complete" ? "success" : "accent"} />
+      )}
       <VStack maxWidth="36rem" gap={2} hAlign="center" role="status">
         <Heading level={3} justify="center">
           {title}

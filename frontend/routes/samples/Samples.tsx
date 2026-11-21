@@ -70,7 +70,11 @@ export default function Samples() {
       ...changes,
     });
     for (const [key, value] of [...params]) if (!value) params.delete(key);
-    void navigate("/samples/" + (params.size ? "?" + params : ""));
+    void navigate(
+      "/samples/" + (params.size ? "?" + params : ""),
+      false,
+      "status" in changes ? { selected_status: changes.status } : undefined,
+    );
   };
   const [query, setQuery] = useSearchInput(
     d.query || "",

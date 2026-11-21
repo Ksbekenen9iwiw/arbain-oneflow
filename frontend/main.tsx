@@ -10,6 +10,7 @@ import {
 import { createRoot } from "react-dom/client";
 import "@astryxdesign/core/reset.css";
 import "@astryxdesign/core/astryx.css";
+import "./brand.css";
 import { InternationalizationProvider } from "@astryxdesign/core/i18n";
 import { indonesian } from "./locale";
 import { ThemeModeProvider } from "./ThemeSwitch";

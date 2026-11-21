@@ -1,4 +1,6 @@
 import {
+  useEffect,
+  useState,
   useLayoutEffect,
   useRef,
   type ComponentProps,
@@ -104,4 +106,30 @@ export function useListMotion(
     previous.current = next;
     return () => animations.forEach((animation) => animation.cancel());
   }, [keys, ref]);
+}
+
+/** Counts a figure up from zero once on first paint; later changes snap. */
+export function useCountUp(target: number, duration = 700) {
+  const [value, setValue] = useState(() =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ? target : 0,
+  );
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || value === target) {
+      started.current = true;
+      setValue(target);
+      return;
+    }
+    started.current = true;
+    let frame = 0;
+    const begin = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - begin) / duration);
+      setValue(target * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target]);
+  return value;
 }

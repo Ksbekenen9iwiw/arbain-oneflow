@@ -84,7 +84,13 @@ export default function Orders() {
       params.delete("shipped_to");
     }
     for (const [key, value] of [...params]) if (!value) params.delete(key);
-    void navigate("/orders/" + (params.size ? "?" + params : ""));
+    void navigate(
+      "/orders/" + (params.size ? "?" + params : ""),
+      false,
+      "status" in changes
+        ? { selected_status: changes.status === "all" ? "" : changes.status }
+        : undefined,
+    );
   };
   const [query, setQuery] = useSearchInput(
     d.query || "",

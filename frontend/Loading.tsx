@@ -1,4 +1,5 @@
 // Native Astryx placeholders, also rendered to static HTML before the client starts.
+import { BrandMark } from "./BrandMark";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import { SideNav, SideNavHeading } from "@astryxdesign/core/SideNav";
@@ -12,7 +13,6 @@ import {
 import { Grid, GridSpan } from "@astryxdesign/core/Grid";
 import { Icon } from "@astryxdesign/core/Icon";
 import { NavIcon } from "@astryxdesign/core/NavIcon";
-import { CubeIcon } from "@heroicons/react/24/outline";
 import { Text } from "@astryxdesign/core/Text";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
@@ -186,7 +186,7 @@ export function LoadingScreen({
                 header={
                   <SideNavHeading
                     heading="OneFlow"
-                    icon={<NavIcon icon={<Icon icon={CubeIcon} />} />}
+                    icon={<NavIcon icon={<Icon icon={BrandMark} />} />}
                   />
                 }
                 footer={<Skeleton height="var(--spacing-10)" />}

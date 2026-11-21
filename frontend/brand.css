@@ -1,0 +1,194 @@
+/* OneFlow brand surface, depth and motion. Tokens only; every animation is
+   gated behind prefers-reduced-motion. */
+
+/* Depth: page < card < floating. */
+.astryx-card {
+  box-shadow:
+    0 1px 2px light-dark(oklch(0.3 0.03 70 / 6%), oklch(0 0 0 / 30%)),
+    0 6px 16px -8px light-dark(oklch(0.3 0.03 70 / 12%), oklch(0 0 0 / 45%));
+}
+.astryx-dialog,
+.astryx-popover,
+.astryx-selector-popup,
+.astryx-context-menu {
+  box-shadow: var(--shadow-high);
+}
+.astryx-dialog::backdrop {
+  backdrop-filter: blur(var(--spacing-1));
+  background: color-mix(in srgb, var(--color-background-body) 55%, transparent);
+}
+
+/* Sticky page header reads as glass over scrolling content. */
+.astryx-layout-header {
+  background: color-mix(
+    in srgb,
+    var(--color-background-surface) 82%,
+    transparent
+  );
+  backdrop-filter: saturate(1.4) blur(var(--spacing-3));
+}
+
+/* Brand identity in the navigation. */
+.astryx-side-nav-heading .astryx-nav-icon {
+  background: linear-gradient(
+    140deg,
+    light-dark(#d9902a, #f0b244),
+    light-dark(#8a4a05, #b4690e)
+  );
+  color: light-dark(#fffdf9, #1f1b14);
+  box-shadow: 0 2px 6px -2px light-dark(oklch(0.5 0.12 70 / 55%), oklch(0 0 0 / 60%));
+}
+.astryx-side-nav-item[aria-current="page"] {
+  background: var(--color-accent-muted);
+  color: var(--color-text-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Key figures. */
+[data-figure] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Press feedback. */
+  .astryx-button {
+    transition:
+      transform var(--duration-fast-min, 100ms) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+  .astryx-button:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .astryx-table-row,
+  .astryx-list-item {
+    transition: background-color var(--duration-fast) var(--ease-standard);
+  }
+  .astryx-tab-indicator {
+    transition:
+      transform var(--duration-medium) var(--ease-standard),
+      width var(--duration-medium) var(--ease-standard),
+      left var(--duration-medium) var(--ease-standard);
+  }
+  .astryx-card {
+    transition:
+      box-shadow var(--duration-medium) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
+  }
+
+  /* Floating surfaces arrive with scale + fade. */
+  .astryx-dialog[open] {
+    animation: oneflow-pop var(--duration-medium) var(--ease-standard);
+  }
+  .astryx-dialog[open]::backdrop {
+    animation: oneflow-fade var(--duration-medium) var(--ease-standard);
+  }
+  .astryx-popover,
+  .astryx-selector-popup,
+  .astryx-context-menu {
+    animation: oneflow-rise var(--duration-fast) var(--ease-standard);
+  }
+
+  /* Rows settle in on first paint, capped so long lists never wait. */
+  .astryx-table-body > .astryx-table-row,
+  .astryx-list > .astryx-list-item {
+    animation: oneflow-rise var(--duration-medium) var(--ease-standard) backwards;
+  }
+  .astryx-table-body > .astryx-table-row:nth-child(2),
+  .astryx-list > .astryx-list-item:nth-child(2) { animation-delay: 25ms; }
+  .astryx-table-body > .astryx-table-row:nth-child(3),
+  .astryx-list > .astryx-list-item:nth-child(3) { animation-delay: 50ms; }
+  .astryx-table-body > .astryx-table-row:nth-child(4),
+  .astryx-list > .astryx-list-item:nth-child(4) { animation-delay: 75ms; }
+  .astryx-table-body > .astryx-table-row:nth-child(5),
+  .astryx-list > .astryx-list-item:nth-child(5) { animation-delay: 100ms; }
+  .astryx-table-body > .astryx-table-row:nth-child(n + 6),
+  .astryx-list > .astryx-list-item:nth-child(n + 6) { animation-delay: 125ms; }
+
+  .astryx-progress-bar-fill {
+    animation: oneflow-grow var(--duration-slow) var(--ease-standard);
+    transform-origin: left;
+  }
+
+  /* Shimmer skeleton. */
+  .astryx-skeleton {
+    background-image: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, var(--color-background-surface) 70%, transparent) 50%,
+      transparent 70%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: oneflow-shimmer 1.4s linear infinite;
+  }
+
+  /* Page transition: content cross-fades with a light blur; navigation stays put. */
+  .astryx-app-shell-sidenav {
+    view-transition-name: oneflow-nav;
+  }
+  ::view-transition-group(oneflow-nav) {
+    animation: none;
+  }
+  ::view-transition-old(oneflow-nav) {
+    display: none;
+  }
+  ::view-transition-new(oneflow-nav) {
+    animation: none;
+  }
+  ::view-transition-old(root) {
+    animation: oneflow-leave var(--duration-fast) var(--ease-standard) both;
+  }
+  ::view-transition-new(root) {
+    animation: oneflow-enter var(--duration-medium) var(--ease-standard) both;
+  }
+}
+
+@keyframes oneflow-fade {
+  from { opacity: 0; }
+}
+@keyframes oneflow-pop {
+  from { opacity: 0; transform: scale(0.96) translateY(var(--spacing-2)); }
+}
+@keyframes oneflow-rise {
+  from { opacity: 0; transform: translateY(var(--spacing-1)); }
+}
+@keyframes oneflow-grow {
+  from { transform: scaleX(0); }
+}
+@keyframes oneflow-shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+@keyframes oneflow-leave {
+  to { opacity: 0; filter: blur(var(--spacing-1)); }
+}
+@keyframes oneflow-enter {
+  from {
+    opacity: 0;
+    filter: blur(var(--spacing-1));
+    transform: translateY(var(--spacing-2));
+  }
+}
+
+/* Row actions stay visible but quiet until the row is hovered or focused. */
+@media (hover: hover) {
+  .astryx-table-row .astryx-table-cell:last-child .astryx-button {
+    opacity: 0.85;
+  }
+  .astryx-table-row:hover .astryx-table-cell:last-child .astryx-button,
+  .astryx-table-row:focus-within .astryx-table-cell:last-child .astryx-button {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .astryx-table-row .astryx-table-cell:last-child .astryx-button {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast-min, 100ms) var(--ease-standard);
+  }
+  [data-honeycomb] {
+    animation: oneflow-pop var(--duration-medium) var(--ease-standard);
+  }
+}
