@@ -1,0 +1,20 @@
+/* OneFlow brand layer over BoardUI: honey-amber accent, Inter. */
+@import "@fontsource-variable/inter";
+
+@theme {
+  --color-accent-50: #fff8eb;
+  --color-accent-100: #feecc7;
+  --color-accent-200: #fcd68a;
+  --color-accent-300: #f7bb4d;
+  --color-accent-400: #e89c1c;
+  --color-accent-500: #c27408;
+  --color-accent-600: #a9610c;
+  --color-accent-700: #8a4d0f;
+  --color-accent-800: #713f12;
+  --color-accent-900: #5c3413;
+  --color-accent-950: #351a06;
+}
+
+:root {
+  --font-inter: "Inter Variable";
+}

@@ -1,6 +1,9 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     {
       name: "astryx-local-font",
       enforce: "pre",
@@ -13,6 +16,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      "@": fileURLToPath(new URL("./frontend", import.meta.url)),
       "@astryxdesign/theme-neutral/fonts.css":
         "@fontsource-variable/figtree/index.css",
     },
