@@ -347,10 +347,10 @@ class ReceivePurchaseForm(StockReceiptForm):
 class ConsignmentVisitForm(forms.Form):
     customer_id = StrictIntegerField(label='Apotek / Pelanggan', min_value=1, max_value=2**63 - 1, widget=forms.HiddenInput())
     product_id = forms.ChoiceField(label='Produk titip jual', choices=[])
-    sold_quantity = StrictIntegerField(label='Jumlah laku terjual di apotek', min_value=0, max_value=2**63 - 1, initial=0, help_text='Selisih stok awal dikurangi sisa fisik. Ditagih bila laku > 2 item.')
-    remaining_stock = StrictIntegerField(label='Sisa stok fisik di apotek', min_value=0, max_value=2**63 - 1, initial=0, help_text='Sisa fisik di rak apotek setelah dicek dan dibersihkan.')
-    added_quantity = StrictIntegerField(label='Tambahan barang titipan baru (dari gudang)', min_value=0, max_value=2**63 - 1, initial=0, help_text='Memotong stok bebas gudang dan menambah stok titipan di apotek.')
-    returned_quantity = StrictIntegerField(label='Barang ditarik kembali (retur/tukar ke gudang)', min_value=0, max_value=2**63 - 1, initial=0, help_text='Tarik barang mendekati ED (≤ 6 bulan), rusak, atau kurang laku.')
+    sold_quantity = StrictIntegerField(label='Terjual di apotek', min_value=0, max_value=2**63 - 1, initial=0, help_text='Ditagih bila laku lebih dari 2.')
+    remaining_stock = StrictIntegerField(label='Sisa di apotek', min_value=0, max_value=2**63 - 1, initial=0)
+    added_quantity = StrictIntegerField(label='Tambahan dari gudang', min_value=0, max_value=2**63 - 1, initial=0)
+    returned_quantity = StrictIntegerField(label='Ditarik kembali ke gudang', min_value=0, max_value=2**63 - 1, initial=0, help_text='Mendekati kedaluwarsa, rusak, atau kurang laku.')
     return_reason = forms.ChoiceField(
         label='Alasan penarikan barang',
         choices=ConsignmentVisitEntry.ReturnReason.choices,

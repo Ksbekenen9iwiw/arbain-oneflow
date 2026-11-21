@@ -1204,11 +1204,6 @@ export default function CustomerDetail() {
           }
         >
           <VStack padding={6} gap={4}>
-            <Text color="secondary">
-              Catat hasil pemeriksaan fisik barang titip jual di apotek. Sistem
-              otomatis memperbarui saldo stok apotek, memotong/mengembalikan
-              stok gudang, dan mencatat presensi kunjungan harian Anda.
-            </Text>
             <SimpleForm
               spec={
                 consignRetry
