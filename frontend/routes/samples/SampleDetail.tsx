@@ -288,7 +288,7 @@ export default function SampleDetail() {
                   description={d.error.message}
                 />
               )}
-              <VStack gap={3} data-tour="sample-overview">
+              <VStack className="oneflow-panel" gap={3} data-tour="sample-overview">
                 <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
                   <HStack gap={3} vAlign="center" wrap="wrap">
                     <Heading level={2}>Progres sampel</Heading>
@@ -354,7 +354,7 @@ export default function SampleDetail() {
                     commercial ? "Pengajuan & produk" : "Produk & batch"
                   }
                 >
-                  <VStack gap={4}>
+                  <VStack className="oneflow-panel" gap={4}>
                     <Heading level={2}>Produk sampel</Heading>
                     <DataTable
                       rows={sample.lines}
@@ -431,7 +431,7 @@ export default function SampleDetail() {
                     )}
                   </VStack>
                   {commercial && (
-                    <VStack gap={4}>
+                    <VStack className="oneflow-panel" gap={4}>
                       <Heading level={2}>Dasar pengajuan</Heading>
                       <Fact label="Tujuan pemberian">
                         {sample.purpose || "Belum tercatat"}
@@ -462,7 +462,7 @@ export default function SampleDetail() {
                     role="tabpanel"
                     aria-label="Evaluasi & pembelian"
                   >
-                    <VStack gap={3}>
+                    <VStack className="oneflow-panel" gap={3}>
                       <Heading level={2}>Catatan evaluasi</Heading>
                       {d.evaluation.events.length ? (
                         <List hasDividers density="balanced">
@@ -494,7 +494,7 @@ export default function SampleDetail() {
                         </Text>
                       )}
                     </VStack>
-                    <VStack gap={3}>
+                    <VStack className="oneflow-panel" gap={3}>
                       <HStack hAlign="between" vAlign="center" gap={3}>
                         <Heading level={2}>Pembelian lanjutan</Heading>
                         {d.can_create_order && (
@@ -585,7 +585,7 @@ export default function SampleDetail() {
                   role="tabpanel"
                   aria-label="Riwayat pelanggan"
                 >
-                  <VStack gap={4}>
+                  <VStack className="oneflow-panel" gap={4}>
                     <Heading level={2}>Riwayat pelanggan</Heading>
                     {!d.history.has_history ? (
                       <Empty

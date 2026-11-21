@@ -269,7 +269,7 @@ export default function ProductDetail() {
                 )}
               </VStack>
               {!!d.source_sales?.length && (
-                <VStack gap={3}>
+                <VStack className="oneflow-panel" gap={3}>
                   <Heading level={2}>Penjualan dari laporan Arba’in</Heading>
                   <DataTable rows={d.source_sales} columns={[
                     {key: "month", header: "Bulan"}, {key: "sales", header: "Sales"},
@@ -299,7 +299,7 @@ export default function ProductDetail() {
                     />
                   </TabList>
                   {d.selected_section === "batches" && (
-                    <VStack gap={4} data-tour="product-batches">
+                    <VStack className="oneflow-panel" gap={4} data-tour="product-batches">
                       <VStack gap={1}>
                         <Heading level={2}>Batch & masa simpan</Heading>
                       </VStack>
@@ -468,7 +468,7 @@ export default function ProductDetail() {
                     </VStack>
                   )}
                   {d.selected_section === "supply" && (
-                    <VStack gap={4} data-tour="product-supply">
+                    <VStack className="oneflow-panel" gap={4} data-tour="product-supply">
                       <VStack gap={1}>
                         <HStack hAlign="between" vAlign="center">
                           <Heading level={2}>Perencanaan pasokan</Heading>

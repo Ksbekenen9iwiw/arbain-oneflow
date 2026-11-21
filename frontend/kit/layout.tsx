@@ -101,6 +101,7 @@ function Box({
         className,
       )}
       style={{ ...boxStyle(props, direction), ...style }}
+      data-tight={direction !== "row" && Number(_gap) <= 1 ? "" : undefined}
       {...rest}
     />
   );

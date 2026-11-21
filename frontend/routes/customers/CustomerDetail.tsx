@@ -242,7 +242,7 @@ export default function CustomerDetail() {
                 description="Riwayat dan pencatatan aktivitas tetap tersedia. Pesanan baru hanya dapat dibuat untuk pelanggan aktif."
               />
             )}
-            <VStack gap={3} aria-label="Tindakan berikutnya">
+            <VStack className="oneflow-panel" gap={3} aria-label="Tindakan berikutnya">
               <HStack hAlign="between" vAlign="center" gap={3}>
                 <VStack gap={1}>
                   <Heading level={2}>Tindakan berikutnya</Heading>
@@ -304,7 +304,7 @@ export default function CustomerDetail() {
                 ]} />
               </Collapsible>
             )}
-            <VStack gap={4} data-tour="customer-overview">
+            <VStack className="oneflow-panel" gap={4} data-tour="customer-overview">
               <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
                 <Heading level={2}>Ringkasan pelanggan</Heading>
                 {(isNarrow || !panel) && (
@@ -419,7 +419,7 @@ export default function CustomerDetail() {
                 </Card>
               </Grid>
             </VStack>
-            <VStack gap={3} id="customer-reorder">
+            <VStack className="oneflow-panel" gap={3} id="customer-reorder">
               <VStack gap={1}>
                 <Heading level={2}>Perkiraan pembelian ulang</Heading>
               </VStack>

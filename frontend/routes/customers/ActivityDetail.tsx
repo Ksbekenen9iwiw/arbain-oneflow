@@ -168,7 +168,7 @@ export default function ActivityDetail() {
         content={
           <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={6}>
-            <VStack gap={3}>
+            <VStack className="oneflow-panel" gap={3}>
               <Heading level={2}>Catatan aktivitas</Heading>
               <Text style={{ whiteSpace: "pre-wrap" }}>
                 {activity.note ||
@@ -178,7 +178,7 @@ export default function ActivityDetail() {
             {d.previous_activity && (
               <>
                 <Divider />
-                <VStack gap={3}>
+                <VStack className="oneflow-panel" gap={3}>
                   <Heading level={2}>Interaksi sebelumnya</Heading>
                   <Text type="supporting">
                     {d.previous_activity.kind_label} ·{" "}
@@ -204,7 +204,7 @@ export default function ActivityDetail() {
               </>
             )}
             <Divider />
-            <VStack gap={4}>
+            <VStack className="oneflow-panel" gap={4}>
               <Heading level={2}>
                 {done ? "Hasil interaksi" : "Catat hasil"}
               </Heading>
@@ -229,7 +229,7 @@ export default function ActivityDetail() {
             {done && d.followups?.length > 0 && (
               <>
                 <Divider />
-                <VStack gap={4}>
+                <VStack className="oneflow-panel" gap={4}>
                   <Heading level={2}>Aktivitas berikutnya</Heading>
                   {d.followups.map((next: Row) => (
                     <HStack

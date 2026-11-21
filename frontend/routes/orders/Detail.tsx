@@ -324,7 +324,7 @@ export default function Detail() {
                   </HStack>
                 </VStack>
               )}
-              <VStack gap={4} data-tour="order-overview">
+              <VStack className="oneflow-panel" gap={4} data-tour="order-overview">
                 <HStack hAlign="between" vAlign="center" gap={4}>
                   <VStack gap={1}>
                     <Heading level={2}>Produk pesanan</Heading>
@@ -422,7 +422,7 @@ export default function Detail() {
                 />
               </VStack>
               {(allocationRows.length > 0 || d.can_swap) && (
-                <VStack gap={4} data-tour="order-allocations">
+                <VStack className="oneflow-panel" gap={4} data-tour="order-allocations">
                   <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
                     <VStack gap={1}>
                       <Heading level={2}>Daftar ambil barang</Heading>
@@ -481,7 +481,7 @@ export default function Detail() {
                 </VStack>
               )}
               {d.batch_swaps.length > 0 && (
-                <VStack gap={4} data-tour="order-batch-swaps">
+                <VStack className="oneflow-panel" gap={4} data-tour="order-batch-swaps">
                   <VStack gap={1}>
                     <Heading level={2}>Riwayat penggantian batch</Heading>
                   </VStack>
@@ -507,7 +507,7 @@ export default function Detail() {
                 </VStack>
               )}
               <Divider />
-              <VStack gap={4} data-tour="order-history-overview">
+              <VStack className="oneflow-panel" gap={4} data-tour="order-history-overview">
                 <Heading level={2}>Riwayat pesanan</Heading>
                 <List
                   hasDividers

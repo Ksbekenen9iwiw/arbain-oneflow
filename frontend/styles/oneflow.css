@@ -172,3 +172,9 @@ body {
 }
 .oneflow-tablecard .bui-table th { border-top: 1px solid var(--color-separator-border); }
 .oneflow-tablecard .bui-table tbody tr:last-child { border-bottom: 1px solid var(--color-separator-border); }
+
+.oneflow-panel .oneflow-card {
+  background-color: var(--color-background-primary-default);
+  box-shadow: var(--shadow-xs);
+  border-radius: 1rem;
+}

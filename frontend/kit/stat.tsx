@@ -116,7 +116,7 @@ export function StatGrid({ children, className }: { children: ReactNode; classNa
   return (
     <div
       className={cx(
-        "grid grid-cols-[repeat(auto-fit,minmax(11.5rem,1fr))] gap-2",
+        "oneflow-statgrid grid grid-cols-[repeat(auto-fit,minmax(11.5rem,1fr))] gap-2",
         className,
       )}
     >
