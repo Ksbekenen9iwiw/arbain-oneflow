@@ -1,3 +1,5 @@
+import { StatGrid, StatTile } from "@/kit";
+import { RiLock2Line, RiShoppingBag3Line, RiStackLine } from "@remixicon/react";
 import { proportional } from "@/kit";
 import { Grid } from "@/kit";
 import { MotionPanel } from "../../motion";
@@ -228,26 +230,29 @@ export default function ProductDetail() {
                   />
                 ) : (
                   <>
-                    <HStack gap={6} wrap="wrap">
+                    <StatGrid>
                       {d.can_manage && (
                         <>
-                          <Fact label="Fisik">
-                            {quantity(p.on_hand)} {p.unit}
-                          </Fact>
-                          <Fact label="Dipesan">
-                            {quantity(p.reserved)} {p.unit}
-                          </Fact>
+                          <StatTile
+                            icon={RiStackLine}
+                            label="Fisik di gudang"
+                            value={`${quantity(p.on_hand)} ${p.unit}`}
+                          />
+                          <StatTile
+                            icon={RiLock2Line}
+                            label="Dipesan"
+                            value={`${quantity(p.reserved)} ${p.unit}`}
+                          />
                         </>
                       )}
-                      <Fact label="Siap jual">
-                        <Heading level={2}>
-                          {quantity(p.available)} {p.unit}
-                        </Heading>
-                      </Fact>
-                      <Fact label="Kondisi">
-                        <StockCondition product={p} />
-                      </Fact>
-                    </HStack>
+                      <StatTile
+                        icon={RiShoppingBag3Line}
+                        tone="accent"
+                        label="Siap jual"
+                        value={`${quantity(p.available)} ${p.unit}`}
+                        caption={<StockCondition product={p} />}
+                      />
+                    </StatGrid>
                     <Text type="supporting">
                       Siap jual = fisik − dipesan; belum mengecualikan batch
                       ditahan atau kedaluwarsa. Diperbarui{" "}
@@ -335,7 +340,7 @@ export default function ProductDetail() {
                           description="FEFO berjalan tanpa syarat masa simpan. Isi minimum sisa masa simpan pada Edit produk sesuai kebijakan yang berlaku."
                         />
                       )}
-                      {d.batches.some((r: Row) => Number(r.remaining) <= 0) && (
+                      {d.batches.some((r: Row) => Number(r.on_hand) <= 0) && (
                         <HStack>
                           <Button
                             size="sm"
@@ -343,7 +348,7 @@ export default function ProductDetail() {
                             label={
                               showDepleted
                                 ? "Sembunyikan batch habis"
-                                : `Tampilkan batch habis (${d.batches.filter((r: Row) => Number(r.remaining) <= 0).length})`
+                                : `Tampilkan batch habis (${d.batches.filter((r: Row) => Number(r.on_hand) <= 0).length})`
                             }
                             onClick={() => setShowDepleted((v) => !v)}
                           />
@@ -353,7 +358,7 @@ export default function ProductDetail() {
                         rows={
                           showDepleted
                             ? d.batches
-                            : d.batches.filter((r: Row) => Number(r.remaining) > 0)
+                            : d.batches.filter((r: Row) => Number(r.on_hand) > 0)
                         }
                         empty={
                           <Empty
