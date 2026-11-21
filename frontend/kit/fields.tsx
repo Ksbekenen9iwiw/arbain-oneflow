@@ -92,6 +92,8 @@ export interface TextInputProps extends FieldBase {
   /** `"search"` shows the search glyph before the value. */
   startIcon?: "search";
   controlStyle?: CSSProperties;
+  /** Element inside the field, after the value (e.g. a show-password toggle). */
+  endContent?: ReactNode;
 }
 
 export function TextInput({
@@ -118,6 +120,7 @@ export function TextInput({
   ref,
   className,
   startIcon,
+  endContent,
 }: TextInputProps) {
   const isInvalid = status?.type === "error";
   return (
@@ -145,6 +148,7 @@ export function TextInput({
         onKeyDown={onKeyDown as never}
         onBlur={onBlur}
         leadingIcon={startIcon === "search" ? RiSearchLine : undefined}
+        trailingAddon={endContent}
       />
     </div>
   );
