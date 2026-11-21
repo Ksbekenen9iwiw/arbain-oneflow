@@ -534,7 +534,7 @@ export default function Today() {
     </MotionStack>
   );
   const workQueue = (
-    <VStack gap={3} paddingBlockEnd={6} id="work-queue">
+    <VStack gap={3} id="work-queue" className="oneflow-panel">
       {(warehouse || manager) && (
         <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
           <Heading level={2}>
@@ -1064,7 +1064,7 @@ export default function Today() {
       };
     });
   const teamRecap = manager && (
-    <VStack gap={3} id="team-recap">
+    <VStack gap={3} id="team-recap" className="oneflow-panel">
       <HStack gap={3} wrap="wrap" vAlign="center" hAlign="between">
         <Heading level={2}>Rekap tim</Heading>
         <HStack gap={2} wrap="wrap" vAlign="center">

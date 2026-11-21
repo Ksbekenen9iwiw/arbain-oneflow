@@ -235,7 +235,7 @@ export default function Stock() {
       }
       content={
         <LayoutContent padding={contentPadding} data-oneflow-scroll>
-          <VStack gap={4}>
+          <VStack gap={4} className="oneflow-tablecard">
             {manage && (
               <TabList
                 hasDivider

@@ -233,12 +233,12 @@ export function Card({
     <div
       ref={ref}
       className={cx(
-        "min-w-0 rounded-3xl border border-border-button-default",
+        "oneflow-card min-w-0 rounded-3xl",
         variant === "transparent"
-          ? "border-transparent"
-          : variant === "muted"
-            ? "bg-background-secondary-default"
-            : "bg-background-primary-default shadow-xs",
+          ? ""
+          : variant === "outline"
+            ? "border border-border-button-default bg-background-primary-default"
+            : "bg-background-secondary-default",
         className,
       )}
       style={{

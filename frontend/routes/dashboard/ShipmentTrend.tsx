@@ -4,8 +4,8 @@ import { useQueryState } from "../../router";
 import { useRef, useState } from "react";
 import { useContentMotion } from "../../motion";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -104,7 +104,6 @@ export default function ShipmentTrend({
           {!compact && ` · ${dateLabel(rows[0]?.date)} – ${dateLabel(today)}`}
         </Text>
       </HStack>
-      {compact && count > 0 && <Text type="supporting">Kumulatif</Text>}
       {count === 0 ? (
         compact ? null : (
           <Text type="supporting">Belum ada pengiriman pada periode ini.</Text>
@@ -112,15 +111,15 @@ export default function ShipmentTrend({
       ) : (
         <ResponsiveContainer
           width="100%"
-          height={compact ? 96 : 128}
+          height={compact ? 168 : 200}
           minWidth={0}
         >
-          <LineChart
+          <AreaChart
             data={data}
             accessibilityLayer
             margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
           >
-            <CartesianGrid vertical={false} stroke="var(--color-border)" />
+            <CartesianGrid vertical={false} stroke="var(--color-separator-border)" strokeDasharray="3 4" />
             <XAxis
               dataKey="date"
               height={compact ? 22 : undefined}
@@ -173,17 +172,25 @@ export default function ShipmentTrend({
                 ) : null;
               }}
             />
-            <Line
+            <defs>
+              <linearGradient id="oneflow-trend-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-accent-500)" stopOpacity={0.28} />
+                <stop offset="100%" stopColor="var(--color-accent-500)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Area
               dataKey="plot"
               name={compact ? "Nilai kumulatif" : "Nilai terkirim"}
-              type={compact ? "stepAfter" : "linear"}
-              stroke="var(--color-accent)"
-              strokeWidth={2}
+              type="monotone"
+              stroke="var(--color-accent-500)"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              fill="url(#oneflow-trend-fill)"
               dot={false}
-              activeDot={{ r: 4 }}
-              isAnimationActive={false}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--color-background-primary-default)" }}
+              animationDuration={600}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       )}
       {recentDays.length > 0 && (

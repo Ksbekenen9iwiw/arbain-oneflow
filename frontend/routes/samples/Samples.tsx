@@ -122,7 +122,7 @@ export default function Samples() {
       }
       content={
         <LayoutContent padding={contentPadding} data-oneflow-scroll>
-          <VStack gap={4} data-tour="samples-overview">
+          <VStack gap={4} className="oneflow-tablecard" data-tour="samples-overview">
             {page.role !== "WAREHOUSE" && (
               <TabList
                 aria-label="Status pengajuan sampel"

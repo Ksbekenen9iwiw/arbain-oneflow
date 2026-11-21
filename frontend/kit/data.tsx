@@ -95,7 +95,7 @@ export function Table<T extends AnyRow>({
       );
   };
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-border-button-default bg-background-primary-default">
+    <div className="bui-table-wrap w-full overflow-x-auto rounded-2xl border border-border-button-default bg-background-primary-default">
       <table aria-label={ariaLabel} className="bui-table w-full">
         <thead>
           <tr>

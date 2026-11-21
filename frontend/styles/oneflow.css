@@ -143,3 +143,32 @@ body {
 .bui-table th:first-child, .bui-table td:first-child { padding-inline-start: 1rem; }
 .bui-table th:last-child, .bui-table td:last-child { padding-inline-end: 1rem; }
 .bui-table tbody tr:hover { background-color: var(--color-background-secondary-default); }
+
+/* BoardUI panels: soft grey card, white tiles inside. */
+.oneflow-card .oneflow-card { background-color: var(--color-background-primary-default); box-shadow: var(--shadow-xs); border-radius: 1rem; }
+.oneflow-panel .bui-table-wrap,
+.oneflow-card .bui-table-wrap { border-color: transparent; box-shadow: var(--shadow-xs); }
+.oneflow-panel {
+  background-color: var(--color-background-secondary-default);
+  border-radius: 1.5rem;
+  padding: 1rem;
+}
+.oneflow-panel .oneflow-panel { background: none; padding: 0; border-radius: 0; }
+
+/* BoardUI data-table card: toolbar, full-bleed table and pagination in one bordered surface. */
+.oneflow-tablecard {
+  border: 1px solid var(--color-border-button-default);
+  border-radius: 1.5rem;
+  background-color: var(--color-background-primary-default);
+  padding: 1rem;
+  overflow: hidden;
+}
+.oneflow-tablecard .bui-table-wrap {
+  border: 0;
+  border-radius: 0;
+  margin-inline: -1rem;
+  width: calc(100% + 2rem);
+  max-width: none;
+}
+.oneflow-tablecard .bui-table th { border-top: 1px solid var(--color-separator-border); }
+.oneflow-tablecard .bui-table tbody tr:last-child { border-bottom: 1px solid var(--color-separator-border); }

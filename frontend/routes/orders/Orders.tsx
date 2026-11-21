@@ -274,7 +274,7 @@ export default function Orders() {
       }
       content={
         <LayoutContent padding={contentPadding} data-oneflow-scroll>
-          <VStack gap={4}>
+          <VStack gap={4} className="oneflow-tablecard">
             <TabList
               hasDivider
               aria-label="Status pesanan"

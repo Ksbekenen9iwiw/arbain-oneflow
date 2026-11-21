@@ -213,7 +213,7 @@ export default function Customers() {
       }
       content={
         <LayoutContent padding={contentPadding} data-oneflow-scroll>
-          <VStack gap={4}>
+          <VStack gap={4} className="oneflow-tablecard">
             <TabList
               hasDivider
               aria-label="Prioritas pelanggan"
