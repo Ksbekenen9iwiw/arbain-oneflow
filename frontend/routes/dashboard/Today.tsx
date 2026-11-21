@@ -1429,7 +1429,7 @@ export default function Today() {
                 </Collapsible>
               )}
               {!sales && (d.supply_alerts || []).length > 0 && (
-                <VStack gap={3}>
+                <VStack gap={3} className="oneflow-panel">
                   <HStack hAlign="between" vAlign="center">
                     <Heading level={2}>Peringatan pasokan</Heading>
                     <Button
@@ -1489,19 +1489,6 @@ export default function Today() {
                               ? "—"
                               : `${quantity(alert.recommend_quantity)} ${alert.product.unit}`}
                           </Text>
-                        ),
-                      },
-                      {
-                        key: "reasons",
-                        header: "Dasar",
-                        renderCell: (alert) => (
-                          <VStack gap={1}>
-                            {alert.reasons.map((reason: string) => (
-                              <Text key={reason} type="supporting">
-                                {reason}
-                              </Text>
-                            ))}
-                          </VStack>
                         ),
                       },
                     ]}

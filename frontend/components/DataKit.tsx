@@ -17,7 +17,7 @@ import {
   type TableColumn,
   type TableSortState,
 } from "@/kit";
-import type { ComponentProps } from "react";
+import { Fragment, type ComponentProps } from "react";
 import type { Row } from "../types";
 import { MotionStack } from "../motion";
 import { useResponsive } from "../responsive";
@@ -58,14 +58,16 @@ function MobileRows<T extends AnyRow>({
           description={
             meta.length || actions.length ? (
               <VStack gap={2} paddingBlockStart={1}>
-                {meta.map((column) => (
-                  <HStack key={column.key} gap={2} vAlign="start" wrap="wrap">
-                    {column.header && (
-                      <Text type="supporting">{column.header}</Text>
-                    )}
-                    {cell(column, row)}
-                  </HStack>
-                ))}
+                {meta.length > 0 && (
+                  <div className="grid grid-cols-[minmax(5.5rem,max-content)_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1">
+                    {meta.map((column) => (
+                      <Fragment key={column.key}>
+                        <Text type="supporting">{column.header}</Text>
+                        <div className="min-w-0">{cell(column, row)}</div>
+                      </Fragment>
+                    ))}
+                  </div>
+                )}
                 {actions.map((column) => (
                   <HStack key={column.key} gap={2} wrap="wrap">
                     {cell(column, row)}
