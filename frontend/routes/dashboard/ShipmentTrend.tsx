@@ -32,6 +32,7 @@ import {
   dateLabel,
 } from "../../ui";
 import type { Row } from "../../types";
+import { useCountUp } from "../../motion";
 
 const compactRupiah = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -74,6 +75,7 @@ export default function ShipmentTrend({
       plot: Number(compact ? total : dailyValue) / 1000000,
     };
   });
+  const shownTotal = useCountUp(Number(total));
   return (
     <VStack gap={2} ref={chartRef}>
       <HStack hAlign="between" gap={2} vAlign="center" wrap="wrap">
@@ -91,9 +93,9 @@ export default function ShipmentTrend({
           <SegmentedControlItem value="month" label="Bulan ini" />
         </SegmentedControl>
       </HStack>
-      <HStack gap={2} vAlign="center" wrap="wrap">
-        <Text size="2xl" weight="semibold" hasTabularNumbers>
-          {money(String(total))}
+      <HStack gap={2} vAlign="end" wrap="wrap">
+        <Text size="3xl" weight="bold" hasTabularNumbers data-figure>
+          {money(String(Math.round(shownTotal)))}
         </Text>
         <Text type="supporting">
           {compact && count === 0

@@ -1,5 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Astryx login-split adapted to a full desktop frame and Django's two-step login.
+import { BrandMark } from "../../BrandMark";
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { Center } from "@astryxdesign/core/Center";
 import { Card } from "@astryxdesign/core/Card";
@@ -8,7 +9,7 @@ import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { InputGroup } from "@astryxdesign/core/InputGroup";
-import { CubeIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import {
   VStack,
   HStack,
@@ -192,7 +193,7 @@ export default function Login() {
       >
         <HStack gap={3} vAlign="center" hAlign="between" wrap="wrap">
           <HStack gap={2} vAlign="center">
-            <Icon icon={CubeIcon} />
+            <Icon icon={BrandMark} />
             <Text weight="bold" size="xl">
               OneFlow
             </Text>

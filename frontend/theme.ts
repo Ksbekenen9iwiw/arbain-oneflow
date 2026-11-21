@@ -8,6 +8,9 @@ export const oneflowTheme = defineTheme({
   // Brand seeds: honey amber accent, herbal green for success, warm neutrals.
   color: { accent: ["#B4690E", "#F0B244"], neutralStyle: "warm" },
   tokens: {
+    "--color-background-body": ["#F5F0E6", "#15120C"],
+    "--color-background-surface": ["#FFFDF9", "#1F1B14"],
+    "--color-background-card": ["#FFFDF9", "#1F1B14"],
     "--color-success": ["#3E7B4F", "#5FA872"],
     "--color-border-green": ["#3E7B4F", "#5FA872"],
     "--color-icon-green": ["#3E7B4F", "#7CC08D"],

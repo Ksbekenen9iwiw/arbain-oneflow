@@ -1,5 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 shell-side-nav: application frame and navigation.
+import { BrandMark } from "../BrandMark";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { MotionStack, playMotion, useContentMotion } from "../motion";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
@@ -20,7 +21,6 @@ import {
 import { Icon } from "@astryxdesign/core/Icon";
 import { NavIcon } from "@astryxdesign/core/NavIcon";
 import {
-  CubeIcon,
   CalendarDaysIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
@@ -210,7 +210,7 @@ export default function Shell({ children }: { children: ReactNode }) {
                   <SideNavHeading
                     heading="OneFlow"
                     headingHref="/"
-                    icon={<NavIcon icon={<Icon icon={CubeIcon} />} />}
+                    icon={<NavIcon icon={<Icon icon={BrandMark} />} />}
                   />
                 </VStack>
               ) : (
@@ -220,7 +220,7 @@ export default function Shell({ children }: { children: ReactNode }) {
                       heading="OneFlow"
                       headingHref="/"
                       subheading={page.demo ? "Workspace demo" : undefined}
-                      icon={<NavIcon icon={<Icon icon={CubeIcon} />} />}
+                      icon={<NavIcon icon={<Icon icon={BrandMark} />} />}
                     />
                   </StackItem>
                   {!isMobile && <StackItem>{collapseButton}</StackItem>}

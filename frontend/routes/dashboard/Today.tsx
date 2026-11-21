@@ -286,7 +286,7 @@ export default function Today() {
             {goal.achievement_percent != null ? (
               <>
                 <HStack hAlign="between" wrap="wrap" gap={2}>
-                  <Text weight="semibold" hasTabularNumbers>
+                  <Text size="2xl" weight="bold" hasTabularNumbers data-figure>
                     {pct(goal.achievement_percent)}
                   </Text>
                   <Text type="supporting">
@@ -371,7 +371,7 @@ export default function Today() {
             <VStack gap={2}>
               <HStack hAlign="between" wrap="wrap" gap={2}>
                 <Text weight="semibold">Target bulan ini</Text>
-                <Text hasTabularNumbers>
+                <Text size="xl" weight="bold" hasTabularNumbers data-figure>
                   {goal.achievement_percent != null
                     ? pct(goal.achievement_percent)
                     : "Belum ditetapkan"}

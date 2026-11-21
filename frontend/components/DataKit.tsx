@@ -116,7 +116,7 @@ export function Empty({
               ? CheckCircleIcon
               : InboxIcon
         }
-        color="secondary"
+        color={kind === "complete" ? "success" : "accent"}
         size="lg"
       />
       <VStack maxWidth="36rem" gap={2} hAlign="center" role="status">
