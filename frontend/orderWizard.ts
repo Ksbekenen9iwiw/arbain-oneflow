@@ -43,7 +43,7 @@ export function initialLines(data: WizardData): OrderLine[] {
     id: String(index),
     product: String(form.fields.find((f) => f.key === "product")?.value || ""),
     quantity: String(
-      form.fields.find((f) => f.key === "quantity")?.value || "",
+      form.fields.find((f) => f.key === "quantity")?.value || "1",
     ),
     deleted: !!form.fields.find((f) => f.key === "DELETE")?.value,
     errors: Object.fromEntries(

@@ -377,7 +377,7 @@ export function DateInput({
           onChange={(next) => onChange(next ? next.toString() : undefined)}
           isDisabled={isDisabled}
           className={cx(
-            "min-w-0 flex-1 justify-start",
+            "min-w-0 flex-1 justify-start border-transparent bg-background-tertiary-default shadow-none hover:bg-background-tertiary-default",
             status?.type === "error" && "ring-2 ring-inset ring-border-error",
           )}
           triggerLabel={

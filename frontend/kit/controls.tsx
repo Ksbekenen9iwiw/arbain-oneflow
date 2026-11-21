@@ -170,7 +170,7 @@ export function Button({
       isIconOnly && (size === "sm" ? "size-8 p-0" : "size-9 p-0"),
       // App "ghost" is a quiet transparent action, not BoardUI's tinted one.
       variant === "ghost" &&
-        "bg-transparent text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary active:bg-background-tertiary-default",
+        "bg-transparent text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary active:bg-background-tertiary-default disabled:bg-transparent disabled:text-text-tertiary disabled:opacity-50 aria-disabled:bg-transparent",
       width === "100%" && "w-full",
       className,
     ),
