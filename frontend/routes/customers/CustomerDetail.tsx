@@ -121,10 +121,11 @@ export default function CustomerDetail() {
     `${a.completed_at ? "Hasil disimpan" : "Dicatat"} ${dateLabel(a.completed_at || a.created_at, true)} WIB`;
   const customerInfoFacts = (
     <VStack gap={4}>
-      <Fact label="Penanggung jawab">{customer.owner.name}</Fact>
+      <Fact label={customer.source_pending ? "Sales di laporan" : "Penanggung jawab"}>{customer.owner.name}</Fact>
       <Fact label="Kategori mitra & potongan harga">
-        {customer.outlet_type_label || "Apotek"} · Diskon{" "}
-        {customer.discount_percent ?? 16}%
+        {customer.source_pending
+          ? "Belum diverifikasi"
+          : `${customer.outlet_type_label} · Diskon ${customer.discount_percent}%`}
       </Fact>
       <Fact label="Tahap terakhir dicatat">
         {d.latest_stage || "Belum ada aktivitas"}
@@ -141,7 +142,7 @@ export default function CustomerDetail() {
         header={
           <PageHeader
             title={customer.name}
-            description={`${customer.code} · ${customer.is_active ? "Aktif" : "Nonaktif"}`}
+            description={customer.source_pending ? "Outlet dari laporan Arba’in" : `${customer.code} · ${customer.is_active ? "Aktif" : "Nonaktif"}`}
             back={{ href: d.back_url, label: backLabel(d.back_url) }}
             actions={
               <HStack gap={2} wrap="wrap">
@@ -198,12 +199,26 @@ export default function CustomerDetail() {
         content={
           <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={6}>
-            {!customer.is_active && (
+            {customer.source_pending && (
+              <Banner status="info" title="Master outlet perlu diverifikasi"
+                description="Cocokkan kode outlet, sales penanggung jawab saat ini, kategori, dan potongan sebelum membuat pesanan."
+                endContent={page.role === "MANAGER" && <Button label="Verifikasi outlet" href={`/customers/${customer.id}/verify/`} />} />
+            )}
+            {!customer.source_pending && !customer.is_active && (
               <Banner
                 status="info"
                 title="Pelanggan nonaktif"
                 description="Riwayat dan pencatatan aktivitas tetap tersedia. Pesanan baru hanya dapat dibuat untuk pelanggan aktif."
               />
+            )}
+            {!!d.source_visits?.length && (
+              <VStack gap={3}>
+                <Heading level={2}>Kunjungan dari laporan Arba’in</Heading>
+                <DataTable rows={d.source_visits} columns={[
+                  {key: "date", header: "Tanggal", renderCell: (r) => dateLabel(r.date)},
+                  {key: "sales", header: "Sales"}, {key: "location", header: "Lokasi sumber"},
+                ]} />
+              </VStack>
             )}
             <VStack gap={3} aria-label="Tindakan berikutnya">
               <HStack hAlign="between" vAlign="center" gap={3}>
@@ -594,8 +609,7 @@ export default function CustomerDetail() {
                   >
                     <Text type="supporting">
                       Stok titip jual di {customer.name} (
-                      {customer.outlet_type_label || "Apotek"} · Diskon mitra{" "}
-                      {customer.discount_percent ?? 16}% ·{" "}
+                      {customer.source_pending ? "Kategori & diskon belum diverifikasi" : `${customer.outlet_type_label} · Diskon mitra ${customer.discount_percent}%`} ·{" "}
                       {quantity(d.consignment?.total_on_display || 0)} unit
                       aktif, {quantity(d.consignment?.total_sold || 0)} unit
                       terjual

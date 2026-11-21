@@ -1,5 +1,6 @@
 from django.urls import path
 from crm import views
+from crm.views.customers import customer_verify
 from crm.views.company_archive import company_archive, company_archive_file
 
 urlpatterns = [
@@ -10,6 +11,7 @@ urlpatterns = [
     path('targets/', views.target_save, name='target_save'),
     path('customers/', views.customers, name='customers'),
     path('customers/new/', views.customer_create, name='customer_create'),
+    path('customers/<int:customer_id>/verify/', customer_verify, name='customer_verify'),
     path('customers/<int:customer_id>/', views.customer_detail, name='customer_detail'),
     path('customers/<int:customer_id>/activities/new/', views.activity_create, name='activity_create'),
     path('activities/<int:activity_id>/complete/', views.activity_complete, name='activity_complete'),

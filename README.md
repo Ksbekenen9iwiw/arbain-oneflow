@@ -183,6 +183,12 @@ ONEFLOW_COMPANY_ARCHIVE=1 python manage.py runserver 127.0.0.1:8000
 
 Perintah pertama tanpa `--apply` memvalidasi sumber. Impor menyimpan alamat baris dan halaman sumber beserta dokumen asli, menjaga sel kosong, serta menandai nilai yang perlu diperiksa. Tanggal gabungan dan angka sumber yang berselisih tetap tersedia untuk ditinjau. Rekap global dan wilayah dapat mencakup stok yang sama. Master SKU, harga, batch, dan saldo operasional perlu dikonfirmasi sebelum arsip dipakai sebagai data pembuka. Simpan paket, dokumen perusahaan, dan database di penyimpanan privat.
 
+## Workspace operasional Arba’in
+
+Pakai database baru tanpa seed demo. Setelah migrasi dan impor arsip, jalankan `python manage.py import_arbain_masters --period 2026-10` untuk validasi, lalu ulangi dengan `--apply`. Gunakan `ONEFLOW_DEMO=0`, `ONEFLOW_COMPANY_ARCHIVE=1`, dan database tujuan yang sama saat migrasi, impor, dan menjalankan aplikasi.
+
+Katalog memakai nama dari rekap penjualan. Profil outlet disatukan hanya jika nama, lokasi, dan sales sumber cocok. Riwayat kunjungan tetap terkait dengan profil tersebut. Untuk mengaktifkan produk, isi SKU, satuan, dan harga, catat batch fisik, lalu sahkan saldo awal lewat **Hitung & koreksi fisik**. Di detail pelanggan, manajer dapat memverifikasi kode dan syarat komersial outlet. Nama sales berasal dari laporan. Kredensial untuk sales perlu dibuat sebelum mereka bisa masuk.
+
 ## Batas MVP
 
 Satu organisasi, satu gudang, produk jadi, pengiriman penuh. Belum ada maklon/produksi, batch/FEFO/kedaluwarsa, retur, pengiriman sebagian, pajak, pembayaran, akuntansi, impor CSV, pengiriman WhatsApp, atau model ML. Koreksi dan jejak stok tersedia, tetapi kondisi fisik tetap memerlukan pemeriksaan gudang.

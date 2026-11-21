@@ -1,6 +1,7 @@
 """Dashboard ('Today') views, action decisions, and sales target updates."""
 from urllib.parse import urlsplit
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -17,7 +18,7 @@ from crm.forms import (
     RawMaterialForm,
     SalesTargetForm,
 )
-from crm.models import Product, SalesTarget
+from crm.models import CompanyReportRow, Customer, Product, SalesTarget
 from crm.navigation import return_url
 from crm.sample_workspace import sample_tasks
 from crm.selectors import (
@@ -98,6 +99,12 @@ def _today_page(request, overrides=None, status=200):
     if role in {'MANAGER', 'WAREHOUSE'}:
         context['raw_material_form'] = RawMaterialForm(actor=request.user)
         context['raw_material_form_default'] = context['raw_material_form']
+    if role == 'MANAGER' and settings.ONEFLOW_COMPANY_ARCHIVE:
+        context['company_setup'] = {
+            'products': Product.objects.filter(opening_stock_pending=True).count(),
+            'outlets': Customer.objects.filter(source_pending=True).count(),
+            'visits': CompanyReportRow.objects.filter(visited_customer__isnull=False).count(),
+        }
     if overrides:
         context.update(overrides)
         if 'action_form' in overrides:

@@ -55,8 +55,10 @@ export default function Customers() {
       if (!value || (key === "sort" && value === "name")) params.delete(key);
     void navigate("/customers/" + (params.size ? "?" + params : ""));
   };
-  const [query, setQuery] = useSearchInput(d.query || "", revision, (nextQuery) =>
-    update({ q: nextQuery }, nextQuery),
+  const [query, setQuery] = useSearchInput(
+    d.query || "",
+    revision,
+    (nextQuery) => update({ q: nextQuery }, nextQuery),
   );
   const sort: TableSortState = [
     {
@@ -84,7 +86,7 @@ export default function Customers() {
         <RecordIdentity
           name={r.name}
           company
-          supporting={`${r.code}${r.phone ? ` · ${r.phone}` : ""}${!r.is_active ? " · Nonaktif" : ""}`}
+          supporting={`${r.source_pending ? "Outlet dari laporan" : r.code}${r.phone ? ` · ${r.phone}` : ""}${r.source_pending ? " · Perlu verifikasi" : !r.is_active ? " · Nonaktif" : ""}`}
         >
           <Link
             data-tour="customer-record"
@@ -257,6 +259,7 @@ export default function Customers() {
                     { value: "", label: "Semua status" },
                     { value: "active", label: "Aktif" },
                     { value: "inactive", label: "Nonaktif" },
+                    { value: "pending", label: "Perlu verifikasi" },
                   ]}
                   onChange={(v) => update({ status: v })}
                 />
@@ -275,7 +278,10 @@ export default function Customers() {
                       ),
                       onClick: () => {
                         setQuery("");
-                        update({ q: "", sales: "", status: "", sort: "name" }, "");
+                        update(
+                          { q: "", sales: "", status: "", sort: "name" },
+                          "",
+                        );
                       },
                     }
                   : undefined

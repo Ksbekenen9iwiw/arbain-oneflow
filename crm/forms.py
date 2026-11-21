@@ -29,6 +29,20 @@ class CustomerForm(forms.ModelForm):
         return self.cleaned_data.get('owner') or getattr(self, 'actor', None)
 
 
+class SourceCustomerEditForm(CustomerForm):
+    outlet_type = forms.ChoiceField(label='Kategori mitra', choices=[('', 'Pilih kategori'), *Customer.OutletType.choices])
+    discount_percent = forms.IntegerField(label='Potongan harga mitra (%)', min_value=0, max_value=100)
+
+    def clean_code(self):
+        code = self.cleaned_data['code']
+        if code.upper().startswith('ARB-O-'):
+            raise forms.ValidationError('Masukkan kode resmi outlet.')
+        return code
+
+    class Meta(CustomerForm.Meta):
+        fields = ['code', 'name', 'phone', 'address', 'owner', 'outlet_type', 'discount_percent', 'is_active']
+
+
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
@@ -39,6 +53,7 @@ class ProductForm(forms.ModelForm):
     def __init__(self, *args, actor, **kwargs):
         require_role(actor, {'WAREHOUSE', 'MANAGER'})
         super().__init__(*args, **kwargs)
+        self.fields['price_rupiah'].required = True
 
 
 class ActivityForm(forms.ModelForm):
@@ -72,8 +87,26 @@ class ProductEditForm(ProductForm):
     min_shelf_life_days = StrictIntegerField(label='Minimum sisa masa simpan (hari)', min_value=0, max_value=3650, required=False, help_text='Kosongkan bila belum ada kebijakan. Angka 0 mewajibkan batch bertanggal dan belum kedaluwarsa.')
 
     class Meta(ProductForm.Meta):
-        fields = ['name', 'price_rupiah', 'min_stock', 'min_shelf_life_days', 'is_active']
+        fields = ['name', 'sku', 'unit', 'price_rupiah', 'min_stock', 'min_shelf_life_days', 'is_active']
         labels = {'name': 'Nama produk', 'is_active': 'Produk aktif dijual'}
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.price_rupiah is None:
+            self.initial['sku'] = ''
+            self.initial['min_stock'] = ''
+        else:
+            self.fields.pop('sku')
+            self.fields.pop('unit')
+
+    def clean(self):
+        data = super().clean()
+        if self.instance.opening_stock_pending and data.get('is_active'):
+            self.add_error('is_active', 'Konfirmasi saldo awal gudang sebelum mengaktifkan produk.')
+        if data.get('sku', '').upper().startswith('ARB-P-'):
+            self.add_error('sku', 'Masukkan SKU resmi perusahaan.')
+        return data
 
 
 class StockReceiptForm(forms.Form):

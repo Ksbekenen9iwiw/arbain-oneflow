@@ -36,6 +36,7 @@ export const stockContext = withReturn;
 export function StockCondition({ product }: { product: Row }) {
   const labels: Record<string, string> = {
     conflict: "Konflik stok",
+    unverified: "Saldo belum diverifikasi",
     empty: "Stok bebas habis",
     low: "Menipis",
     ready: "Memenuhi minimum",
@@ -43,15 +44,17 @@ export function StockCondition({ product }: { product: Row }) {
   return (
     <Status
       value={
-        product.stock_state === "conflict"
-          ? "STOCK_CONFLICT"
-          : product.stock_state === "empty"
-            ? "STOCK_EMPTY"
-            : product.stock_state === "low"
-              ? "STOCK_LOW"
-              : product.stock_state === "ready"
-                ? "STOCK_READY"
-                : "DRAFT"
+        product.stock_state === "unverified"
+          ? "WARNING"
+          : product.stock_state === "conflict"
+            ? "STOCK_CONFLICT"
+            : product.stock_state === "empty"
+              ? "STOCK_EMPTY"
+              : product.stock_state === "low"
+                ? "STOCK_LOW"
+                : product.stock_state === "ready"
+                  ? "STOCK_READY"
+                  : "DRAFT"
       }
       label={labels[product.stock_state]}
     />

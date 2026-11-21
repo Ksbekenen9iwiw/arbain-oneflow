@@ -147,10 +147,7 @@ export default function Today() {
       ),
     );
   }, [revision]);
-  const [alarmPanelState, setAlarmPanelState] = useQueryState(
-    "alarm",
-    "shown",
-  );
+  const [alarmPanelState, setAlarmPanelState] = useQueryState("alarm", "shown");
   const showAlarmPanel = alarmPanelState !== "hidden";
   const [targetView, setTargetView] = useQueryState("targets", "hidden");
   const showTargets = targetView === "shown";
@@ -1081,6 +1078,28 @@ export default function Today() {
             <VStack gap={6}>
               {analytics}
               {metrics}
+              {Number(d.company_setup?.visits || 0) > 0 && (
+                <VStack gap={3}>
+                  <Heading level={2}>Data Arba’in</Heading>
+                  <HStack gap={2} wrap="wrap">
+                    <Button
+                      variant="secondary"
+                      label={`${quantity(d.company_setup.products)} saldo stok perlu dicek`}
+                      href="/stock/?filter=unverified"
+                    />
+                    <Button
+                      variant="secondary"
+                      label={`${quantity(d.company_setup.outlets)} outlet perlu diverifikasi`}
+                      href="/customers/?status=pending"
+                    />
+                    <Button
+                      variant="secondary"
+                      label={`${quantity(d.company_setup.visits)} kunjungan dari laporan`}
+                      href="/company-data/?tab=visits"
+                    />
+                  </HStack>
+                </VStack>
+              )}
               <ConsignmentAndAttendanceHub
                 role={page.role}
                 pageUrl={page.url}
@@ -1380,30 +1399,35 @@ export default function Today() {
                   ? d.raw_material_form
                   : {
                       ...d.raw_material_form_default,
-                      fields: d.raw_material_form_default.fields.map((f: Row) =>
-                        f.key === "material_id" && rawMaterialItem
-                          ? { ...f, value: String(rawMaterialItem.id) }
-                          : f.key === "on_hand" && rawMaterialItem
-                            ? { ...f, value: String(rawMaterialItem.on_hand) }
-                            : f.key === "min_threshold" && rawMaterialItem
-                              ? {
-                                  ...f,
-                                  value: String(rawMaterialItem.min_threshold),
-                                }
-                              : f.key === "fast_moving_threshold" &&
-                                  rawMaterialItem
+                      fields: d.raw_material_form_default.fields.map(
+                        (f: Row) =>
+                          f.key === "material_id" && rawMaterialItem
+                            ? { ...f, value: String(rawMaterialItem.id) }
+                            : f.key === "on_hand" && rawMaterialItem
+                              ? { ...f, value: String(rawMaterialItem.on_hand) }
+                              : f.key === "min_threshold" && rawMaterialItem
                                 ? {
                                     ...f,
                                     value: String(
-                                      rawMaterialItem.fast_moving_threshold,
+                                      rawMaterialItem.min_threshold,
                                     ),
                                   }
-                                : f.key === "note" && rawMaterialItem
+                                : f.key === "fast_moving_threshold" &&
+                                    rawMaterialItem
                                   ? {
                                       ...f,
-                                      value: String(rawMaterialItem.note || ""),
+                                      value: String(
+                                        rawMaterialItem.fast_moving_threshold,
+                                      ),
                                     }
-                                  : f,
+                                  : f.key === "note" && rawMaterialItem
+                                    ? {
+                                        ...f,
+                                        value: String(
+                                          rawMaterialItem.note || "",
+                                        ),
+                                      }
+                                    : f,
                       ),
                     }
               }

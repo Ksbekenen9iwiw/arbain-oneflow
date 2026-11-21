@@ -1,6 +1,11 @@
 import SupplyPlanning from "./SupplyPlanning";
 import { ProductIdentity } from "../../ProductIdentity";
-import { stockTabUrl, listReturn, backLabel, withReturn } from "../../navigation";
+import {
+  stockTabUrl,
+  listReturn,
+  backLabel,
+  withReturn,
+} from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Keeps the Astryx table-page frame; separates products from paginated history.
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
@@ -56,9 +61,9 @@ export default function Stock() {
   );
   const filtered = Boolean(
     d.query ||
-      d.stock_filter ||
-      d.selected_status ||
-      (d.selected_sort && d.selected_sort !== "sku"),
+    d.stock_filter ||
+    d.selected_status ||
+    (d.selected_sort && d.selected_sort !== "sku"),
   );
   const columns: TableColumn<Row>[] = [
     {
@@ -77,8 +82,10 @@ export default function Stock() {
               {r.name}
             </Link>
             <Text type="supporting">
-              {r.sku} · {r.unit}
-              {!r.is_active ? " · Nonaktif" : ""}
+              {r.price == null
+                ? "SKU & satuan belum diverifikasi"
+                : `${r.sku} · ${r.unit}`}
+              {!r.is_active && r.price != null ? " · Nonaktif" : ""}
             </Text>
           </VStack>
         </ProductIdentity>
@@ -90,7 +97,11 @@ export default function Stock() {
       sortable: true,
       align: "end",
       width: proportional(1.2, { minWidth: 60 }),
-      renderCell: (r) => <Text hasTabularNumbers>{money(r.price)}</Text>,
+      renderCell: (r) => (
+        <Text hasTabularNumbers>
+          {r.price == null ? "Belum diisi" : money(r.price)}
+        </Text>
+      ),
     },
     ...(manage
       ? [
@@ -101,7 +112,9 @@ export default function Stock() {
             align: "end" as const,
             width: proportional(0.65, { minWidth: 60 }),
             renderCell: (r: Row) => (
-              <Text hasTabularNumbers>{quantity(r.on_hand)}</Text>
+              <Text hasTabularNumbers>
+                {r.opening_stock_pending ? "—" : quantity(r.on_hand)}
+              </Text>
             ),
           },
           {
@@ -111,7 +124,9 @@ export default function Stock() {
             align: "end" as const,
             width: proportional(0.85, { minWidth: 60 }),
             renderCell: (r: Row) => (
-              <Text hasTabularNumbers>{quantity(r.reserved)}</Text>
+              <Text hasTabularNumbers>
+                {r.opening_stock_pending ? "—" : quantity(r.reserved)}
+              </Text>
             ),
           },
         ]
@@ -125,9 +140,11 @@ export default function Stock() {
       renderCell: (r) => (
         <VStack gap={1}>
           <Text weight="semibold" hasTabularNumbers>
-            {quantity(r.available)}
+            {r.opening_stock_pending ? "—" : quantity(r.available)}
           </Text>
-          <Text type="supporting">Min. {quantity(r.min_stock)}</Text>
+          {r.min_stock != null && (
+            <Text type="supporting">Min. {quantity(r.min_stock)}</Text>
+          )}
         </VStack>
       ),
     },
@@ -148,8 +165,13 @@ export default function Stock() {
                 <Button
                   size="sm"
                   variant="secondary"
-                  label="Barang masuk"
-                  href={stockContext(`/stock/${r.id}/receive/`, page.url)}
+                  label={r.price == null ? "Lengkapi katalog" : "Barang masuk"}
+                  href={stockContext(
+                    r.price == null
+                      ? `/products/${r.id}/edit/`
+                      : `/stock/${r.id}/receive/`,
+                    page.url,
+                  )}
                 />
                 <DropdownMenu
                   presentation="popover"
@@ -288,6 +310,10 @@ export default function Stock() {
                           value: "conflict",
                           label: `Konflik stok (${d.condition_counts.conflict})`,
                         },
+                        {
+                          value: "unverified",
+                          label: `Belum diverifikasi (${d.condition_counts.unverified || 0})`,
+                        },
                       ]}
                       onChange={(filter) => update({ filter, q: query })}
                     />
@@ -305,7 +331,12 @@ export default function Stock() {
                           ),
                           onClick: () => {
                             setQuery("");
-                            update({ q: "", status: "", filter: "", sort: "sku" });
+                            update({
+                              q: "",
+                              status: "",
+                              filter: "",
+                              sort: "sku",
+                            });
                           },
                         }
                       : undefined
