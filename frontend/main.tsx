@@ -9,7 +9,6 @@ import {
 } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/globals.css";
-import "./styles/oneflow.css";
 import { I18nProvider } from "react-aria-components";
 import { Toaster } from "@/components/base/toast/toast";
 import { TemplateCopyProvider } from "@/components/foundations/template-copy/template-copy";
@@ -179,11 +178,7 @@ function App() {
   useLayoutEffect(() => {
     window.dispatchEvent(new Event("oneflow:ready"));
     const root = document.getElementById("oneflow-root")!;
-    const animation = playMotion(
-      root.firstElementChild as HTMLElement,
-      [{ opacity: 0.94 }, { opacity: 1 }],
-      "fast",
-    );
+    const animation = playMotion(root, [{ opacity: 0.94 }, { opacity: 1 }], "fast");
     return () => animation?.cancel();
   }, []);
   useEffect(() => {

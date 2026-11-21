@@ -165,8 +165,15 @@ export function Button({
   const shared = {
     variant: boardVariant,
     size: BUTTON_SIZE[size],
-    iconOnly: isIconOnly,
-    className: cx("gap-1.5", width === "100%" && "w-full", className),
+    className: cx(
+      "gap-1.5",
+      isIconOnly && (size === "sm" ? "size-8 p-0" : "size-9 p-0"),
+      // App "ghost" is a quiet transparent action, not BoardUI's tinted one.
+      variant === "ghost" &&
+        "bg-transparent text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary active:bg-background-tertiary-default",
+      width === "100%" && "w-full",
+      className,
+    ),
     style: {
       width: width === "100%" ? undefined : width,
       ...style,

@@ -1,6 +1,8 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
 @import "./theme.css";
 @import "./typography.css";
+@import "./oneflow.css";
 
 /* ---------------------------------------------------------------------------
  * Dark mode strategy
