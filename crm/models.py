@@ -19,7 +19,8 @@ class Customer(models.Model):
     code = models.CharField('Kode pelanggan', max_length=40, unique=True)
     name = models.CharField('Nama pelanggan', max_length=160)
     outlet_type = models.CharField('Kategori mitra', max_length=20, choices=OutletType.choices, default=OutletType.APOTEK)
-    discount_percent = models.PositiveSmallIntegerField('Potongan harga mitra (%)', default=16)
+    discount_percent = models.PositiveSmallIntegerField('Potongan harga mitra (%)', default=16, null=True, blank=True)
+    source_pending = models.BooleanField(default=False)
     phone = models.CharField('Nomor kontak', max_length=40, blank=True)
     address = models.TextField('Alamat', blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='customers', verbose_name='Sales penanggung jawab')
@@ -27,6 +28,10 @@ class Customer(models.Model):
 
     class Meta:
         ordering = ['code']
+        constraints = [
+            models.CheckConstraint(condition=Q(is_active=False) | Q(source_pending=False, discount_percent__isnull=False),
+                                   name='active_customer_has_verified_commercial_terms'),
+        ]
 
     def __str__(self):
         return f'{self.code} · {self.name}'
@@ -36,7 +41,8 @@ class Product(models.Model):
     sku = models.CharField('SKU', max_length=40, unique=True)
     name = models.CharField('Nama produk', max_length=160)
     unit = models.CharField('Satuan', max_length=30, default='botol')
-    price_rupiah = models.PositiveBigIntegerField('Harga satuan (Rp)')
+    price_rupiah = models.PositiveBigIntegerField('Harga satuan (Rp)', null=True, blank=True)
+    opening_stock_pending = models.BooleanField(default=False)
     min_stock = models.PositiveIntegerField('Batas minimum stok', default=5)
     # Nullable on purpose: unset is not a zero-day policy, and FEFO refuses to
     # reserve until someone fills it in.
@@ -45,6 +51,10 @@ class Product(models.Model):
 
     class Meta:
         ordering = ['sku']
+        constraints = [
+            models.CheckConstraint(condition=Q(is_active=False) | Q(price_rupiah__isnull=False, opening_stock_pending=False),
+                                   name='active_product_has_price_and_opening_stock'),
+        ]
 
     def __str__(self):
         return f'{self.sku} · {self.name}'
@@ -548,6 +558,8 @@ class CompanyReportRow(models.Model):
         NOTES = 'notes', 'Catatan mitra'
 
     report = models.ForeignKey(CompanyReport, on_delete=models.CASCADE, related_name='rows')
+    catalog_product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='company_report_rows')
+    visited_customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name='company_visit_rows')
     kind = models.CharField(max_length=20, choices=Kind.choices, db_index=True)
     page = models.PositiveIntegerField()
     source_row = models.CharField(max_length=48)

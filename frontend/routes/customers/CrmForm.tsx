@@ -162,6 +162,8 @@ export default function CrmForm() {
                       </Text>
                     )}
                     {field("owner")}
+                    {field("outlet_type")}
+                    {field("discount_percent")}
                     {field("is_active")}
                   </VStack>
                 </>

@@ -12,14 +12,10 @@ def django(*args, check=True):
 
 
 django('migrate', '--noinput')
-if django('shell', '-c', 'from crm.models import Customer; raise SystemExit(0 if Customer.objects.exists() else 1)', check=False) == 0:
-    print('Data sudah ada; seed dilewati.')
-else:
-    django('seed_demo', '--show-demo-credentials')
-
-# Setel sandi akun demo agar tombol "akses demo untuk juri" selalu tersedia.
-# Gagal dengan aman (check=False) bila akun belum ada atau bukan workspace demo.
-django('configure_judging_accounts', '--confirm-demo-reset', check=False)
+if os.environ.setdefault('ONEFLOW_DEMO', '0') == '1':
+    if django('shell', '-c', 'from crm.models import Customer; raise SystemExit(0 if Customer.objects.exists() else 1)', check=False) != 0:
+        django('seed_demo', '--show-demo-credentials')
+    django('configure_judging_accounts', '--confirm-demo-reset', check=False)
 
 os.execvp('gunicorn', ['gunicorn', 'oneflow.wsgi:application',
                       '--bind', f"0.0.0.0:{os.environ.get('PORT', '8000')}",

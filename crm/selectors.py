@@ -30,7 +30,7 @@ def customer_records(actor, params, as_of):
         selected_sales = str(get_object_or_404(owners, pk=selected_sales).pk)
     query = params.get('q', '').strip()
     status = params.get('status', '')
-    status = status if status in ('active', 'inactive') else ''
+    status = status if status in ('active', 'inactive', 'pending') else ''
     view = params.get('view', '')
     view = view if view in ('overdue', 'today') else ''
     sort = params.get('sort', 'name')
@@ -40,8 +40,10 @@ def customer_records(actor, params, as_of):
         records = records.filter(owner_id=selected_sales)
     if query:
         records = records.filter(Q(name__icontains=query) | Q(code__icontains=query) | Q(phone__icontains=query))
-    if status:
-        records = records.filter(is_active=status == 'active')
+    if status == 'pending':
+        records = records.filter(source_pending=True)
+    elif status:
+        records = records.filter(is_active=status == 'active', source_pending=False)
     records = list(records.prefetch_related(Prefetch('activities', queryset=Activity.objects.order_by('-created_at', '-pk'))))
     for customer in records:
         activities = list(customer.activities.all())
@@ -110,6 +112,10 @@ def customer_history(actor, customer_id):
     context['next_actions'] = customer_next_actions(
         actor, customer, opened, context['reorder_patterns'], orders, timezone.localdate())
     context['samples'] = customer_samples(actor, customer)
+    context['source_visits'] = [
+        dict(id=row.pk, date=row.observed_date, sales=row.sales, location=row.details.get('Alamat', ''))
+        for row in customer.company_visit_rows.order_by('-observed_date', '-pk')
+    ]
     from crm.forms import ConsignmentVisitForm
     from crm.services.consignment import pharmacy_consignment_overview, product_traction_analysis
     outlet_rows = pharmacy_consignment_overview(actor, customer_id=customer.id)
@@ -118,7 +124,7 @@ def customer_history(actor, customer_id):
         'total_on_display': 0, 'total_sold': 0, 'weak_items': [], 'last_checked_date': None,
         'items': [], 'recent_entries': [],
     }
-    if role_of(actor) in {'SALES', 'MANAGER'}:
+    if not customer.source_pending and role_of(actor) in {'SALES', 'MANAGER'}:
         context['consignment_form'] = ConsignmentVisitForm(actor=actor, customer=customer)
         context['consignment_form_default'] = context['consignment_form']
     context['carry_directives'] = [

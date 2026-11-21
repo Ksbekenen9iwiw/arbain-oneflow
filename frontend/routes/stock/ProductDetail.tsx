@@ -104,10 +104,12 @@ export default function ProductDetail() {
   const productInfoContent = (
     <VStack gap={4}>
       <Fact label="Harga per satuan">
-        {money(p.price)} / {p.unit}
+        {p.price == null ? "Belum diisi" : `${money(p.price)} / ${p.unit}`}
       </Fact>
       <Fact label="Batas minimum">
-        {quantity(p.min_stock)} {p.unit}
+        {p.min_stock == null
+          ? "Belum diisi"
+          : `${quantity(p.min_stock)} ${p.unit}`}
       </Fact>
       <Fact label="Status produk">
         {p.is_active
@@ -140,17 +142,31 @@ export default function ProductDetail() {
                       <Heading level={1}>{p.name}</Heading>
                       <HStack gap={3} vAlign="center" wrap="wrap">
                         <Text color="secondary">
-                          {p.sku} · {p.unit}
+                          {p.price == null
+                            ? "SKU & satuan belum diverifikasi"
+                            : `${p.sku} · ${p.unit}`}
                         </Text>
                         <Status
                           value="DRAFT"
-                          label={p.is_active ? "Aktif dijual" : "Nonaktif"}
+                          label={
+                            p.is_active
+                              ? "Aktif dijual"
+                              : p.price == null
+                                ? "Perlu lengkapi katalog"
+                                : "Nonaktif"
+                          }
                         />
                       </HStack>
                     </VStack>
                   </ProductIdentity>
                 </StackItem>
-                {d.can_manage && (
+                {d.can_manage && p.price == null && (
+                  <Button
+                    label="Lengkapi katalog"
+                    href={stockContext(`/products/${p.id}/edit/`, page.url)}
+                  />
+                )}
+                {d.can_manage && p.price != null && (
                   <HStack gap={2} wrap="wrap">
                     <Button
                       label="Hitung & koreksi fisik"
@@ -203,31 +219,41 @@ export default function ProductDetail() {
                     />
                   )}
                 </HStack>
-                <HStack gap={6} wrap="wrap">
-                  {d.can_manage && (
-                    <>
-                      <Fact label="Fisik">
-                        {quantity(p.on_hand)} {p.unit}
+                {p.opening_stock_pending ? (
+                  <Banner
+                    status="warning"
+                    title="Saldo gudang belum diverifikasi"
+                    description="Catat semua batch awal dari hasil cek gudang, lalu cocokkan jumlah fisiknya sebelum produk diaktifkan."
+                  />
+                ) : (
+                  <>
+                    <HStack gap={6} wrap="wrap">
+                      {d.can_manage && (
+                        <>
+                          <Fact label="Fisik">
+                            {quantity(p.on_hand)} {p.unit}
+                          </Fact>
+                          <Fact label="Reservasi">
+                            {quantity(p.reserved)} {p.unit}
+                          </Fact>
+                        </>
+                      )}
+                      <Fact label="Stok bebas">
+                        <Heading level={2}>
+                          {quantity(p.available)} {p.unit}
+                        </Heading>
                       </Fact>
-                      <Fact label="Reservasi">
-                        {quantity(p.reserved)} {p.unit}
+                      <Fact label="Kondisi">
+                        <StockCondition product={p} />
                       </Fact>
-                    </>
-                  )}
-                  <Fact label="Stok bebas">
-                    <Heading level={2}>
-                      {quantity(p.available)} {p.unit}
-                    </Heading>
-                  </Fact>
-                  <Fact label="Kondisi">
-                    <StockCondition product={p} />
-                  </Fact>
-                </HStack>
-                <Text type="supporting">
-                  Stok bebas = fisik − reservasi; belum mengecualikan batch
-                  ditahan atau kedaluwarsa. Diperbarui{" "}
-                  {dateLabel(p.updated_at, true)} WIB
-                </Text>
+                    </HStack>
+                    <Text type="supporting">
+                      Stok bebas = fisik − reservasi; belum mengecualikan batch
+                      ditahan atau kedaluwarsa. Diperbarui{" "}
+                      {dateLabel(p.updated_at, true)} WIB
+                    </Text>
+                  </>
+                )}
                 {p.stock_state === "conflict" && (
                   <Banner
                     status="warning"
@@ -240,6 +266,17 @@ export default function ProductDetail() {
                   />
                 )}
               </VStack>
+              {!!d.source_sales?.length && (
+                <VStack gap={3}>
+                  <Heading level={2}>Penjualan dari laporan Arba’in</Heading>
+                  <DataTable rows={d.source_sales} columns={[
+                    {key: "month", header: "Bulan"}, {key: "sales", header: "Sales"},
+                    {key: "quantity", header: "Jumlah"}, {key: "returned", header: "Retur"},
+                    {key: "sold", header: "Laku"},
+                    {key: "issue", header: "Pemeriksaan", renderCell: (r) => r.issue || "—"},
+                  ]} />
+                </VStack>
+              )}
               {d.can_manage && (
                 <>
                   <TabList

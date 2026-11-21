@@ -117,6 +117,8 @@ def record_consignment_visit(
     """
     require_role(actor, {'SALES', 'MANAGER'})
     customer = get_object_or_404(customers_for(actor), pk=customer_id)
+    if customer.source_pending:
+        raise BusinessError('INVALID_STATE', 'Verifikasi master outlet sebelum mencatat titip jual.')
     if not customer.is_active and added_quantity > 0:
         raise BusinessError('INVALID_STATE', 'Pelanggan nonaktif tidak dapat menerima tambahan stok titipan baru.')
     product = get_object_or_404(Product, pk=product_id, is_active=True)

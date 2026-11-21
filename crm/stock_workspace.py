@@ -14,6 +14,8 @@ from crm.services.batches import fefo_key
 
 
 def stock_state(product):
+    if product.opening_stock_pending:
+        return 'unverified'
     available = product.balance.available
     if available < 0:
         return 'conflict'
@@ -93,7 +95,7 @@ def stock_records(actor, params):
         rows.sort(key=lambda r: (priority.get(r['risk'], 5), r['product'].sku))
         return {'selected_tab': tab, 'planning': rows, 'query': query, 'selected_risk': risk, 'planning_counts': counts}
     products = list(Product.objects.select_related('balance'))
-    summary = {'product_count': len(products), 'low_stock_count': sum(p.balance.available < p.min_stock for p in products), 'conflict_count': sum(p.balance.available < 0 for p in products)}
+    summary = {'product_count': len(products), 'low_stock_count': sum(stock_state(p) in {'empty', 'low', 'conflict'} and p.balance.available < p.min_stock for p in products), 'conflict_count': sum(p.balance.available < 0 for p in products)}
     if tab == 'movements':
         return dict(movement_records(actor, params), selected_tab=tab, stock_summary=summary,
                     product_options=[{'value': str(p.pk), 'label': f'{p.sku} · {p.name}'} for p in products])
@@ -101,20 +103,21 @@ def stock_records(actor, params):
     status = params.get('status', '')
     status = status if status in ('active', 'inactive') else ''
     condition = params.get('filter', '')
-    condition = condition if condition in ('low', 'empty', 'conflict', 'ready') else ''
+    condition = condition if condition in ('low', 'empty', 'conflict', 'ready', 'unverified') else ''
     if query:
         products = [p for p in products if query.casefold() in f'{p.name} {p.sku}'.casefold()]
     if status:
         products = [p for p in products if p.is_active == (status == 'active')]
-    counts = {'all': len(products), 'low': sum(p.balance.available < p.min_stock for p in products),
+    counts = {'all': len(products), 'low': sum(stock_state(p) in {'empty', 'low', 'conflict'} and p.balance.available < p.min_stock for p in products),
               'empty': sum(stock_state(p) == 'empty' for p in products), 'conflict': sum(stock_state(p) == 'conflict' for p in products),
-              'ready': sum(stock_state(p) == 'ready' for p in products)}
+              'ready': sum(stock_state(p) == 'ready' for p in products),
+              'unverified': sum(stock_state(p) == 'unverified' for p in products)}
     if condition:
         if condition == 'low':
-            products = [p for p in products if p.balance.available < p.min_stock]
+            products = [p for p in products if stock_state(p) in {'empty', 'low', 'conflict'} and p.balance.available < p.min_stock]
         else:
             products = [p for p in products if stock_state(p) == condition]
-    keys = {'name': lambda p: p.name.casefold(), 'sku': lambda p: p.sku.casefold(), 'price': lambda p: p.price_rupiah,
+    keys = {'name': lambda p: p.name.casefold(), 'sku': lambda p: p.sku.casefold(), 'price': lambda p: (p.price_rupiah is None, p.price_rupiah or 0),
             'available': lambda p: p.balance.available}
     if role != 'SALES':
         keys.update(on_hand=lambda p: p.balance.on_hand, reserved=lambda p: p.balance.reserved)
@@ -129,6 +132,11 @@ def stock_records(actor, params):
 
 def product_workspace(actor, product, params):
     data = {'product': product, 'can_manage': role_of(actor) != 'SALES', 'selected_section': 'movements'}
+    data['source_sales'] = [
+        dict(id=row.pk, sales=row.sales, month=row.report.period.strftime('%Y-%m'), quantity=row.quantity,
+             sold=row.sold, returned=row.returned, issue=row.issue)
+        for row in product.company_report_rows.select_related('report').order_by('-report__period', 'sales')
+    ] if role_of(actor) == 'MANAGER' else []
     if data['can_manage']:
         data.update(movement_records(actor, params, product))
         data['selected_section'] = params.get('section') if params.get('section') in ('batches', 'supply', 'movements', 'reservations') else 'batches'

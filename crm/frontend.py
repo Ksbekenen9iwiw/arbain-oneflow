@@ -80,12 +80,13 @@ def encode(value, role):
         return dict(id=str(value.pk), code=value.code, name=value.name, phone=value.phone,
                     address=value.address, owner=person(value.owner), is_active=value.is_active,
                     outlet_type=value.outlet_type, outlet_type_label=value.get_outlet_type_display(),
-                    discount_percent=str(value.discount_percent),
+                    discount_percent=encode(value.discount_percent, role), source_pending=value.source_pending,
                     summary=encode(getattr(value, "summary", None), role))
     if isinstance(value, Product):
         from crm.stock_workspace import stock_state
         result = dict(id=str(value.pk), sku=value.sku, name=value.name, unit=value.unit,
-                      price=str(value.price_rupiah), min_stock=str(value.min_stock), is_active=value.is_active, stock_state=stock_state(value),
+                      price=encode(value.price_rupiah, role), min_stock=encode(value.min_stock if value.price_rupiah is not None else None, role),
+                      is_active=value.is_active, stock_state=stock_state(value), opening_stock_pending=value.opening_stock_pending,
                       available=str(value.balance.available), updated_at=encode(value.balance.updated_at, role))
         if role != 'SALES':
             result.update(on_hand=str(value.balance.on_hand), reserved=str(value.balance.reserved))

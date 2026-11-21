@@ -8,9 +8,9 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods
 
-from crm.access import customers_for, sample_requests_for
-from crm.forms import ActivityCompletionForm, ActivityForm, CustomerForm
-from crm.models import Activity
+from crm.access import customers_for, require_role, sample_requests_for
+from crm.forms import ActivityCompletionForm, ActivityForm, CustomerForm, SourceCustomerEditForm
+from crm.models import Activity, Customer
 from crm.navigation import return_url
 from crm.selectors import customer_history, customer_records
 from crm.views.common import page
@@ -43,6 +43,23 @@ def customer_create(request):
         messages.success(request, 'Pelanggan tersimpan.')
         return redirect(customer_detail_url(request, customer.id))
     return page(request, 'crm/form.html', {'form': form, 'heading': 'Tambah pelanggan', 'submit_label': 'Simpan pelanggan', 'form_kind': 'customer', 'back_url': customer_return_url(request)}, status=400 if request.method == 'POST' else 200)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def customer_verify(request, customer_id):
+    require_role(request.user, {'MANAGER'})
+    customer = get_object_or_404(Customer, pk=customer_id, source_pending=True)
+    form = SourceCustomerEditForm(request.POST or None, instance=customer, actor=request.user, initial={'code': ''})
+    if request.method == 'POST' and form.is_valid():
+        verified = form.save(commit=False)
+        verified.source_pending = False
+        verified.save()
+        messages.success(request, 'Master outlet terverifikasi.')
+        return redirect('customer_detail', customer_id=verified.pk)
+    return page(request, 'crm/form.html', {'form': form, 'heading': 'Verifikasi master outlet',
+        'submit_label': 'Simpan verifikasi', 'form_kind': 'customer', 'customer': customer,
+        'back_url': f'/customers/{customer.pk}/'}, status=400 if request.method == 'POST' else 200)
 
 
 @login_required

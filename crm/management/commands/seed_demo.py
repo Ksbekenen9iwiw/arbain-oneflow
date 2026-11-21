@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from uuid import uuid4
 
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -27,6 +28,8 @@ class Command(BaseCommand):
         parser.add_argument('--reorder-demo', action='store_true', help='Tambahkan skenario pengingat pembelian ulang berlabel simulasi (pola 42/28/14 hari + pengadaan berjalan).')
 
     def handle(self, *args, **options):
+        if not settings.ONEFLOW_DEMO:
+            raise CommandError('Seed demo dinonaktifkan pada workspace operasional.')
         try:
             as_of = date.fromisoformat(options['as_of'])
             # History needs 96 days before the reference date.

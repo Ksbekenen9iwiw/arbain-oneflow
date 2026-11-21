@@ -50,8 +50,19 @@ def _record_stock(actor, product_id, quantity, reason, operation_id, kind, batch
         if (previous.product_id, previous.kind, previous.input_quantity, previous.reason, previous.actor_id) != (product_id, kind, quantity, reason, actor.id):
             raise BusinessError('IDEMPOTENCY_CONFLICT', 'ID operasi sudah digunakan dengan isi berbeda.')
         return previous
-    product = get_object_or_404(Product, pk=product_id)
-    balance = get_object_or_404(InventoryBalance, product=product)
+    product = get_object_or_404(Product.objects.select_for_update(), pk=product_id)
+    balance = get_object_or_404(InventoryBalance.objects.select_for_update(), product=product)
+    if product.price_rupiah is None:
+        raise BusinessError('INVALID_STATE', 'Lengkapi SKU, satuan, dan harga produk sebelum mencatat stok.')
+    if product.opening_stock_pending and kind == StockMovement.Kind.RECEIPT and not (batch_code and received_date and expiry_date):
+        raise BusinessError('INVALID_INPUT', 'Saldo awal memerlukan kode batch, tanggal penerimaan, dan kedaluwarsa.')
+    if product.opening_stock_pending and kind == StockMovement.Kind.ADJUSTMENT:
+        from django.db.models import Sum
+        recorded = product.batches.aggregate(total=Sum('on_hand'))['total'] or 0
+        if quantity != recorded or product.batches.filter(on_hand__gt=0, expiry_date__isnull=True).exists():
+            raise BusinessError('INVALID_INPUT', 'Catat seluruh batch fisik dengan tanggal kedaluwarsa. Jumlah hitung harus sama dengan total batch sebelum saldo awal disahkan.')
+        product.opening_stock_pending = False
+        product.save(update_fields=['opening_stock_pending'])
     actual = balance.on_hand + quantity if kind == StockMovement.Kind.RECEIPT else quantity
     integer_input(actual)
     delta = actual - balance.on_hand

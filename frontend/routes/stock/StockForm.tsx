@@ -122,16 +122,18 @@ export default function StockForm() {
               ))}
               {mutation ? (
                 <>
+                  {p.opening_stock_pending && <Banner status="info" title="Pencatatan saldo awal"
+                    description={count ? "Cocokkan total fisik dengan total batch yang sudah dicatat." : "Masukkan batch dari hasil hitung awal, termasuk tanggal penerimaan dan kedaluwarsanya."} />}
                   <HStack gap={6} wrap="wrap">
-                    <Fact label="Fisik saat ini">
+                    <Fact label={p.opening_stock_pending ? "Jumlah batch tercatat" : "Fisik saat ini"}>
                       {quantity(p.on_hand)} {p.unit}
                     </Fact>
                     <Fact label="Reservasi">
                       {quantity(p.reserved)} {p.unit}
                     </Fact>
-                    <Fact label="Tersedia">
+                    {!p.opening_stock_pending && <Fact label="Tersedia">
                       {quantity(p.available)} {p.unit}
-                    </Fact>
+                    </Fact>}
                   </HStack>
                   <VStack gap={4}>
                     {field(count ? "counted_quantity" : "quantity", {
@@ -231,9 +233,9 @@ export default function StockForm() {
                   <VStack gap={4}>
                     <Heading level={2}>Identitas produk</Heading>
                     {field("name")}
-                    {!editing && field("sku")}
-                    {!editing && field("unit")}
-                    {editing && (
+                    {(!editing || p.price == null) && field("sku")}
+                    {(!editing || p.price == null) && field("unit")}
+                    {editing && p.price != null && (
                       <Text color="secondary">
                         SKU {p.sku} · Satuan {p.unit}
                       </Text>
@@ -243,6 +245,7 @@ export default function StockForm() {
                     <Heading level={2}>Harga & persediaan</Heading>
                     {field("price_rupiah")}
                     {editing &&
+                      d.original_price != null &&
                       amount !== null &&
                       amount !== BigInt(d.original_price) && (
                         <Text type="supporting">
@@ -252,6 +255,7 @@ export default function StockForm() {
                         </Text>
                       )}
                     {field("min_stock")}
+                    {field("min_shelf_life_days")}
                   </VStack>
                   <VStack gap={3}>
                     <Heading level={2}>Ketersediaan untuk pesanan</Heading>
