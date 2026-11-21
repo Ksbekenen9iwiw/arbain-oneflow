@@ -32,11 +32,6 @@ export function OutletsConsignmentTab({
       role="tabpanel"
       aria-label="Stok di Apotek"
     >
-      <Text type="supporting">
-        Daftar apotek yang menyimpan stok titip jual (konsinyasi), jumlah
-        barang yang masih dipajang di apotek, jumlah terjual, serta deteksi
-        produk yang lambat laku di masing-masing apotek.
-      </Text>
       <DataTable
         rows={consignmentOutlets.map((o: Row) => ({
           ...o,

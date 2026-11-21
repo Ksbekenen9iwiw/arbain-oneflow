@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Card } from "@astryxdesign/core/Card";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { Icon } from "@astryxdesign/core/Icon";
+import { Card } from "@/kit";
+import { IconButton } from "@/kit";
+import { Icon } from "@/kit";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { VStack, HStack, Text, Heading, Button } from "./ui";
 import { useApp } from "./router";

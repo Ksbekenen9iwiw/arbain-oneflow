@@ -1,15 +1,15 @@
-import { proportional } from "@astryxdesign/core/Table";
-import { Collapsible } from "@astryxdesign/core/Collapsible";
-import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { proportional } from "@/kit";
+import { Collapsible } from "@/kit";
+import { DropdownMenu } from "@/kit";
+import { List, ListItem } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import { MotionPanel, MotionStack } from "../../motion";
 import { ProductIdentity } from "../../ProductIdentity";
 import { sampleJourney, sampleStage } from "../../sampleJourney";
 import { useQueryState } from "../../router";
 import { useEffect, useState } from "react";
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { Divider } from "@astryxdesign/core/Divider";
+import { Layout, LayoutContent } from "@/kit";
+import { Divider } from "@/kit";
 import {
   VStack,
   HStack,
@@ -155,10 +155,6 @@ export default function SampleDetail() {
                   <Text key={reason}>{reason}</Text>
                 ),
               )}
-              <Text type="supporting">
-                Dasar pengulangan memakai riwayat produk yang sama. Buka
-                tab Riwayat pelanggan untuk memeriksa bukti pendukung.
-              </Text>
               {page.role === "MANAGER" && (
                 <Button
                   href={withReturn("/samples/policy/", page.url)}
@@ -292,7 +288,7 @@ export default function SampleDetail() {
                   description={d.error.message}
                 />
               )}
-              <VStack gap={3} data-tour="sample-overview">
+              <VStack className="oneflow-panel" gap={3} data-tour="sample-overview">
                 <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
                   <HStack gap={3} vAlign="center" wrap="wrap">
                     <Heading level={2}>Progres sampel</Heading>
@@ -358,7 +354,7 @@ export default function SampleDetail() {
                     commercial ? "Pengajuan & produk" : "Produk & batch"
                   }
                 >
-                  <VStack gap={4}>
+                  <VStack className="oneflow-panel" gap={4}>
                     <Heading level={2}>Produk sampel</Heading>
                     <DataTable
                       rows={sample.lines}
@@ -435,7 +431,7 @@ export default function SampleDetail() {
                     )}
                   </VStack>
                   {commercial && (
-                    <VStack gap={4}>
+                    <VStack className="oneflow-panel" gap={4}>
                       <Heading level={2}>Dasar pengajuan</Heading>
                       <Fact label="Tujuan pemberian">
                         {sample.purpose || "Belum tercatat"}
@@ -466,7 +462,7 @@ export default function SampleDetail() {
                     role="tabpanel"
                     aria-label="Evaluasi & pembelian"
                   >
-                    <VStack gap={3}>
+                    <VStack className="oneflow-panel" gap={3}>
                       <Heading level={2}>Catatan evaluasi</Heading>
                       {d.evaluation.events.length ? (
                         <List hasDividers density="balanced">
@@ -498,7 +494,7 @@ export default function SampleDetail() {
                         </Text>
                       )}
                     </VStack>
-                    <VStack gap={3}>
+                    <VStack className="oneflow-panel" gap={3}>
                       <HStack hAlign="between" vAlign="center" gap={3}>
                         <Heading level={2}>Pembelian lanjutan</Heading>
                         {d.can_create_order && (
@@ -589,12 +585,11 @@ export default function SampleDetail() {
                   role="tabpanel"
                   aria-label="Riwayat pelanggan"
                 >
-                  <VStack gap={4}>
+                  <VStack className="oneflow-panel" gap={4}>
                     <Heading level={2}>Riwayat pelanggan</Heading>
                     {!d.history.has_history ? (
                       <Empty
                         title="Belum ada riwayat"
-                        description="Calon pelanggan baru tidak otomatis dianggap memiliki track record buruk."
                       />
                     ) : (
                       <>
@@ -617,7 +612,6 @@ export default function SampleDetail() {
                           empty={
                             <Empty
                               title="Belum ada pengajuan sampel sebelumnya"
-                              description="Riwayat pengajuan pelanggan ini akan tampil di sini."
                             />
                           }
                           columns={[
@@ -674,7 +668,6 @@ export default function SampleDetail() {
                           empty={
                             <Empty
                               title="Belum ada sampel diterima"
-                              description="Sampel muncul setelah penerimaan pelanggan dicatat."
                             />
                           }
                           columns={[
@@ -716,7 +709,6 @@ export default function SampleDetail() {
                           empty={
                             <Empty
                               title="Belum ada tindak lanjut tercatat"
-                              description="Jadwal tindak lanjut dari evaluasi sampel akan tampil di sini."
                             />
                           }
                           columns={[
@@ -757,7 +749,6 @@ export default function SampleDetail() {
                           empty={
                             <Empty
                               title="Belum ada pembelian yang ditautkan"
-                              description="Pesanan yang dibuat dari evaluasi sampel akan tampil di sini."
                             />
                           }
                           columns={[

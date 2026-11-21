@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { TabList, Tab } from "@/kit";
 import type { Row } from "../../types";
 import { money, quantity, Text, VStack } from "../../ui";
 import { AttendanceRecapTab } from "./AttendanceRecapTab";

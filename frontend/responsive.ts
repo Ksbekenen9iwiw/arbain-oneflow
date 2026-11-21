@@ -1,4 +1,4 @@
-import { useMediaQuery } from "@astryxdesign/core/hooks";
+import { useMediaQuery } from "@/kit";
 
 export function useResponsive() {
   const isMobile = useMediaQuery("(max-width: 768px)");

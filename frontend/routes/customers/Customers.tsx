@@ -1,19 +1,19 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 import { RecordIdentity } from "../../RecordIdentity";
 import { withReturn, listReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 table-page: unified toolbar, scoped tabs, full-width table.
 import { useState } from "react";
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { TextInput } from "@astryxdesign/core/TextInput";
-import { Selector } from "@astryxdesign/core/Selector";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { Layout, LayoutContent } from "@/kit";
+import { TextInput } from "@/kit";
+import { Selector } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import {
   proportional,
   useTableSortable,
   type TableSortState,
   type TableColumn,
-} from "@astryxdesign/core/Table";
+} from "@/kit";
 import {
   tablePresentation,
   ResultsSummary,
@@ -196,12 +196,7 @@ export default function Customers() {
       header={
         <PageHeader
           back={back ? { href: back, label: backLabel(back) } : undefined}
-          title="Pelanggan"
-          description={
-            manager
-              ? "Hubungan pelanggan dan tindak lanjut tim."
-              : "Pelanggan dan tindak lanjut yang menjadi tanggung jawab Anda."
-          }
+          title="Pelanggan" 
           actions={
             <Button
               variant="primary"
@@ -213,7 +208,7 @@ export default function Customers() {
       }
       content={
         <LayoutContent padding={contentPadding} data-oneflow-scroll>
-          <VStack gap={4}>
+          <VStack gap={4} className="oneflow-tablecard">
             <TabList
               hasDivider
               aria-label="Prioritas pelanggan"

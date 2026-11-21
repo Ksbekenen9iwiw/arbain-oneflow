@@ -8,14 +8,14 @@ import {
   type ReactNode,
 } from "react";
 import { createRoot } from "react-dom/client";
-import "@astryxdesign/core/reset.css";
-import "@astryxdesign/core/astryx.css";
-import "./brand.css";
-import { InternationalizationProvider } from "@astryxdesign/core/i18n";
-import { indonesian } from "./locale";
+import "./styles/globals.css";
+import { I18nProvider } from "react-aria-components";
+import { Toaster } from "@/components/base/toast/toast";
+import { TemplateCopyProvider } from "@/components/foundations/template-copy/template-copy";
+import { translateCopy } from "./locale";
 import { ThemeModeProvider } from "./ThemeSwitch";
-import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
-import { Skeleton } from "@astryxdesign/core/Skeleton";
+import { Layout, LayoutContent, LayoutHeader } from "@/kit";
+import { Skeleton } from "@/kit";
 import { VStack, Button, Banner, PageHeader, Text } from "./ui";
 import { Router, useApp } from "./router";
 import Shell from "./components/Shell";
@@ -157,7 +157,6 @@ class Boundary extends Component<
       >
         <Banner
           status="error"
-          role="alert"
           title="Halaman tidak berhasil ditampilkan"
           description="Muat ulang untuk mencoba kembali. Isian yang belum dikirim perlu diisi ulang."
           endContent={
@@ -179,11 +178,7 @@ function App() {
   useLayoutEffect(() => {
     window.dispatchEvent(new Event("oneflow:ready"));
     const root = document.getElementById("oneflow-root")!;
-    const animation = playMotion(
-      root.firstElementChild as HTMLElement,
-      [{ opacity: 0.94 }, { opacity: 1 }],
-      "fast",
-    );
+    const animation = playMotion(root, [{ opacity: 0.94 }, { opacity: 1 }], "fast");
     return () => animation?.cancel();
   }, []);
   useEffect(() => {
@@ -275,7 +270,6 @@ function App() {
               <VStack gap={6}>
                 <Banner
                   status="error"
-                  role="alert"
                   title={
                     d.error?.message ||
                     d.description ||
@@ -335,14 +329,14 @@ const initial: Page = JSON.parse(
   document.getElementById("oneflow-page")!.textContent!,
 );
 createRoot(document.getElementById("oneflow-root")!).render(
-  <InternationalizationProvider
-    locale="id-ID"
-    messages={{ "id-ID": indonesian }}
-  >
-    <ThemeModeProvider>
-      <Router initial={initial} onPrefetch={prefetchRoute}>
-        <App />
-      </Router>
-    </ThemeModeProvider>
-  </InternationalizationProvider>,
+  <I18nProvider locale="id-ID">
+    <TemplateCopyProvider translate={translateCopy}>
+      <ThemeModeProvider>
+        <Router initial={initial} onPrefetch={prefetchRoute}>
+          <App />
+        </Router>
+        <Toaster aria-label="Pemberitahuan" closeLabel="Tutup" />
+      </ThemeModeProvider>
+    </TemplateCopyProvider>
+  </I18nProvider>,
 );

@@ -9,14 +9,14 @@ import {
   LayoutContent,
   LayoutFooter,
   LayoutHeader,
-} from "@astryxdesign/core/Layout";
-import { FormLayout } from "@astryxdesign/core/FormLayout";
-import { Step, Stepper } from "@astryxdesign/core/Stepper";
-import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
+} from "@/kit";
+import { FormLayout } from "@/kit";
+import { Step, Stepper } from "@/kit";
+import { Selector, SelectorOption } from "@/kit";
 import { QuantityInput } from "../../QuantityInput";
-import { proportional } from "@astryxdesign/core/Table";
-import { Divider } from "@astryxdesign/core/Divider";
-import { Icon } from "@astryxdesign/core/Icon";
+import { proportional } from "@/kit";
+import { Divider } from "@/kit";
+import { Icon } from "@/kit";
 import {
   VStack,
   HStack,
@@ -157,7 +157,7 @@ export default function OrderWizard() {
       const line = {
         id,
         product: "",
-        quantity: "",
+        quantity: "1",
         deleted: false,
         errors: {},
       };
@@ -258,11 +258,11 @@ export default function OrderWizard() {
                   <Text type="supporting" color="secondary">
                     {
                       [
-                        "Pilih pelanggan yang akan menerima pesanan ini.",
+                        "",
                         d.editing
-                          ? "Ubah produk dan jumlah yang dipesan. Harga produk lama tetap dipertahankan."
-                          : "Tambahkan produk dan jumlah yang dipesan. Harga mengikuti katalog saat ini.",
-                        "Pastikan pelanggan, produk, dan jumlah sudah sesuai sebelum menyimpan draf.",
+                          ? "Harga produk lama tetap dipertahankan."
+                          : "",
+                        "",
                       ][step]
                     }
                   </Text>
@@ -477,7 +477,7 @@ export default function OrderWizard() {
                             <Text type="supporting" color="secondary">
                               {product
                                 ? `${money(product.price)} / ${product.unit} · stok siap jual ${quantity(product.available)} ${product.unit}`
-                                : "Pilih produk untuk melihat harga dan stok."}
+                                : ""}
                             </Text>
                             <Button
                               label={`Hapus produk ${index + 1}`}
@@ -645,8 +645,8 @@ export default function OrderWizard() {
                     {step === 2 && (
                       <Text type="supporting" color="secondary">
                         {d.editing
-                          ? "Perubahan belum mereservasi stok. Harga produk lama tetap; harga produk baru diperiksa saat disimpan."
-                          : "Disimpan sebagai draf. Stok baru direservasi saat pesanan dikonfirmasi. Harga diperiksa kembali saat disimpan."}
+                          ? "Stok baru dipesan saat pesanan dikonfirmasi."
+                          : "Disimpan sebagai draf. Stok baru dipesan saat pesanan dikonfirmasi."}
                       </Text>
                     )}
                   </>

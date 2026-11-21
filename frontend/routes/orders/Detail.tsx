@@ -1,4 +1,4 @@
-import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
+import { DropdownMenu } from "@/kit";
 import { MotionPanel } from "../../motion";
 import { ProductIdentity } from "../../ProductIdentity";
 import { withReturn, backLabel } from "../../navigation";
@@ -6,15 +6,15 @@ import { withReturn, backLabel } from "../../navigation";
 // Adapted from Astryx 0.7.0 detail-page: status header, line items, totals,
 // chronological history and a hideable customer panel.
 import { useEffect, useState } from "react";
-import { Layout, LayoutHeader, LayoutContent } from "@astryxdesign/core/Layout";
+import { Layout, LayoutHeader, LayoutContent } from "@/kit";
 import {
   MetadataList,
   MetadataListItem,
-} from "@astryxdesign/core/MetadataList";
-import { Avatar } from "@astryxdesign/core/Avatar";
-import { Divider } from "@astryxdesign/core/Divider";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
+} from "@/kit";
+import { Avatar } from "@/kit";
+import { Divider } from "@/kit";
+import { Icon } from "@/kit";
+import { IconButton } from "@/kit";
 import {
   ViewColumnsIcon,
   DocumentTextIcon,
@@ -22,8 +22,8 @@ import {
   TruckIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { proportional } from "@astryxdesign/core/Table";
+import { List, ListItem } from "@/kit";
+import { proportional } from "@/kit";
 import {
   VStack,
   HStack,
@@ -324,7 +324,7 @@ export default function Detail() {
                   </HStack>
                 </VStack>
               )}
-              <VStack gap={4} data-tour="order-overview">
+              <VStack className="oneflow-panel" gap={4} data-tour="order-overview">
                 <HStack hAlign="between" vAlign="center" gap={4}>
                   <VStack gap={1}>
                     <Heading level={2}>Produk pesanan</Heading>
@@ -420,20 +420,12 @@ export default function Detail() {
                     },
                   ]}
                 />
-
-                <Text type="supporting">
-                  Harga satuan tersimpan saat produk ditambahkan ke draf.
-                </Text>
               </VStack>
               {(allocationRows.length > 0 || d.can_swap) && (
-                <VStack gap={4} data-tour="order-allocations">
+                <VStack className="oneflow-panel" gap={4} data-tour="order-allocations">
                   <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
                     <VStack gap={1}>
                       <Heading level={2}>Daftar ambil barang</Heading>
-                      <Text type="supporting">
-                        Ambil batch sesuai daftar (kedaluwarsa terdekat lebih
-                        dulu), lalu tandai terkirim.
-                      </Text>
                     </VStack>
                     {d.can_swap && (
                       <Button
@@ -489,12 +481,9 @@ export default function Detail() {
                 </VStack>
               )}
               {d.batch_swaps.length > 0 && (
-                <VStack gap={4} data-tour="order-batch-swaps">
+                <VStack className="oneflow-panel" gap={4} data-tour="order-batch-swaps">
                   <VStack gap={1}>
                     <Heading level={2}>Riwayat penggantian batch</Heading>
-                    <Text type="supporting">
-                      Perubahan batch oleh gudang beserta alasannya.
-                    </Text>
                   </VStack>
                   <List hasDividers>
                     {d.batch_swaps.map((swap: Row) => (
@@ -518,7 +507,7 @@ export default function Detail() {
                 </VStack>
               )}
               <Divider />
-              <VStack gap={4} data-tour="order-history-overview">
+              <VStack className="oneflow-panel" gap={4} data-tour="order-history-overview">
                 <Heading level={2}>Riwayat pesanan</Heading>
                 <List
                   hasDividers

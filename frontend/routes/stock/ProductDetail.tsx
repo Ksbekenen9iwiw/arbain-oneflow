@@ -1,13 +1,15 @@
-import { proportional } from "@astryxdesign/core/Table";
-import { Grid } from "@astryxdesign/core/Grid";
+import { StatGrid, StatTile } from "@/kit";
+import { RiLock2Line, RiShoppingBag3Line, RiStackLine } from "@remixicon/react";
+import { proportional } from "@/kit";
+import { Grid } from "@/kit";
 import { MotionPanel } from "../../motion";
 import { ProductIdentity } from "../../ProductIdentity";
 import { withReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from the scaffolded Astryx detail-page: header, content and end panel.
 import { useState } from "react";
-import { Layout, LayoutHeader, LayoutContent } from "@astryxdesign/core/Layout";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { Layout, LayoutHeader, LayoutContent } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import {
   HStack,
   VStack,
@@ -29,7 +31,7 @@ import {
   useResponsive,
 } from "../../ui";
 import { useApp } from "../../router";
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 import { FormDialog, SimpleForm } from "../../ui";
 import type { Row } from "../../types";
 import { StockCondition, MovementView, stockContext } from "./StockParts";
@@ -228,31 +230,30 @@ export default function ProductDetail() {
                   />
                 ) : (
                   <>
-                    <HStack gap={6} wrap="wrap">
+                    <StatGrid>
                       {d.can_manage && (
                         <>
-                          <Fact label="Fisik">
-                            {quantity(p.on_hand)} {p.unit}
-                          </Fact>
-                          <Fact label="Dipesan">
-                            {quantity(p.reserved)} {p.unit}
-                          </Fact>
+                          <StatTile
+                            icon={RiStackLine}
+                            label="Fisik di gudang"
+                            value={`${quantity(p.on_hand)} ${p.unit}`}
+                          />
+                          <StatTile
+                            icon={RiLock2Line}
+                            label="Dipesan"
+                            value={`${quantity(p.reserved)} ${p.unit}`}
+                          />
                         </>
                       )}
-                      <Fact label="Siap jual">
-                        <Heading level={2}>
-                          {quantity(p.available)} {p.unit}
-                        </Heading>
-                      </Fact>
-                      <Fact label="Kondisi">
-                        <StockCondition product={p} />
-                      </Fact>
-                    </HStack>
-                    <Text type="supporting">
-                      Siap jual = fisik − dipesan; belum mengecualikan batch
-                      ditahan atau kedaluwarsa. Diperbarui{" "}
-                      {dateLabel(p.updated_at, true)} WIB
-                    </Text>
+                      <StatTile
+                        icon={RiShoppingBag3Line}
+                        tone="accent"
+                        label="Siap jual"
+                        value={`${quantity(p.available)} ${p.unit}`}
+                        caption={<StockCondition product={p} />}
+                      />
+                    </StatGrid>
+                    <Text type="supporting">Diperbarui {dateLabel(p.updated_at, true)} WIB</Text>
                   </>
                 )}
                 {p.stock_state === "conflict" && (
@@ -268,7 +269,7 @@ export default function ProductDetail() {
                 )}
               </VStack>
               {!!d.source_sales?.length && (
-                <VStack gap={3}>
+                <VStack className="oneflow-panel" gap={3}>
                   <Heading level={2}>Penjualan dari laporan Arba’in</Heading>
                   <DataTable rows={d.source_sales} columns={[
                     {key: "month", header: "Bulan"}, {key: "sales", header: "Sales"},
@@ -298,25 +299,11 @@ export default function ProductDetail() {
                     />
                   </TabList>
                   {d.selected_section === "batches" && (
-                    <VStack gap={4} data-tour="product-batches">
+                    <VStack className="oneflow-panel" gap={4} data-tour="product-batches">
                       <VStack gap={1}>
                         <Heading level={2}>Batch & masa simpan</Heading>
-                        <Text type="supporting">
-                          FEFO mengambil batch dengan tanggal kedaluwarsa
-                          terdekat lebih dahulu. Stok ditahan atau kedaluwarsa
-                          tetap tercatat fisik tetapi tidak dapat dialokasikan.
-                        </Text>
                       </VStack>
                       <HStack gap={6} wrap="wrap">
-                        <Fact label="Fisik">
-                          {quantity(d.batch_summary.on_hand)} {p.unit}
-                        </Fact>
-                        <Fact label="Dipesan">
-                          {quantity(d.batch_summary.reserved)} {p.unit}
-                        </Fact>
-                        <Fact label="Siap jual">
-                          {quantity(d.batch_summary.available)} {p.unit}
-                        </Fact>
                         <Fact label="Ditahan / kedaluwarsa">
                           {quantity(d.batch_summary.ineligible)} {p.unit}
                         </Fact>
@@ -332,10 +319,10 @@ export default function ProductDetail() {
                         <Banner
                           status="warning"
                           title="Masa simpan minimum belum dikonfigurasi"
-                          description="FEFO berjalan tanpa syarat masa simpan. Isi minimum sisa masa simpan pada Edit produk sesuai kebijakan yang berlaku."
+                          description="Isi minimum sisa masa simpan di Edit produk."
                         />
                       )}
-                      {d.batches.some((r: Row) => Number(r.remaining) <= 0) && (
+                      {d.batches.some((r: Row) => Number(r.on_hand) <= 0) && (
                         <HStack>
                           <Button
                             size="sm"
@@ -343,7 +330,7 @@ export default function ProductDetail() {
                             label={
                               showDepleted
                                 ? "Sembunyikan batch habis"
-                                : `Tampilkan batch habis (${d.batches.filter((r: Row) => Number(r.remaining) <= 0).length})`
+                                : `Tampilkan batch habis (${d.batches.filter((r: Row) => Number(r.on_hand) <= 0).length})`
                             }
                             onClick={() => setShowDepleted((v) => !v)}
                           />
@@ -353,7 +340,7 @@ export default function ProductDetail() {
                         rows={
                           showDepleted
                             ? d.batches
-                            : d.batches.filter((r: Row) => Number(r.remaining) > 0)
+                            : d.batches.filter((r: Row) => Number(r.on_hand) > 0)
                         }
                         empty={
                           <Empty
@@ -472,7 +459,7 @@ export default function ProductDetail() {
                     </VStack>
                   )}
                   {d.selected_section === "supply" && (
-                    <VStack gap={4} data-tour="product-supply">
+                    <VStack className="oneflow-panel" gap={4} data-tour="product-supply">
                       <VStack gap={1}>
                         <HStack hAlign="between" vAlign="center">
                           <Heading level={2}>Perencanaan pasokan</Heading>
@@ -486,11 +473,6 @@ export default function ProductDetail() {
                             />
                           )}
                         </HStack>
-                        <Text type="supporting">
-                          Rata-rata harian memakai unit terkirim pada hari
-                          kalender penuh; stok layak mengikuti aturan FEFO.
-                          Rekomendasi hanya saran — keputusan tetap pada Anda.
-                        </Text>
                       </VStack>
                       {d.error && (
                         <Banner
@@ -723,7 +705,6 @@ export default function ProductDetail() {
                         empty={
                           <Empty
                             title="Tidak ada pesanan yang mereservasi produk ini"
-                            description="Stok dipesan tercatat setelah pesanan dikonfirmasi."
                           />
                         }
                         columns={[

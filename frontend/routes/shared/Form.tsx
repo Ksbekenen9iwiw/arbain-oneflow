@@ -1,7 +1,7 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 form-two-column: context alongside a single-submit form.
-import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
+import { Layout, LayoutContent, LayoutFooter } from "@/kit";
 
 import {
   VStack,
@@ -52,7 +52,7 @@ export default function FormPage() {
         <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={6}>
             {d.activity && (
-              <VStack gap={4}>
+              <VStack className="oneflow-panel" gap={4}>
                 <HStack gap={6} wrap="wrap">
                   <Fact label="Aktivitas">{d.activity.kind_label}</Fact>
                   <Fact label="Jadwal">
@@ -74,7 +74,7 @@ export default function FormPage() {
               </VStack>
             )}
             {(product || d.help_text) && (
-              <VStack gap={4}>
+              <VStack className="oneflow-panel" gap={4}>
                 {(d.help_text || editing) && (
                   <Text color="secondary">
                     {d.help_text ||

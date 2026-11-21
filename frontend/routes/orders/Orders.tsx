@@ -1,5 +1,5 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
-import { Pagination } from "@astryxdesign/core/Pagination";
+import { Collapsible } from "@/kit";
+import { Pagination } from "@/kit";
 import { MotionStack } from "../../motion";
 import { RecordIdentity } from "../../RecordIdentity";
 import { ProductIdentity } from "../../ProductIdentity";
@@ -7,19 +7,19 @@ import { withReturn, listReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 table-page: one toolbar and one filtered table.
 import { useEffect, useState } from "react";
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { TextInput } from "@astryxdesign/core/TextInput";
-import { Selector } from "@astryxdesign/core/Selector";
-import { DateInput } from "@astryxdesign/core/DateInput";
-import type { ISODateString } from "@astryxdesign/core/Calendar";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { Layout, LayoutContent } from "@/kit";
+import { TextInput } from "@/kit";
+import { Selector } from "@/kit";
+import { DateInput } from "@/kit";
+import type { ISODateString } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import {
   proportional,
   useTableSortable,
   useTableRowExpansion,
   type TableSortState,
   type TableColumn,
-} from "@astryxdesign/core/Table";
+} from "@/kit";
 import {
   tablePresentation,
   ResultsSummary,
@@ -255,12 +255,7 @@ export default function Orders() {
       header={
         <PageHeader
           back={back ? { href: back, label: backLabel(back) } : undefined}
-          title="Pesanan"
-          description={
-            warehouse
-              ? "Pesanan yang menunggu pengiriman dan riwayat terkirim."
-              : "Pantau pesanan dari draf hingga terkirim."
-          }
+          title="Pesanan" 
           actions={
             !warehouse && (
               <Button
@@ -274,7 +269,7 @@ export default function Orders() {
       }
       content={
         <LayoutContent padding={contentPadding} data-oneflow-scroll>
-          <VStack gap={4}>
+          <VStack gap={4} className="oneflow-tablecard">
             <TabList
               hasDivider
               aria-label="Status pesanan"

@@ -1,9 +1,9 @@
-import { Card } from "@astryxdesign/core/Card";
-import { Grid } from "@astryxdesign/core/Grid";
+import { Card } from "@/kit";
+import { Grid } from "@/kit";
 import {
   SegmentedControl,
   SegmentedControlItem,
-} from "@astryxdesign/core/SegmentedControl";
+} from "@/kit";
 import { MotionStack } from "../../motion";
 import { withReturn } from "../../navigation";
 import { RecordIdentity } from "../../RecordIdentity";

@@ -19,12 +19,6 @@ export function RawMaterialAlertsTab({
       role="tabpanel"
       aria-label="Alarm Bahan Baku"
     >
-      <Text type="supporting">
-        Early warning system bahan pokok/baku berdasarkan kuantitas dan
-        kecepatan produk laku keras. Jika produk terkait sedang laku keras,
-        target stok aman otomatis menggunakan batas laku keras (misal 1.000 kg /
-        1 ton).
-      </Text>
       <DataTable
         rows={rawMaterialAlerts}
         columns={[

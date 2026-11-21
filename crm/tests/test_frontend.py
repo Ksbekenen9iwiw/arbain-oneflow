@@ -32,13 +32,13 @@ class ReactPageTests(TestCase):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, 'id="oneflow-boot-status"')
-                self.assertContains(response, 'astryx-skeleton')
+                self.assertContains(response, 'bui-skeleton')
                 self.assertContains(response, 'id="oneflow-boot-error"')
                 self.assertContains(response, '/static/crm/bootstrap.js')
                 self.assertNotContains(response, '<p>Memuat OneFlow')
         self.client.logout()
         login = self.client.get('/login/')
-        self.assertContains(login, 'astryx-skeleton')
+        self.assertContains(login, 'bui-skeleton')
         self.assertNotContains(login, 'Side navigation')
 
     def post(self, path, data):

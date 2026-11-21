@@ -1,12 +1,12 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx table-page: padded document stack, filters and flat records.
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { Pagination } from "@astryxdesign/core/Pagination";
-import { Selector } from "@astryxdesign/core/Selector";
-import { Tab, TabList } from "@astryxdesign/core/TabList";
-import { proportional, type TableColumn } from "@astryxdesign/core/Table";
-import { TextInput } from "@astryxdesign/core/TextInput";
+import { Layout, LayoutContent } from "@/kit";
+import { Pagination } from "@/kit";
+import { Selector } from "@/kit";
+import { Tab, TabList } from "@/kit";
+import { proportional, type TableColumn } from "@/kit";
+import { TextInput } from "@/kit";
 import { useApp } from "../../router";
 import type { Row } from "../../types";
 import {
@@ -345,7 +345,6 @@ export default function CompanyArchive() {
             {!data.month ? (
               <Empty
                 title="Belum ada laporan perusahaan"
-                description="Dokumen yang diimpor akan tampil di sini."
               />
             ) : (
               <VStack gap={4}>

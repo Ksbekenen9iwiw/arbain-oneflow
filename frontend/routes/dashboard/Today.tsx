@@ -1,4 +1,4 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 import { MotionStack } from "../../motion";
 import { RecordIdentity } from "../../RecordIdentity";
 import { ProductIdentity } from "../../ProductIdentity";
@@ -8,21 +8,31 @@ import { withReturn } from "../../navigation";
 // Native scorecards, trend, goal progress and work table; all records supplied by Django.
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ChartSkeleton } from "../../Loading";
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
+import { Layout, LayoutContent } from "@/kit";
+import { List, ListItem } from "@/kit";
+import { Icon } from "@/kit";
+import { IconButton } from "@/kit";
 import {
   ArrowPathIcon,
   AdjustmentsHorizontalIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { Card } from "@astryxdesign/core/Card";
-import { Grid, GridSpan } from "@astryxdesign/core/Grid";
-import { ProgressBar } from "@astryxdesign/core/ProgressBar";
-import { Selector } from "@astryxdesign/core/Selector";
-import { proportional } from "@astryxdesign/core/Table";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { Card, StatGrid, StatTile } from "@/kit";
+import {
+  RiAlarmWarningLine,
+  RiAlertLine,
+  RiCalendarCheckLine,
+  RiErrorWarningLine,
+  RiFlaskLine,
+  RiFocus2Line,
+  RiMegaphoneLine,
+  RiStore2Line,
+} from "@remixicon/react";
+import { Grid, GridSpan } from "@/kit";
+import { ProgressBar } from "@/kit";
+import { Selector } from "@/kit";
+import { proportional } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import {
   VStack,
   HStack,
@@ -344,70 +354,71 @@ export default function Today() {
   // padding within each table section so the next section retains its gap.
   const salesOverview = sales && (
     <VStack gap={2} aria-label="Ringkasan sales">
-      <Grid columns={isNarrow ? 1 : 3} gap={3}>
-        <Card padding={4}>
-          <VStack gap={4}>
-            <Heading level={2}>Ringkasan</Heading>
-            <HStack gap={2} wrap="wrap">
-              {[
-                { mode: "late", label: "terlambat", count: lateActivities },
-                { mode: "today", label: "hari ini", count: todayActivities },
-              ].map(({ mode, label, count }) => (
-                <Button
-                  key={mode}
-                  label={`${quantity(count)} ${label}`}
-                  variant={schedule === mode ? "primary" : "secondary"}
-                  aria-pressed={schedule === mode}
-                  aria-controls="queue-activities"
-                  onClick={() =>
-                    focusQueue(
-                      "activities",
-                      schedule === mode ? "priority" : mode,
-                    )
-                  }
-                />
-              ))}
-            </HStack>
-            <VStack gap={2}>
-              <HStack hAlign="between" wrap="wrap" gap={2}>
-                <Text weight="semibold">Target bulan ini</Text>
-                <Text size="xl" weight="bold" hasTabularNumbers data-figure>
-                  {goal.achievement_percent != null
-                    ? pct(goal.achievement_percent)
-                    : "Belum ditetapkan"}
-                </Text>
-              </HStack>
-              {goal.achievement_percent != null && (
-                <ProgressBar
-                  label="Capaian target bulan ini"
-                  isLabelHidden
-                  value={Math.min(100, goal.achievement_percent)}
-                  variant={
-                    goal.achievement_percent >= 100 ? "success" : "accent"
-                  }
-                />
-              )}
-              <Text type="supporting">
-                {goal.achievement_percent != null
-                  ? `dari ${money(goal.target_rupiah)}`
-                  : "Hubungi manajer untuk menetapkan target."}
-              </Text>
-            </VStack>
-          </VStack>
-        </Card>
-        <GridSpan columns={isNarrow ? 1 : 2}>
-          <Card padding={3}>
-            <Suspense fallback={<ChartSkeleton />}>
-              <ShipmentTrend
-                days={m.shipment_days}
-                today={page.today}
-                defaultPeriod="30"
-                compact
-              />
-            </Suspense>
-          </Card>
-        </GridSpan>
-      </Grid>
+      <StatGrid>
+        <StatTile
+          icon={RiAlarmWarningLine}
+          tone={lateActivities > 0 ? "danger" : "neutral"}
+          label="Terlambat"
+          value={quantity(lateActivities)}
+          action={schedule === "late" ? "Tampilkan semua" : "Kerjakan dulu"}
+          isSelected={schedule === "late"}
+          aria-controls="queue-activities"
+          onClick={() =>
+            focusQueue("activities", schedule === "late" ? "priority" : "late")
+          }
+        />
+        <StatTile
+          icon={RiCalendarCheckLine}
+          tone={todayActivities > 0 ? "accent" : "neutral"}
+          label="Jadwal hari ini"
+          value={quantity(todayActivities)}
+          action={schedule === "today" ? "Tampilkan semua" : "Lihat jadwal"}
+          isSelected={schedule === "today"}
+          aria-controls="queue-activities"
+          onClick={() =>
+            focusQueue("activities", schedule === "today" ? "priority" : "today")
+          }
+        />
+        <StatTile
+          icon={RiFocus2Line}
+          tone={
+            goal.achievement_percent != null && goal.achievement_percent >= 100
+              ? "success"
+              : "accent"
+          }
+          label="Target bulan ini"
+          value={
+            goal.achievement_percent != null
+              ? pct(goal.achievement_percent)
+              : "Belum ada"
+          }
+          caption={
+            goal.achievement_percent != null
+              ? `dari ${money(goal.target_rupiah)}`
+              : "Hubungi manajer"
+          }
+        >
+          {goal.achievement_percent != null && (
+            <ProgressBar
+              label="Capaian target bulan ini"
+              isLabelHidden
+              value={Math.min(100, goal.achievement_percent)}
+              variant={goal.achievement_percent >= 100 ? "success" : "accent"}
+            />
+          )}
+        </StatTile>
+      </StatGrid>
+      <Card padding={3}>
+        <Suspense fallback={<ChartSkeleton />}>
+          <ShipmentTrend
+            days={m.shipment_days}
+            today={page.today}
+            defaultPeriod="30"
+            compact
+          />
+        </Suspense>
+      </Card>
+
     </VStack>
   );
 
@@ -523,7 +534,7 @@ export default function Today() {
     </MotionStack>
   );
   const workQueue = (
-    <VStack gap={3} paddingBlockEnd={6} id="work-queue">
+    <VStack gap={3} id="work-queue" className="oneflow-panel">
       {(warehouse || manager) && (
         <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
           <Heading level={2}>
@@ -778,9 +789,6 @@ export default function Today() {
           <HStack hAlign="between">
             <VStack gap={1}>
               <Heading level={2}>Prioritas pelanggan</Heading>
-              <Text type="supporting">
-                Saran dari jadwal tindak lanjut dan riwayat pembelian
-              </Text>
             </VStack>
             {Number(d.action_count) > 5 && (
               <Button
@@ -803,7 +811,6 @@ export default function Today() {
             empty={
               <Empty
                 title="Tidak ada rekomendasi saat ini"
-                description="Aktivitas terjadwal tetap ada di tab Aktivitas. Rekomendasi muncul saat ada pemicu dari jadwal atau riwayat pembelian."
                 action={
                   <Button
                     label="Lihat aktivitas"
@@ -935,7 +942,6 @@ export default function Today() {
               <Empty
                 kind="complete"
                 title="Tidak ada pesanan menunggu pengiriman"
-                description="Pesanan yang dikonfirmasi akan tampil di sini."
               />
             }
           />
@@ -1053,7 +1059,7 @@ export default function Today() {
       };
     });
   const teamRecap = manager && (
-    <VStack gap={3} id="team-recap">
+    <VStack gap={3} id="team-recap" className="oneflow-panel">
       <HStack gap={3} wrap="wrap" vAlign="center" hAlign="between">
         <Heading level={2}>Rekap tim</Heading>
         <HStack gap={2} wrap="wrap" vAlign="center">
@@ -1338,61 +1344,48 @@ export default function Today() {
               {priorityItems.length > 0 && (
                 <VStack gap={2}>
                   <Heading level={2}>Perlu ditangani</Heading>
-                  {warehouse ? (
-                    <HStack gap={2} wrap="wrap">
-                      {priorityItems.map((item) => (
-                        <Button
+                  <StatGrid>
+                    {priorityItems.map((item) => {
+                      const [count, ...noun] = item.label.split(" ");
+                      const urgent =
+                        item.action === "Tinjau konflik" ||
+                        (item.action === "Buka alarm" && hasCriticalAlert);
+                      const text = noun.join(" ");
+                      return (
+                        <StatTile
                           key={item.label}
-                          label={item.label}
-                          size="sm"
-                          variant="secondary"
+                          icon={
+                            item.action === "Baca arahan"
+                              ? RiMegaphoneLine
+                              : item.action === "Tinjau sampel"
+                                ? RiFlaskLine
+                                : item.action === "Tinjau outlet"
+                                  ? RiStore2Line
+                                  : urgent
+                                    ? RiErrorWarningLine
+                                    : RiAlertLine
+                          }
+                          tone={
+                            urgent
+                              ? "danger"
+                              : item.action === "Baca arahan" ||
+                                  item.action === "Tinjau sampel"
+                                ? "accent"
+                                : "warning"
+                          }
+                          label={text.charAt(0).toUpperCase() + text.slice(1)}
+                          value={count}
+                          action={item.action}
                           href={
                             item.href
                               ? withReturn(item.href, page.url)
                               : undefined
                           }
                           onClick={item.run}
-                          icon={
-                            item.action === "Tinjau konflik" ||
-                            (item.action === "Buka alarm" &&
-                              hasCriticalAlert) ? (
-                              <Icon icon="error" color="error" />
-                            ) : (
-                              <Icon icon="warning" color="warning" />
-                            )
-                          }
                         />
-                      ))}
-                    </HStack>
-                  ) : (
-                    <List hasDividers density="compact">
-                      {priorityItems.map((item) => (
-                        <ListItem
-                          key={item.label}
-                          label={item.label}
-                          endContent={
-                            <Button
-                              label={item.action}
-                              size="sm"
-                              variant="secondary"
-                              href={
-                                item.href
-                                  ? withReturn(item.href, page.url)
-                                  : undefined
-                              }
-                              onClick={item.run}
-                              icon={
-                                item.action === "Buka alarm" &&
-                                hasCriticalAlert ? (
-                                  <Icon icon="error" color="error" />
-                                ) : undefined
-                              }
-                            />
-                          }
-                        />
-                      ))}
-                    </List>
-                  )}
+                      );
+                    })}
+                  </StatGrid>
                 </VStack>
               )}
               {salesOverview}
@@ -1436,7 +1429,7 @@ export default function Today() {
                 </Collapsible>
               )}
               {!sales && (d.supply_alerts || []).length > 0 && (
-                <VStack gap={3}>
+                <VStack gap={3} className="oneflow-panel">
                   <HStack hAlign="between" vAlign="center">
                     <Heading level={2}>Peringatan pasokan</Heading>
                     <Button
@@ -1446,10 +1439,6 @@ export default function Today() {
                       label="Semua pengadaan"
                     />
                   </HStack>
-                  <Text type="supporting">
-                    Produk diurutkan dari risiko paling mendesak. Buka produk
-                    untuk meninjau alasan dan jumlah pengadaan.
-                  </Text>
                   <DataTable
                     rows={d.supply_alerts}
                     columns={[
@@ -1500,19 +1489,6 @@ export default function Today() {
                               ? "—"
                               : `${quantity(alert.recommend_quantity)} ${alert.product.unit}`}
                           </Text>
-                        ),
-                      },
-                      {
-                        key: "reasons",
-                        header: "Dasar",
-                        renderCell: (alert) => (
-                          <VStack gap={1}>
-                            {alert.reasons.map((reason: string) => (
-                              <Text key={reason} type="supporting">
-                                {reason}
-                              </Text>
-                            ))}
-                          </VStack>
                         ),
                       },
                     ]}

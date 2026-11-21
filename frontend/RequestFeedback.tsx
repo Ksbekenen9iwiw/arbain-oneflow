@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Banner, type BannerContainer } from "@astryxdesign/core/Banner";
-import { Button } from "@astryxdesign/core/Button";
+import { Banner, type BannerContainer } from "@/kit";
+import { Button } from "@/kit";
 import { useApp } from "./router";
 import { MotionStack } from "./motion";
 

@@ -1,7 +1,7 @@
-import { InputGroup, InputGroupText } from "@astryxdesign/core/InputGroup";
-import { TextInput, type TextInputProps } from "@astryxdesign/core/TextInput";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { Icon } from "@astryxdesign/core/Icon";
+import { InputGroup, InputGroupText } from "@/kit";
+import { TextInput, type TextInputProps } from "@/kit";
+import { IconButton } from "@/kit";
+import { Icon } from "@/kit";
 import { MinusIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { MAX_QUANTITY, steppedQuantity } from "./quantityStep";
 import { useEffect, useRef } from "react";

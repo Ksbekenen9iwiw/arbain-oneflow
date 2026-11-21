@@ -1,7 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Retains Astryx form-two-column's single-submit frame and pinned actions.
-import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
-import { Selector } from "@astryxdesign/core/Selector";
+import { Layout, LayoutContent, LayoutFooter } from "@/kit";
+import { Selector } from "@/kit";
 import {
   VStack,
   HStack,

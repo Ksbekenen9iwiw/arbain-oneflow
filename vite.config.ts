@@ -1,20 +1,13 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [
-    {
-      name: "astryx-local-font",
-      enforce: "pre",
-      transform(code, id) {
-        // The official theme requests Figtree; Fontsource names its variable face Figtree Variable.
-        if (id.includes("@fontsource-variable/figtree/") && id.endsWith(".css"))
-          return code.replaceAll("Figtree Variable", "Figtree");
-      },
-    },
+    tailwindcss(),
   ],
   resolve: {
     alias: {
-      "@astryxdesign/theme-neutral/fonts.css":
-        "@fontsource-variable/figtree/index.css",
+      "@": fileURLToPath(new URL("./frontend", import.meta.url)),
     },
   },
   base: "/static/crm/react/",
@@ -24,6 +17,19 @@ export default defineConfig({
     manifest: true,
     rolldownOptions: {
       input: "frontend/main.tsx",
+      output: {
+        // Keep rarely-changing libraries in their own cacheable chunks.
+        codeSplitting: {
+          groups: [
+            { name: "react", test: /node_modules[\/](react|react-dom|scheduler)[\/]/ },
+            {
+              name: "aria",
+              test: /node_modules[\/](react-aria|react-stately|@react-aria|@react-stately|@react-types|@internationalized)/,
+            },
+            { name: "motion", test: /node_modules[\/](motion|framer-motion|motion-dom|motion-utils)[\/]/ },
+          ],
+        },
+      },
       // This is a client-only app; React Server Component directives do not apply.
       onwarn(warning, warn) {
         if (warning.code !== "MODULE_LEVEL_DIRECTIVE") warn(warning);

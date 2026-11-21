@@ -5,13 +5,13 @@ import {
   HStack,
   StackItem,
   Section,
-} from "@astryxdesign/core/Layout";
-import { Text, Heading } from "@astryxdesign/core/Text";
-import { Button } from "@astryxdesign/core/Button";
-import { Banner } from "@astryxdesign/core/Banner";
-import { Link } from "@astryxdesign/core/Link";
-import { Token } from "@astryxdesign/core/Token";
-import { Icon } from "@astryxdesign/core/Icon";
+} from "@/kit";
+import { Text, Heading } from "@/kit";
+import { Button } from "@/kit";
+import { Banner } from "@/kit";
+import { Link } from "@/kit";
+import { Token } from "@/kit";
+import { Icon } from "@/kit";
 import {
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
@@ -89,11 +89,27 @@ export function PageHeader({
     <LayoutHeader padding={contentPadding} paddingBlockEnd={paddingBlockEnd}>
       <VStack gap={3}>
         {back && (
-          <HStack gap={2} vAlign="center">
-            <Link href={back.href} color="secondary">
-              ← {back.label}
-            </Link>
-          </HStack>
+          <nav
+            aria-label="Jejak halaman"
+            className="flex min-w-0 items-center gap-1.5 text-body-medium text-text-secondary"
+          >
+            <a
+              href={back.href}
+              className="rounded-md outline-none transition-colors duration-150 hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+            >
+              {back.label === "Kembali" ? "← Kembali" : back.label}
+            </a>
+            {back.label !== "Kembali" && (
+              <>
+                <span aria-hidden className="text-text-tertiary">
+                  ›
+                </span>
+                <span aria-current="page" className="truncate text-text-primary">
+                  {title}
+                </span>
+              </>
+            )}
+          </nav>
         )}
         <HStack gap={3} vAlign="center" hAlign="between" wrap="wrap">
           <HStack gap={3} vAlign="center">

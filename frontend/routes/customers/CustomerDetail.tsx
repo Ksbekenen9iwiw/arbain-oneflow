@@ -1,5 +1,5 @@
-import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { DropdownMenu } from "@/kit";
+import { Collapsible } from "@/kit";
 import { useEffect, useState } from "react";
 import { ProductIdentity, ProductThumbnail } from "../../ProductIdentity";
 import { MotionPanel } from "../../motion";
@@ -7,15 +7,15 @@ import { MotionStack } from "../../motion";
 import { withReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Astryx detail-page frame: record header, chronological List, and context rail.
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { Grid } from "@astryxdesign/core/Grid";
-import { Card } from "@astryxdesign/core/Card";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { Layout, LayoutContent } from "@/kit";
+import { Grid } from "@/kit";
+import { Card } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import {
   SegmentedControl,
   SegmentedControlItem,
-} from "@astryxdesign/core/SegmentedControl";
-import { List, ListItem } from "@astryxdesign/core/List";
+} from "@/kit";
+import { List, ListItem } from "@/kit";
 import {
   VStack,
   HStack,
@@ -242,7 +242,7 @@ export default function CustomerDetail() {
                 description="Riwayat dan pencatatan aktivitas tetap tersedia. Pesanan baru hanya dapat dibuat untuk pelanggan aktif."
               />
             )}
-            <VStack gap={3} aria-label="Tindakan berikutnya">
+            <VStack className="oneflow-panel" gap={3} aria-label="Tindakan berikutnya">
               <HStack hAlign="between" vAlign="center" gap={3}>
                 <VStack gap={1}>
                   <Heading level={2}>Tindakan berikutnya</Heading>
@@ -304,7 +304,7 @@ export default function CustomerDetail() {
                 ]} />
               </Collapsible>
             )}
-            <VStack gap={4} data-tour="customer-overview">
+            <VStack className="oneflow-panel" gap={4} data-tour="customer-overview">
               <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
                 <Heading level={2}>Ringkasan pelanggan</Heading>
                 {(isNarrow || !panel) && (
@@ -419,13 +419,9 @@ export default function CustomerDetail() {
                 </Card>
               </Grid>
             </VStack>
-            <VStack gap={3} id="customer-reorder">
+            <VStack className="oneflow-panel" gap={3} id="customer-reorder">
               <VStack gap={1}>
                 <Heading level={2}>Perkiraan pembelian ulang</Heading>
-                <Text type="supporting">
-                  Pengingat muncul saat perkiraan pembelian tiba, dari minimal 3
-                  tanggal berbeda. Tetap tindak lanjuti meskipun stok kurang.
-                </Text>
               </VStack>
               {(d.reorder_patterns || []).length ||
               (d.thin_history || []).length ? (
@@ -874,10 +870,6 @@ export default function CustomerDetail() {
                   aria-label="Sampel pelanggan"
                   gap={3}
                 >
-                  <Text type="supporting">
-                    Ikuti pengiriman, evaluasi, dan pembelian yang ditautkan
-                    untuk pelanggan ini.
-                  </Text>
                   {(d.samples || []).length ? (
                     <List hasDividers density="balanced">
                       {d.samples.map((sample: Row) => (
@@ -940,7 +932,7 @@ export default function CustomerDetail() {
                   ) : (
                     <Empty
                       title="Belum ada sampel"
-                      description="Ajukan sampel jika ada kebutuhan pelanggan yang perlu diuji. Riwayat dan hasilnya akan tampil di sini."
+                      
                       action={
                         customer.is_active ? (
                           <Button
@@ -964,17 +956,12 @@ export default function CustomerDetail() {
                   aria-label="Pesanan"
                   gap={3}
                 >
-                  <Text type="supporting">
-                    Pesanan pelanggan ini sesuai akses akun Anda. Buka pesanan
-                    untuk melanjutkan prosesnya.
-                  </Text>
                   <OrderTable
                     rows={d.orders}
                     showCustomer={false}
                     empty={
                       <Empty
                         title="Belum ada pesanan dalam cakupan akun ini"
-                        description="Pesanan baru akan tersimpan pada pelanggan ini."
                         action={
                           customer.is_active ? (
                             <>
@@ -1164,7 +1151,6 @@ export default function CustomerDetail() {
                           ? "Belum ada riwayat pelanggan"
                           : "Belum ada riwayat pada jenis ini"
                       }
-                      description="Hasil interaksi dan perubahan status pesanan akan tampil di sini."
                       action={
                         filter !== "all" ? (
                           <Button
@@ -1218,11 +1204,6 @@ export default function CustomerDetail() {
           }
         >
           <VStack padding={6} gap={4}>
-            <Text color="secondary">
-              Catat hasil pemeriksaan fisik barang titip jual di apotek. Sistem
-              otomatis memperbarui saldo stok apotek, memotong/mengembalikan
-              stok gudang, dan mencatat presensi kunjungan harian Anda.
-            </Text>
             <SimpleForm
               spec={
                 consignRetry

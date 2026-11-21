@@ -3,16 +3,14 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { Theme } from "@astryxdesign/core/theme";
-import { Switch } from "@astryxdesign/core/Switch";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { Icon } from "@astryxdesign/core/Icon";
-import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
-import { oneflowTheme } from "./theme";
+import { Switch } from "@/kit";
+import { Icon, IconButton } from "@/kit";
+import { RiMoonLine, RiSunLine } from "@remixicon/react";
 import {
   THEME_STORAGE_KEY,
   nextThemeMode,
@@ -43,7 +41,7 @@ function readPrefersDark(): boolean {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
-/** Provides persisted light/dark theme mode state around Astryx Theme. */
+/** Provides persisted light/dark theme mode state via the `.dark` class. */
 export function ThemeModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemePreference>(() =>
     readThemePreference(),
@@ -97,13 +95,14 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
     [mode, resolvedMode, isDark, setMode, toggleMode],
   );
 
-  return (
-    <ThemeModeContext.Provider value={value}>
-      <Theme theme={oneflowTheme} mode={mode}>
-        {children}
-      </Theme>
-    </ThemeModeContext.Provider>
-  );
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", isDark);
+    root.setAttribute("data-theme", resolvedMode);
+    root.style.colorScheme = resolvedMode;
+  }, [isDark, resolvedMode]);
+
+  return <ThemeModeContext.Provider value={value}>{children}</ThemeModeContext.Provider>;
 }
 
 /** Access current light/dark mode state and actions from ThemeModeProvider. */
@@ -115,45 +114,21 @@ export function useThemeMode(): ThemeModeContextValue {
   return ctx;
 }
 
-/** Light/dark theme switch control for sidebars and headers. */
-export function ThemeSwitch({
-  compact = false,
-  spread = false,
-}: {
-  compact?: boolean;
-  spread?: boolean;
-}) {
-  const { isDark, setMode, toggleMode } = useThemeMode();
-
+/** Light/dark theme toggle for the sidebar footer. */
+export function ThemeSwitch({ compact = false }: { compact?: boolean; spread?: boolean }) {
+  const { isDark, toggleMode } = useThemeMode();
+  const label = isDark ? "Beralih ke tema terang" : "Beralih ke tema gelap";
   if (compact) {
-    const label = isDark ? "Beralih ke tema terang" : "Beralih ke tema gelap";
-    const tooltip = isDark
-      ? "Tema gelap aktif · Beralih ke terang"
-      : "Tema terang aktif · Beralih ke gelap";
     return (
       <IconButton
         label={label}
-        tooltip={tooltip}
+        tooltip={label}
         size="sm"
-        variant="secondary"
-        icon={<Icon icon={isDark ? SunIcon : MoonIcon} />}
+        variant="ghost"
+        icon={<Icon icon={isDark ? RiSunLine : RiMoonLine} />}
         onClick={toggleMode}
       />
     );
   }
-
-  return (
-    <Switch
-      label="Tema gelap"
-      labelIcon={
-        <Icon icon={isDark ? MoonIcon : SunIcon} size="sm" color="inherit" />
-      }
-      labelPosition="start"
-      labelSpacing={spread ? "spread" : "hug"}
-      size="sm"
-      width={spread ? "100%" : undefined}
-      value={isDark}
-      onChange={(checked) => setMode(checked ? "dark" : "light")}
-    />
-  );
+  return <Switch label="Tema gelap" size="sm" value={isDark} onChange={toggleMode} />;
 }

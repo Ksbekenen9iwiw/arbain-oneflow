@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
@@ -9,7 +13,15 @@
     "skipLibCheck": true,
     "allowJs": true,
     "noEmit": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "paths": {
+      "@/*": [
+        "./frontend/*"
+      ]
+    }
   },
-  "include": ["frontend", "astryx-themes.js", "vite.config.ts"]
+  "include": [
+    "frontend",
+    "vite.config.ts"
+  ]
 }

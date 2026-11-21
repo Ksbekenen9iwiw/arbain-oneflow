@@ -1,6 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Retains Astryx form-two-column's constrained form and pinned actions.
-import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
+import { Layout, LayoutContent, LayoutFooter } from "@/kit";
 import {
   VStack,
   HStack,
@@ -148,11 +148,6 @@ export default function StockForm() {
                     <VStack gap={3}>
                       <VStack gap={1}>
                         <Heading level={2}>Data batch</Heading>
-                        <Text type="supporting">
-                          Isi kode batch dan tanggal agar barang dapat dipilih
-                          FEFO. Tanpa data batch, barang masuk ke lot “Belum
-                          lengkap” dan diperlakukan paling akhir.
-                        </Text>
                       </VStack>
                       {field("batch_code")}
                       {field("received_date")}
@@ -210,7 +205,7 @@ export default function StockForm() {
                         <Banner
                           status="warning"
                           title="Siap jual akan negatif"
-                          description="Hasil hitung tetap dapat disimpan. Reservasi tidak dihapus; periksa pesanan terkait sebelum konfirmasi baru."
+                          description="Periksa pesanan terkait sebelum konfirmasi baru."
                         />
                       ) : (
                         <Text type="supporting">

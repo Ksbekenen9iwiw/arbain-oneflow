@@ -1,26 +1,9 @@
-// Copyright (c) Meta Platforms, Inc. and affiliates.
-// Astryx login-split adapted to a full desktop frame and Django's two-step login.
+// Split sign-in: OneFlow card on the left, product photo on the right.
+import { useLayoutEffect, useRef, useState } from "react";
+import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
 import { BrandMark } from "../../BrandMark";
-import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { Center } from "@astryxdesign/core/Center";
-import { Card } from "@astryxdesign/core/Card";
-import { Grid } from "@astryxdesign/core/Grid";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { TextInput } from "@astryxdesign/core/TextInput";
-import { InputGroup } from "@astryxdesign/core/InputGroup";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import {
-  VStack,
-  HStack,
-  StackItem,
-  Text,
-  Heading,
-  Button,
-  Banner,
-  ServerForm,
-  useResponsive,
-} from "../../ui";
+import { Banner, Button, TextInput } from "@/kit";
+import { ServerForm } from "../../ui";
 import { useApp } from "../../router";
 import type { Field } from "../../types";
 import coverUrl from "../../assets/arbain-honey-herbal.jpg";
@@ -29,17 +12,8 @@ import { useContentMotion } from "../../motion";
 import { RequestFeedback, usePendingFeedback } from "../../RequestFeedback";
 import { ThemeSwitch } from "../../ThemeSwitch";
 
-const coverStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-};
-
 export default function Login() {
   const { page, busy, submit, clearDirty } = useApp();
-  const { isMobile } = useResponsive();
   const initialUsername = String(
     page.data.form.fields.find((field: Field) => field.name === "username")
       ?.value || "",
@@ -127,235 +101,158 @@ export default function Login() {
     setStep("username");
   }
 
+  const hasServerError = showServerErrors && serverErrors.length > 0;
+  const Eye = showPassword ? RiEyeOffLine : RiEyeLine;
   const passwordField = (
-                        <InputGroup
-                          label="Sandi"
-                          size="lg"
-                          status={
-                            message || (showServerErrors && serverErrors.length)
-                              ? { type: "error", message: message || undefined }
-                              : undefined
-                          }
-                        >
-                          <TextInput
-                            label="Sandi"
-                            htmlName="password"
-                            autoComplete="current-password"
-                            type={showPassword ? "text" : "password"}
-                            value={password}
-                            onChange={(value) => {
-                              setPassword(value);
-                              setMessage("");
-                              setShowServerErrors(false);
-                            }}
-                            isReadOnly={pending}
-                            controlStyle={{
-                              minHeight:
-                                "calc(var(--spacing-12) + var(--spacing-2))",
-                            }}
-                          />
-                          <IconButton
-                            label={
-                              showPassword
-                                ? "Sembunyikan sandi"
-                                : "Tampilkan sandi"
-                            }
-                            icon={
-                              <Icon
-                                icon={showPassword ? EyeSlashIcon : EyeIcon}
-                              />
-                            }
-                            variant="secondary"
-                            isDisabled={pending}
-                            onClick={() => setShowPassword(!showPassword)}
-                          />
-                        </InputGroup>
+    <TextInput
+      label="Sandi"
+      htmlName="password"
+      autoComplete="current-password"
+      type={showPassword ? "text" : "password"}
+      value={password}
+      onChange={(value) => {
+        setPassword(value);
+        setMessage("");
+        setShowServerErrors(false);
+      }}
+      isReadOnly={pending}
+      status={
+        (message && (step === "password" || password)) || hasServerError
+          ? { type: "error", message: message || undefined }
+          : undefined
+      }
+      endContent={
+        <button
+          type="button"
+          aria-label={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+          aria-pressed={showPassword}
+          disabled={pending}
+          onClick={() => setShowPassword(!showPassword)}
+          className="flex size-6 cursor-pointer items-center justify-center rounded-md text-foreground-icon-secondary outline-none transition-colors duration-150 hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+        >
+          <Eye aria-hidden className="size-4.5" />
+        </button>
+      }
+    />
   );
 
   return (
-    <Grid
-      columns={{ minWidth: 320, repeat: "fit", max: 2 }}
-      gap={6}
-      align="stretch"
-      style={
-        {
-          backgroundColor: "var(--color-background-surface)",
-          padding: isMobile ? "var(--spacing-4)" : "var(--spacing-6)",
-          minHeight: "100dvh",
-          "--size-element-lg": "calc(var(--spacing-12) + var(--spacing-2))",
-        } as CSSProperties
-      }
-    >
-      <VStack
-        gap={8}
-        padding={isMobile ? 2 : 6}
-        minHeight={isMobile ? "auto" : "calc(100dvh - var(--spacing-12))"}
-      >
-        <HStack gap={3} vAlign="center" hAlign="between" wrap="wrap">
-          <HStack gap={2} vAlign="center">
-            <Icon icon={BrandMark} />
-            <Text weight="bold" size="xl">
-              OneFlow
-            </Text>
-          </HStack>
-          <ThemeSwitch />
-        </HStack>
-        <StackItem size="fill">
-          <Center height="100%">
-            <VStack gap={8} width="100%" maxWidth="36rem" padding={4}>
-              <VStack gap={3}>
-                <Heading level={1} type="display-3" weight="semibold">
-                  Masuk ke OneFlow
-                </Heading>
-                <Text color="secondary">
-                  Gunakan akun kerja CV Arbain Anda.
-                </Text>
-              </VStack>
-              <VStack ref={panel} gap={5} minHeight="13rem">
-                <ServerForm onSubmit={(data) => void continueLogin(data)}>
-                  <VStack gap={6}>
-                    <input
-                      type="hidden"
-                      name="next"
-                      value={page.data.next || ""}
+    <div className="grid min-h-dvh grid-cols-1 gap-2 bg-background-full p-2 lg:grid-cols-2">
+      <div className="flex min-h-0 flex-col rounded-3xl border border-border-button-default bg-background-primary-default p-5 shadow-xs sm:p-8">
+        <header className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2.5">
+            <span className="flex size-9 items-center justify-center rounded-2lg bg-linear-to-b from-accent-400 to-accent-500 text-white shadow-nav-selected">
+              <BrandMark className="size-5" />
+            </span>
+            <span className="text-headline-semibold text-text-primary">OneFlow</span>
+          </span>
+          <ThemeSwitch compact />
+        </header>
+        <div className="flex flex-1 items-center justify-center py-10">
+          <div className="flex w-full max-w-[400px] flex-col gap-8">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-title-1-semibold text-text-primary">Masuk ke OneFlow</h1>
+              <p className="text-body-regular text-text-secondary">
+                Gunakan akun kerja CV Arbain Anda.
+              </p>
+            </div>
+            <div ref={panel}>
+              <ServerForm onSubmit={(data) => void continueLogin(data)}>
+                <div className="flex flex-col gap-5">
+                  <input type="hidden" name="next" value={page.data.next || ""} />
+                  {step === "username" ? (
+                    <TextInput
+                      label="Nama pengguna"
+                      htmlName="username"
+                      autoComplete="username"
+                      value={username}
+                      onChange={(value) => {
+                        setUsername(value);
+                        setMessage("");
+                      }}
+                      isReadOnly={pending}
+                      status={message && !password ? { type: "error", message } : undefined}
                     />
-                    {step === "username" ? (
-                      <TextInput
-                        label="Nama pengguna"
-                        htmlName="username"
-                        autoComplete="username"
-                        size="lg"
-                        value={username}
-                        onChange={(value) => {
-                          setUsername(value);
-                          setMessage("");
-                        }}
-                        isReadOnly={pending}
-                        isLoading={checking}
-                        width="100%"
-                        controlStyle={{
-                          minHeight:
-                            "calc(var(--spacing-12) + var(--spacing-2))",
-                        }}
-                        status={
-                          message && !password
-                            ? { type: "error", message }
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                    {step === "username" && passwordField}
-                    {step === "password" && (
-                      <>
-                        <HStack gap={3} vAlign="center" justify="between">
-                          <Text weight="semibold" wordBreak="break-all">
-                            {username}
-                          </Text>
-                          <Button
-                            label="Ganti akun"
-                            variant="secondary"
-                            size="sm"
-                            isDisabled={pending}
-                            onClick={changeAccount}
-                          />
-                        </HStack>
-                        <input
-                          type="hidden"
-                          name="username"
-                          value={username}
-                          autoComplete="username"
-                        />
-                        {passwordField}
-                      </>
-                    )}
-                    {showServerErrors && serverErrors.length > 0 && (
-                      <Banner status="error" title={serverErrors.join(" ")} />
-                    )}
-                    <RequestFeedback />
-                    {pendingStage === "slow" && (
-                      <Text type="supporting" role="status">
-                        Masih menghubungkan ke OneFlow. Tunggu sebentar.
-                      </Text>
-                    )}
-                    <HStack justify="end">
+                  ) : (
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-background-secondary-default p-3">
+                      <span className="flex min-w-0 flex-col">
+                        <span className="text-caption-1-regular text-text-tertiary">
+                          Masuk sebagai
+                        </span>
+                        <span className="text-body-semibold break-all text-text-primary">
+                          {username}
+                        </span>
+                      </span>
                       <Button
-                        type="submit"
-                        size="lg"
-                        style={{ minWidth: "7rem" }}
-                        label="Masuk"
-                        variant="primary"
-                        isLoading={pending}
+                        label="Ganti akun"
+                        variant="secondary"
+                        size="sm"
                         isDisabled={pending}
+                        onClick={changeAccount}
                       />
-                    </HStack>
-                  </VStack>
-                </ServerForm>
-              </VStack>
-              {page.demo && page.data.demo_accounts?.length > 0 && (
-                <DemoAccess
-                  accounts={page.data.demo_accounts}
-                  disabled={pending}
-                  onSelect={(account) => {
-                    setUsername(account.username);
-                    setPassword(account.password);
-                    setStep("password");
-                    setMessage("");
-                    setShowServerErrors(false);
-                    setShowPassword(false);
-                    clearDirty();
-                  }}
-                />
-              )}
-            </VStack>
-          </Center>
-        </StackItem>
-        <Text type="supporting">
+                      <input type="hidden" name="username" value={username} />
+                    </div>
+                  )}
+                  {passwordField}
+                  {hasServerError && <Banner status="error" title={serverErrors.join(" ")} />}
+                  <RequestFeedback />
+                  {pendingStage === "slow" && (
+                    <p role="status" className="text-caption-1-regular text-text-secondary">
+                      Masih menghubungkan ke OneFlow. Tunggu sebentar.
+                    </p>
+                  )}
+                  <Button
+                    type="submit"
+                    label="Masuk"
+                    variant="primary"
+                    width="100%"
+                    isLoading={pending}
+                    isDisabled={pending}
+                  />
+                </div>
+              </ServerForm>
+            </div>
+            {page.demo && page.data.demo_accounts?.length > 0 && (
+              <DemoAccess
+                accounts={page.data.demo_accounts}
+                disabled={pending}
+                onSelect={(account) => {
+                  setUsername(account.username);
+                  setPassword(account.password);
+                  setStep("password");
+                  setMessage("");
+                  setShowServerErrors(false);
+                  setShowPassword(false);
+                  clearDirty();
+                }}
+              />
+            )}
+          </div>
+        </div>
+        <p className="text-caption-1-regular text-text-tertiary">
           Butuh akses atau lupa sandi? Hubungi admin CV Arbain.
-        </Text>
-      </VStack>
-      <Card
-        variant="transparent"
-        padding={0}
-        minHeight={isMobile ? "18rem" : "38rem"}
-        style={{ position: "relative", overflow: "hidden" }}
-      >
+        </p>
+      </div>
+      <div className="relative hidden min-h-[38rem] overflow-hidden rounded-3xl lg:block">
         <img
           src={coverUrl}
           alt="Madu dan produk herbal dengan dedaunan dalam cahaya alami."
-          style={coverStyle}
+          className="absolute inset-0 size-full object-cover"
           fetchPriority="high"
           decoding="async"
         />
-        <VStack
-          gap={4}
-          padding={isMobile ? 6 : 10}
-          height="100%"
-          style={{
-            position: "relative",
-            color: "var(--color-on-dark)",
-            background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--color-on-light) 74%, transparent), color-mix(in srgb, var(--color-on-light) 30%, transparent) 40%, transparent 65%)",
-            paddingTop: "clamp(2rem, 8vh, 7rem)",
-          }}
-        >
-          <Heading
-            level={2}
-            type="display-3"
-            weight="semibold"
-            color="inherit"
-            justify="center"
-            textWrap="balance"
-          >
+        <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/25 via-45% to-transparent" />
+        <div className="relative flex flex-col items-center gap-3 px-10 pt-[clamp(2rem,10vh,7rem)] text-center text-white">
+          <h2 className="text-title-1-semibold text-balance">
             Pelanggan, pesanan, dan stok.
             <br />
             Terhubung dalam satu alur.
-          </Heading>
-          <Text color="inherit" size="lg" justify="center" textWrap="balance">
-            Dari kunjungan sales hingga pengiriman, setiap tim bekerja dengan
-            data yang sama.
-          </Text>
-        </VStack>
-      </Card>
-    </Grid>
+          </h2>
+          <p className="max-w-md text-body-regular text-balance text-white/85">
+            Dari kunjungan sales hingga pengiriman, setiap tim bekerja dengan data yang sama.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

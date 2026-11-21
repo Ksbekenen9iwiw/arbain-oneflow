@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { proportional } from "@astryxdesign/core/Table";
+import { proportional } from "@/kit";
 import {
   Text,
   Button,
@@ -106,7 +106,6 @@ export function OrderTable({
         empty || (
           <Empty
             title="Belum ada pesanan"
-            description="Pesanan yang sesuai akan tampil di sini."
           />
         )
       }

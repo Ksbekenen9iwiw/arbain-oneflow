@@ -4,24 +4,25 @@ import { useQueryState } from "../../router";
 import { useRef, useState } from "react";
 import { useContentMotion } from "../../motion";
 import {
-  LineChart,
-  Line,
+  ComposedChart,
+  Area,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Card } from "@astryxdesign/core/Card";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { Tooltip as HelpTooltip } from "@astryxdesign/core/Tooltip";
+import { Card } from "@/kit";
+import { Icon } from "@/kit";
+import { IconButton } from "@/kit";
+import { List, ListItem } from "@/kit";
+import { Tooltip as HelpTooltip } from "@/kit";
 import { TableCellsIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import {
   SegmentedControl,
   SegmentedControlItem,
-} from "@astryxdesign/core/SegmentedControl";
+} from "@/kit";
 import {
   VStack,
   HStack,
@@ -104,7 +105,6 @@ export default function ShipmentTrend({
           {!compact && ` · ${dateLabel(rows[0]?.date)} – ${dateLabel(today)}`}
         </Text>
       </HStack>
-      {compact && count > 0 && <Text type="supporting">Kumulatif</Text>}
       {count === 0 ? (
         compact ? null : (
           <Text type="supporting">Belum ada pengiriman pada periode ini.</Text>
@@ -112,15 +112,15 @@ export default function ShipmentTrend({
       ) : (
         <ResponsiveContainer
           width="100%"
-          height={compact ? 96 : 128}
+          height={compact ? 168 : 200}
           minWidth={0}
         >
-          <LineChart
+          <ComposedChart
             data={data}
             accessibilityLayer
             margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
           >
-            <CartesianGrid vertical={false} stroke="var(--color-border)" />
+            <CartesianGrid vertical={false} stroke="var(--color-separator-border)" strokeDasharray="3 4" />
             <XAxis
               dataKey="date"
               height={compact ? 22 : undefined}
@@ -139,7 +139,7 @@ export default function ShipmentTrend({
               }
             />
             <YAxis
-              width={compact ? 72 : 42}
+              width={compact ? 72 : 52}
               tickCount={compact ? 3 : undefined}
               axisLine={false}
               tickLine={false}
@@ -150,7 +150,7 @@ export default function ShipmentTrend({
               tickFormatter={(v) =>
                 compact
                   ? compactRupiah.format(v * 1000000)
-                  : Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 })
+                  : v ? `${Number(v).toLocaleString("id-ID", { maximumFractionDigits: 1 })} jt` : "0"
               }
             />
             <Tooltip
@@ -173,17 +173,37 @@ export default function ShipmentTrend({
                 ) : null;
               }}
             />
-            <Line
-              dataKey="plot"
-              name={compact ? "Nilai kumulatif" : "Nilai terkirim"}
-              type={compact ? "stepAfter" : "linear"}
-              stroke="var(--color-accent)"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
-              isAnimationActive={false}
-            />
-          </LineChart>
+            <defs>
+              <linearGradient id="oneflow-trend-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-accent-500)" stopOpacity={0.28} />
+                <stop offset="100%" stopColor="var(--color-accent-500)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            {compact ? (
+            <Area
+                dataKey="plot"
+                name={compact ? "Nilai kumulatif" : "Nilai terkirim"}
+                type="monotone"
+                stroke="var(--color-accent-500)"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                fill="url(#oneflow-trend-fill)"
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--color-background-primary-default)" }}
+                animationDuration={600}
+              />
+            ) : (
+              <Bar
+                dataKey="plot"
+                name="Nilai terkirim"
+                fill="var(--color-accent-500)"
+                radius={[6, 6, 6, 6]}
+                maxBarSize={22}
+                background={{ fill: "var(--color-background-tertiary-default)", radius: 6 }}
+                animationDuration={500}
+              />
+            )}
+          </ComposedChart>
         </ResponsiveContainer>
       )}
       {recentDays.length > 0 && (

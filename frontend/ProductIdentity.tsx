@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Thumbnail } from "@astryxdesign/core/Thumbnail";
-import { HStack } from "@astryxdesign/core/Layout";
+import { Thumbnail } from "@/kit";
+import { HStack } from "@/kit";
 import { productPhotos } from "./productPhotos";
 
 // Catalog mockups are keyed by SKU; unknown products retain Astryx’s neutral fallback.

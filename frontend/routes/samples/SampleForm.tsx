@@ -1,10 +1,10 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 import { MotionPanel } from "../../motion";
 
 import { withReturn } from "../../navigation";
 import { useState } from "react";
-import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
-import { Selector } from "@astryxdesign/core/Selector";
+import { Layout, LayoutContent, LayoutFooter } from "@/kit";
+import { Selector } from "@/kit";
 import {
   VStack,
   HStack,
@@ -88,27 +88,13 @@ export default function SampleForm() {
       <VStack gap={2}>
         <Heading level={2}>Alur pengajuan</Heading>
         <Text weight="semibold">1. Simpan draf</Text>
-        <Text type="supporting">
-          Periksa pelanggan, produk, dan alasan pemberian.
-        </Text>
       </VStack>
       <VStack gap={2}>
         <Text weight="semibold">2. Ajukan ke manajer</Text>
-        <Text type="supporting">
-          Rekomendasi beserta riwayat pelanggan tersedia di detail untuk
-          ditinjau.
-        </Text>
       </VStack>
       <VStack gap={2}>
         <Text weight="semibold">3. Kirim & tindak lanjuti</Text>
-        <Text type="supporting">
-          Gudang mengirim setelah disetujui. Sales mencatat penerimaan dan
-          tanggapan.
-        </Text>
       </VStack>
-      <Text type="supporting">
-        Sampel mengurangi stok saat dikirim dan tidak menambah omzet.
-      </Text>
     </VStack>
   );
   return (
@@ -119,8 +105,7 @@ export default function SampleForm() {
         defaultHasDividers
         header={
           <PageHeader
-            title={d.editing ? `Edit ${d.editing}` : "Buat pengajuan sampel"}
-            description="Draf tidak mereservasi atau mengurangi stok."
+            title={d.editing ? `Edit ${d.editing}` : "Buat pengajuan sampel"}
             back={{ href: d.back_url, label: "Kembali" }}
             actions={
               <HStack gap={2} wrap="wrap">
