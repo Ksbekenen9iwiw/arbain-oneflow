@@ -84,6 +84,10 @@ export default function Login() {
       setMessage("Masukkan nama pengguna Anda.");
       return;
     }
+    if (password) {
+      await submit(page.url, data);
+      return;
+    }
     inFlight.current = true;
     setChecking(true);
     data.set("step", "username");
@@ -122,99 +126,7 @@ export default function Login() {
     setStep("username");
   }
 
-  return (
-    <Grid
-      columns={{ minWidth: 320, repeat: "fit", max: 2 }}
-      gap={6}
-      align="stretch"
-      style={
-        {
-          backgroundColor: "var(--color-background-surface)",
-          padding: isMobile ? "var(--spacing-4)" : "var(--spacing-6)",
-          minHeight: "100dvh",
-          "--size-element-lg": "calc(var(--spacing-12) + var(--spacing-2))",
-        } as CSSProperties
-      }
-    >
-      <VStack
-        gap={8}
-        padding={isMobile ? 2 : 6}
-        minHeight={isMobile ? "auto" : "calc(100dvh - var(--spacing-12))"}
-      >
-        <HStack gap={3} vAlign="center" hAlign="between" wrap="wrap">
-          <HStack gap={2} vAlign="center">
-            <Icon icon={CubeIcon} />
-            <Text weight="bold" size="xl">
-              OneFlow
-            </Text>
-          </HStack>
-          <ThemeSwitch />
-        </HStack>
-        <StackItem size="fill">
-          <Center height="100%">
-            <VStack gap={8} width="100%" maxWidth="36rem" padding={4}>
-              <VStack gap={3}>
-                <Heading level={1} type="display-3" weight="semibold">
-                  {step === "username"
-                    ? "Masuk ke OneFlow"
-                    : "Selamat datang kembali"}
-                </Heading>
-                <Text color="secondary">
-                  {step === "username"
-                    ? "Gunakan akun kerja CV Arbain Anda."
-                    : "Masukkan sandi untuk melanjutkan pekerjaan Anda."}
-                </Text>
-              </VStack>
-              <VStack ref={panel} gap={5} minHeight="13rem">
-                <ServerForm onSubmit={(data) => void continueLogin(data)}>
-                  <VStack gap={6}>
-                    <input
-                      type="hidden"
-                      name="next"
-                      value={page.data.next || ""}
-                    />
-                    {step === "username" ? (
-                      <TextInput
-                        label="Nama pengguna"
-                        htmlName="username"
-                        autoComplete="username"
-                        size="lg"
-                        value={username}
-                        onChange={(value) => {
-                          setUsername(value);
-                          setMessage("");
-                        }}
-                        isReadOnly={pending}
-                        isLoading={checking}
-                        width="100%"
-                        controlStyle={{
-                          minHeight:
-                            "calc(var(--spacing-12) + var(--spacing-2))",
-                        }}
-                        status={
-                          message ? { type: "error", message } : undefined
-                        }
-                      />
-                    ) : (
-                      <>
-                        <HStack gap={3} vAlign="center" justify="between">
-                          <Text weight="semibold" wordBreak="break-all">
-                            {username}
-                          </Text>
-                          <Button
-                            label="Ganti akun"
-                            variant="secondary"
-                            size="sm"
-                            isDisabled={pending}
-                            onClick={changeAccount}
-                          />
-                        </HStack>
-                        <input
-                          type="hidden"
-                          name="username"
-                          value={username}
-                          autoComplete="username"
-                        />
+  const passwordField = (
                         <InputGroup
                           label="Sandi"
                           size="lg"
@@ -257,6 +169,102 @@ export default function Login() {
                             onClick={() => setShowPassword(!showPassword)}
                           />
                         </InputGroup>
+  );
+
+  return (
+    <Grid
+      columns={{ minWidth: 320, repeat: "fit", max: 2 }}
+      gap={6}
+      align="stretch"
+      style={
+        {
+          backgroundColor: "var(--color-background-surface)",
+          padding: isMobile ? "var(--spacing-4)" : "var(--spacing-6)",
+          minHeight: "100dvh",
+          "--size-element-lg": "calc(var(--spacing-12) + var(--spacing-2))",
+        } as CSSProperties
+      }
+    >
+      <VStack
+        gap={8}
+        padding={isMobile ? 2 : 6}
+        minHeight={isMobile ? "auto" : "calc(100dvh - var(--spacing-12))"}
+      >
+        <HStack gap={3} vAlign="center" hAlign="between" wrap="wrap">
+          <HStack gap={2} vAlign="center">
+            <Icon icon={CubeIcon} />
+            <Text weight="bold" size="xl">
+              OneFlow
+            </Text>
+          </HStack>
+          <ThemeSwitch />
+        </HStack>
+        <StackItem size="fill">
+          <Center height="100%">
+            <VStack gap={8} width="100%" maxWidth="36rem" padding={4}>
+              <VStack gap={3}>
+                <Heading level={1} type="display-3" weight="semibold">
+                  Masuk ke OneFlow
+                </Heading>
+                <Text color="secondary">
+                  Gunakan akun kerja CV Arbain Anda.
+                </Text>
+              </VStack>
+              <VStack ref={panel} gap={5} minHeight="13rem">
+                <ServerForm onSubmit={(data) => void continueLogin(data)}>
+                  <VStack gap={6}>
+                    <input
+                      type="hidden"
+                      name="next"
+                      value={page.data.next || ""}
+                    />
+                    {step === "username" ? (
+                      <TextInput
+                        label="Nama pengguna"
+                        htmlName="username"
+                        autoComplete="username"
+                        size="lg"
+                        value={username}
+                        onChange={(value) => {
+                          setUsername(value);
+                          setMessage("");
+                        }}
+                        isReadOnly={pending}
+                        isLoading={checking}
+                        width="100%"
+                        controlStyle={{
+                          minHeight:
+                            "calc(var(--spacing-12) + var(--spacing-2))",
+                        }}
+                        status={
+                          message && !password
+                            ? { type: "error", message }
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                    {step === "username" && passwordField}
+                    {step === "password" && (
+                      <>
+                        <HStack gap={3} vAlign="center" justify="between">
+                          <Text weight="semibold" wordBreak="break-all">
+                            {username}
+                          </Text>
+                          <Button
+                            label="Ganti akun"
+                            variant="secondary"
+                            size="sm"
+                            isDisabled={pending}
+                            onClick={changeAccount}
+                          />
+                        </HStack>
+                        <input
+                          type="hidden"
+                          name="username"
+                          value={username}
+                          autoComplete="username"
+                        />
+                        {passwordField}
                       </>
                     )}
                     {showServerErrors && serverErrors.length > 0 && (
@@ -273,7 +281,8 @@ export default function Login() {
                         type="submit"
                         size="lg"
                         style={{ minWidth: "7rem" }}
-                        label={step === "username" ? "Lanjut" : "Masuk"}
+                        label="Masuk"
+                        variant="primary"
                         isLoading={pending}
                         isDisabled={pending}
                       />

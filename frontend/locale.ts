@@ -25,6 +25,8 @@ export const indonesian = {
   "@astryx.dateInput.closeCalendar": "Tutup kalender",
   "@astryx.dateInput.clear": "Hapus {label}",
   "@astryx.selector.clearLabel": "Hapus {label}",
+  "@astryx.selector.placeholder": "Pilih…",
+  "@astryx.multiSelector.selectPlaceholder": "Pilih…",
   "@astryx.textInput.clearLabel": "Hapus {label}",
   "@astryx.stepper.previousStep": "Langkah sebelumnya",
   "@astryx.stepper.nextStep": "Langkah berikutnya",

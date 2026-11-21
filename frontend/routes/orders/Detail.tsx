@@ -174,6 +174,17 @@ export default function Detail() {
                       {order.customer.name} · Dibuat{" "}
                       {dateLabel(order.created_at)}
                     </Text>
+                    {!d.can_confirm && !d.can_ship && (
+                      <Text type="supporting">
+                        {order.status === "CONFIRMED"
+                          ? "Langkah berikutnya: gudang menyiapkan dan mengirim pesanan ini."
+                          : order.status === "SHIPPED"
+                            ? "Pesanan selesai dikirim. Tidak ada tindakan lagi."
+                            : order.status === "CANCELLED"
+                              ? "Pesanan dibatalkan. Tidak ada tindakan lagi."
+                              : "Menunggu sales mengonfirmasi draf ini."}
+                      </Text>
+                    )}
                   </VStack>
                 </StackItem>
                 <HStack gap={2} wrap="wrap">
@@ -217,6 +228,14 @@ export default function Detail() {
                       ]}
                     />
                   )}
+                  {isNarrow ? (
+                    <Button
+                      label="Detail pelanggan"
+                      variant="secondary"
+                      aria-expanded={narrowPanelOpen}
+                      onClick={() => setNarrowPanelOpen(true)}
+                    />
+                  ) : (
                   <IconButton
                     label={
                       isNarrow
@@ -233,6 +252,7 @@ export default function Detail() {
                       else setPanel(!panel);
                     }}
                   />
+                  )}
                 </HStack>
               </HStack>
             </VStack>
@@ -407,12 +427,12 @@ export default function Detail() {
               </VStack>
               {(allocationRows.length > 0 || d.can_swap) && (
                 <VStack gap={4} data-tour="order-allocations">
-                  <HStack gap={3} hAlign="between" vAlign="center">
+                  <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
                     <VStack gap={1}>
-                      <Heading level={2}>Alokasi batch</Heading>
+                      <Heading level={2}>Daftar ambil barang</Heading>
                       <Text type="supporting">
-                        Urutan pengambilan berdasarkan kedaluwarsa terdekat
-                        (FEFO).
+                        Ambil batch sesuai daftar (kedaluwarsa terdekat lebih
+                        dulu), lalu tandai terkirim.
                       </Text>
                     </VStack>
                     {d.can_swap && (
@@ -440,15 +460,8 @@ export default function Detail() {
                         ),
                       },
                       {
-                        key: "expiry_date",
-                        header: "Kedaluwarsa",
-                        renderCell: (r) => (
-                          <Text>{dateLabel(r.expiry_date)}</Text>
-                        ),
-                      },
-                      {
                         key: "quantity",
-                        header: "Dialokasikan",
+                        header: "Jumlah ambil",
                         align: "end",
                         renderCell: (r) => (
                           <Text hasTabularNumbers>
@@ -457,9 +470,16 @@ export default function Detail() {
                         ),
                       },
                       {
+                        key: "expiry_date",
+                        header: "Kedaluwarsa",
+                        renderCell: (r) => (
+                          <Text>{dateLabel(r.expiry_date)}</Text>
+                        ),
+                      },
+                      {
                         key: "status",
-                        width: proportional(2, { minWidth: 240 }),
-                        header: "Kondisi batch saat ini",
+                        width: proportional(1.5, { minWidth: 120 }),
+                        header: "Kondisi batch",
                         renderCell: (r) => (
                           <BatchStatus batch={r} today={page.today} />
                         ),

@@ -4,7 +4,6 @@ import { withReturn } from "../../navigation";
 // Astryx TablePaginatedTable pattern, with pagination and sorting owned by Django.
 import { useEffect, useState } from "react";
 import {
-  Table,
   proportional,
   useTableSortable,
   type TableColumn,
@@ -28,6 +27,7 @@ import {
   Banner,
   quantity,
   dateLabel,
+  Table,
 } from "../../ui";
 import { useApp } from "../../router";
 import { useDelayedBusy } from "../../RequestFeedback";
@@ -37,7 +37,7 @@ export function StockCondition({ product }: { product: Row }) {
   const labels: Record<string, string> = {
     conflict: "Konflik stok",
     unverified: "Saldo belum diverifikasi",
-    empty: "Stok bebas habis",
+    empty: "Siap jual habis",
     low: "Menipis",
     ready: "Memenuhi minimum",
   };

@@ -125,7 +125,7 @@ export default function Stock() {
           },
           {
             key: "reserved",
-            header: "Reservasi",
+            header: "Dipesan",
             sortable: true,
             align: "end" as const,
             width: proportional(0.85, { minWidth: 60 }),
@@ -139,7 +139,7 @@ export default function Stock() {
       : []),
     {
       key: "available",
-      header: "Tersedia",
+      header: "Siap jual",
       sortable: true,
       align: "end",
       width: proportional(1, { minWidth: 60 }),
@@ -299,7 +299,7 @@ export default function Stock() {
                         },
                         {
                           value: "empty",
-                          label: `Stok bebas habis (${d.condition_counts.empty})`,
+                          label: `Siap jual habis (${d.condition_counts.empty})`,
                         },
                         {
                           value: "conflict",
@@ -381,7 +381,7 @@ export default function Stock() {
                       : undefined
                   }
                 >
-                  {d.products.length} produk · Stok bebas = fisik − reservasi.
+                  {d.products.length} produk · Siap jual = fisik − dipesan.
                   Kelayakan kirim diperiksa per batch.
                 </ResultsSummary>
                 {d.stock_filter === "low" && (

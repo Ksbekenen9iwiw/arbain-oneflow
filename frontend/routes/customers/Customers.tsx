@@ -9,7 +9,6 @@ import { TextInput } from "@astryxdesign/core/TextInput";
 import { Selector } from "@astryxdesign/core/Selector";
 import { TabList, Tab } from "@astryxdesign/core/TabList";
 import {
-  Table,
   proportional,
   useTableSortable,
   type TableSortState,
@@ -32,6 +31,7 @@ import {
   useResponsive,
   useSearchInput,
   resetLabel,
+  Table,
 } from "../../ui";
 import { useApp } from "../../router";
 import type { Row } from "../../types";
@@ -53,7 +53,7 @@ export default function Customers() {
       ...changes,
     });
     for (const [key, value] of [...params])
-      if (!value || (key === "sort" && value === "name")) params.delete(key);
+      if (!value || (key === "sort" && value === "next_due")) params.delete(key);
     void navigate("/customers/" + (params.size ? "?" + params : ""));
   };
   const [query, setQuery] = useSearchInput(
@@ -74,7 +74,7 @@ export default function Customers() {
       update({
         sort: next.length
           ? (next[0].direction === "descending" ? "-" : "") + next[0].sortKey
-          : "name",
+          : "next_due",
       }),
   });
   const columns: TableColumn<Row>[] = [
@@ -169,19 +169,20 @@ export default function Customers() {
       header: "Tindakan",
       width: proportional(1.1),
       align: "end",
-      renderCell: (r) => (
-        <Button
-          size="sm"
-          variant="secondary"
-          label={r.summary.next_activity ? "Catat hasil" : "Buka profil"}
-          href={customerContext(
-            r.summary.next_activity
-              ? `/activities/${r.summary.next_activity.id}/complete/`
-              : `/customers/${r.id}/`,
-            page.url,
-          )}
-        />
-      ),
+      renderCell: (r) => {
+        const next = r.summary.next_activity;
+        return next && next.due && next.due <= page.today ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            label="Catat hasil"
+            href={customerContext(
+              `/activities/${next.id}/complete/`,
+              page.url,
+            )}
+          />
+        ) : null;
+      },
     },
   ];
   const filtered = Boolean(d.query || d.selected_sales || d.selected_status);
@@ -280,18 +281,18 @@ export default function Customers() {
 
             <ResultsSummary
               reset={
-                filtered || d.selected_sort !== "name"
+                filtered || d.selected_sort !== "next_due"
                   ? {
                       label: resetLabel(
                         d.query,
                         d.selected_sales ||
                           d.selected_status ||
-                          d.selected_sort !== "name",
+                          d.selected_sort !== "next_due",
                       ),
                       onClick: () => {
                         setQuery("");
                         update(
-                          { q: "", sales: "", status: "", sort: "name" },
+                          { q: "", sales: "", status: "", sort: "next_due" },
                           "",
                         );
                       },

@@ -1,3 +1,4 @@
+import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { MotionPanel } from "../../motion";
 
 import { withReturn } from "../../navigation";
@@ -238,7 +239,7 @@ export default function SampleForm() {
                         />
                         {line.product && (
                           <Text type="supporting">
-                            Stok bebas saat ini:{" "}
+                            Siap jual saat ini:{" "}
                             {d.catalog.find(
                               (product: Row) => product.id === line.product,
                             )?.available ?? "—"}{" "}
@@ -303,12 +304,23 @@ export default function SampleForm() {
                 {field("purpose", {
                   help: "Jelaskan tujuan pemberian agar manajer bisa menilai kebutuhan sampel.",
                 })}
-                {field("customer_need")}
-                {field("potential_orders")}
                 {field("business_profile", {
                   help: "Wajib sebelum diajukan: jenis usaha dan kebutuhan utama pelanggan.",
                 })}
-                {field("notes")}
+                <Collapsible
+                  trigger="Detail tambahan (opsional)"
+                  defaultIsOpen={["customer_need", "potential_orders", "notes"].some(
+                    (key) =>
+                      !!spec.fields.find((item) => item.key === key)?.value ||
+                      !!spec.fields.find((item) => item.key === key)?.errors?.length,
+                  )}
+                >
+                  <VStack gap={4}>
+                    {field("customer_need")}
+                    {field("potential_orders")}
+                    {field("notes")}
+                  </VStack>
+                </Collapsible>
               </VStack>
             </VStack>
           </ServerForm>

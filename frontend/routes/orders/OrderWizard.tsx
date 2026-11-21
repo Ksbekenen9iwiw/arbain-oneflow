@@ -246,7 +246,7 @@ export default function OrderWizard() {
             >
               <VStack gap={5}>
                 <VStack gap={1}>
-                  <Heading level={2} id="order-step-heading" tabIndex={-1}>
+                  <Heading level={2} id="order-step-heading" tabIndex={-1} style={{ outline: "none" }}>
                     {
                       [
                         "Pilih pelanggan",
@@ -476,7 +476,7 @@ export default function OrderWizard() {
                           <HStack gap={3} hAlign="between" vAlign="center">
                             <Text type="supporting" color="secondary">
                               {product
-                                ? `${money(product.price)} / ${product.unit} · stok bebas ${quantity(product.available)} ${product.unit}`
+                                ? `${money(product.price)} / ${product.unit} · stok siap jual ${quantity(product.available)} ${product.unit}`
                                 : "Pilih produk untuk melihat harga dan stok."}
                             </Text>
                             <Button

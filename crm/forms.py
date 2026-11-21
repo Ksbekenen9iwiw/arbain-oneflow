@@ -159,9 +159,9 @@ class SampleRequestForm(forms.Form):
     customer = forms.ModelChoiceField(label='Pelanggan / calon pelanggan', queryset=Customer.objects.none())
     purpose = forms.CharField(label='Tujuan pemberian', required=False, widget=forms.Textarea(attrs={'rows': 3}))
     customer_need = forms.CharField(label='Kebutuhan pelanggan', required=False, widget=forms.Textarea(attrs={'rows': 3}))
-    potential_orders = forms.CharField(label='Potensi pesanan', required=False, widget=forms.Textarea(attrs={'rows': 3}))
-    business_profile = forms.CharField(label='Profil usaha calon pelanggan', required=False, widget=forms.Textarea(attrs={'rows': 3}))
-    notes = forms.CharField(label='Catatan pendukung', required=False, widget=forms.Textarea(attrs={'rows': 3}))
+    potential_orders = forms.CharField(label='Potensi pesanan', required=False, widget=forms.Textarea(attrs={'rows': 2}))
+    business_profile = forms.CharField(label='Profil usaha calon pelanggan', required=False, widget=forms.Textarea(attrs={'rows': 2}))
+    notes = forms.CharField(label='Catatan pendukung', required=False, widget=forms.Textarea(attrs={'rows': 2}))
 
     def __init__(self, *args, actor, **kwargs):
         super().__init__(*args, **kwargs)
@@ -189,9 +189,9 @@ class CancelSampleForm(forms.Form):
 
 
 class SamplePolicyForm(forms.Form):
-    repeat_threshold = StrictIntegerField(label='Ambang pemberian sampel berulang', min_value=1, max_value=1000)
-    review_period_days = StrictIntegerField(label='Periode riwayat yang diperiksa (hari)', min_value=1, max_value=3650)
-    evaluation_days = StrictIntegerField(label='Masa evaluasi setelah diterima (hari)', min_value=0, max_value=3650)
+    repeat_threshold = StrictIntegerField(label='Ambang pemberian sampel berulang', min_value=1, max_value=1000, help_text='Jika pelanggan sudah menerima sampel sebanyak ini dalam periode di bawah, pengajuan berikutnya wajib disetujui manajer.')
+    review_period_days = StrictIntegerField(label='Periode riwayat yang diperiksa (hari)', min_value=1, max_value=3650, help_text='Rentang hari ke belakang yang dihitung untuk ambang di atas.')
+    evaluation_days = StrictIntegerField(label='Masa evaluasi setelah diterima (hari)', min_value=0, max_value=3650, help_text='Sales diingatkan mengevaluasi hasil sampel setelah sekian hari. 0 berarti langsung.')
 
     def __init__(self, *args, actor, **kwargs):
         require_role(actor, {'MANAGER'})

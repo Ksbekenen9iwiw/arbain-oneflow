@@ -1,4 +1,5 @@
 import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Pagination } from "@astryxdesign/core/Pagination";
 import { MotionStack } from "../../motion";
 import { RecordIdentity } from "../../RecordIdentity";
 import { ProductIdentity } from "../../ProductIdentity";
@@ -13,7 +14,6 @@ import { DateInput } from "@astryxdesign/core/DateInput";
 import type { ISODateString } from "@astryxdesign/core/Calendar";
 import { TabList, Tab } from "@astryxdesign/core/TabList";
 import {
-  Table,
   proportional,
   useTableSortable,
   useTableRowExpansion,
@@ -40,6 +40,7 @@ import {
   useResponsive,
   useSearchInput,
   resetLabel,
+  Table,
 } from "../../ui";
 import { useApp } from "../../router";
 import { useDelayedBusy } from "../../RequestFeedback";
@@ -71,8 +72,9 @@ export default function Orders() {
       return_to: back || "",
       q: nextQuery,
       sales: d.selected_sales,
-      status: d.selected_status,
+      status: d.selected_status || "all",
       sort: d.selected_sort,
+      page: "",
       shipped_from: from,
       shipped_to: to,
       ...changes,
@@ -273,7 +275,7 @@ export default function Orders() {
               value={d.selected_status || "all"}
               onChange={(v) =>
                 update({
-                  status: v === "all" ? "" : v,
+                  status: v,
                   sort: v === "SHIPPED" ? "-shipped_at" : "-created_at",
                   shipped_from: "",
                   shipped_to: "",
@@ -420,7 +422,7 @@ export default function Orders() {
                   : undefined
               }
             >
-              {d.orders.length} pesanan
+              {d.total} pesanan
               {d.shipped_from
                 ? ` · Dikirim ${dateLabel(d.shipped_from)}–${dateLabel(d.shipped_to)} (WIB)`
                 : ""}
@@ -456,6 +458,16 @@ export default function Orders() {
                     />
                   ) : undefined
                 }
+              />
+            )}
+            {Number(d.pages) > 1 && (
+              <Pagination
+                page={Number(d.page)}
+                totalItems={Number(d.total)}
+                pageSize={Number(d.page_size)}
+                onChange={(pageNumber) => update({ page: String(pageNumber) })}
+                isDisabled={delayedBusy}
+                label="Halaman pesanan"
               />
             )}
           </VStack>

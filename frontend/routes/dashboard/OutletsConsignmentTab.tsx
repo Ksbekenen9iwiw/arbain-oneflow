@@ -82,28 +82,34 @@ export function OutletsConsignmentTab({
           },
           {
             key: "total_on_display",
-            header: "Stok di Apotek",
+            header: "Stok · terjual",
             align: "end",
             renderCell: (o: Row) => (
-              <Text weight="semibold" hasTabularNumbers>
-                {quantity(o.total_on_display)} unit
-              </Text>
-            ),
-          },
-          {
-            key: "total_sold",
-            header: "Terjual",
-            align: "end",
-            renderCell: (o: Row) => (
-              <Text hasTabularNumbers>{quantity(o.total_sold)} unit</Text>
+              <VStack gap={1} hAlign="end">
+                <Text weight="semibold" hasTabularNumbers>
+                  {quantity(o.total_on_display)} unit
+                </Text>
+                <Text type="supporting" hasTabularNumbers>
+                  laku {quantity(o.total_sold)}
+                </Text>
+              </VStack>
             ),
           },
           {
             key: "items",
-            header: "Rincian Produk di Apotek",
+            header: "Perlu perhatian",
             renderCell: (o: Row) => (
               <VStack gap={1}>
-                {(o.items || []).map((item: Row) => (
+                {!(o.items || []).some(
+                  (item: Row) => item.is_near_expiry || item.is_weak,
+                ) && (
+                  <Text type="supporting">
+                    {quantity((o.items || []).length)} produk aman
+                  </Text>
+                )}
+                {(o.items || [])
+                  .filter((item: Row) => item.is_near_expiry || item.is_weak)
+                  .map((item: Row) => (
                   <HStack key={item.id} gap={2} wrap="wrap" vAlign="center">
                     <Text>
                       {item.name}:{" "}
@@ -122,7 +128,7 @@ export function OutletsConsignmentTab({
                       <Status value="SLOW" label="Kurang laku di sini" />
                     )}
                   </HStack>
-                ))}
+                  ))}
               </VStack>
             ),
           },
