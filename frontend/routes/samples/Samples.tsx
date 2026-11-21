@@ -95,12 +95,7 @@ export default function Samples() {
       header={
         <PageHeader
           back={back ? { href: back, label: backLabel(back) } : undefined}
-          title="Pengajuan sampel"
-          description={
-            page.role === "WAREHOUSE"
-              ? "Pengajuan disetujui yang perlu dipenuhi gudang."
-              : "Ajukan, tinjau, dan telusuri pemberian sampel pelanggan."
-          }
+          title="Pengajuan sampel" 
           actions={
             <HStack gap={2} wrap="wrap">
               {page.role === "MANAGER" && (

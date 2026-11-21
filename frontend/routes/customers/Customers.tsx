@@ -196,12 +196,7 @@ export default function Customers() {
       header={
         <PageHeader
           back={back ? { href: back, label: backLabel(back) } : undefined}
-          title="Pelanggan"
-          description={
-            manager
-              ? "Hubungan pelanggan dan tindak lanjut tim."
-              : "Pelanggan dan tindak lanjut yang menjadi tanggung jawab Anda."
-          }
+          title="Pelanggan" 
           actions={
             <Button
               variant="primary"

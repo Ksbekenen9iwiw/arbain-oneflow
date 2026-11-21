@@ -255,12 +255,7 @@ export default function Orders() {
       header={
         <PageHeader
           back={back ? { href: back, label: backLabel(back) } : undefined}
-          title="Pesanan"
-          description={
-            warehouse
-              ? "Pesanan yang menunggu pengiriman dan riwayat terkirim."
-              : "Pantau pesanan dari draf hingga terkirim."
-          }
+          title="Pesanan" 
           actions={
             !warehouse && (
               <Button
