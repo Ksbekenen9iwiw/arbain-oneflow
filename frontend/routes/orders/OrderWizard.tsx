@@ -258,11 +258,11 @@ export default function OrderWizard() {
                   <Text type="supporting" color="secondary">
                     {
                       [
-                        "Pilih pelanggan yang akan menerima pesanan ini.",
+                        "",
                         d.editing
                           ? "Ubah produk dan jumlah yang dipesan. Harga produk lama tetap dipertahankan."
                           : "Tambahkan produk dan jumlah yang dipesan. Harga mengikuti katalog saat ini.",
-                        "Pastikan pelanggan, produk, dan jumlah sudah sesuai sebelum menyimpan draf.",
+                        "",
                       ][step]
                     }
                   </Text>

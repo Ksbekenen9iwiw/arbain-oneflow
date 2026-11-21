@@ -345,7 +345,6 @@ export default function CompanyArchive() {
             {!data.month ? (
               <Empty
                 title="Belum ada laporan perusahaan"
-                description="Dokumen yang diimpor akan tampil di sini."
               />
             ) : (
               <VStack gap={4}>

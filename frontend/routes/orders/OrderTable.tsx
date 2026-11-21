@@ -106,7 +106,6 @@ export function OrderTable({
         empty || (
           <Empty
             title="Belum ada pesanan"
-            description="Pesanan yang sesuai akan tampil di sini."
           />
         )
       }

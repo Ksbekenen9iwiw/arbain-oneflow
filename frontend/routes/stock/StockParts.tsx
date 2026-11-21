@@ -102,7 +102,6 @@ export function ServerTable({
       <Empty
         kind="search"
         title="Tidak ada mutasi yang cocok"
-        description="Ubah filter untuk menelusuri riwayat lain."
       />
     )
   );

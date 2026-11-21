@@ -590,7 +590,6 @@ export default function SampleDetail() {
                     {!d.history.has_history ? (
                       <Empty
                         title="Belum ada riwayat"
-                        description="Calon pelanggan baru tidak otomatis dianggap memiliki track record buruk."
                       />
                     ) : (
                       <>
@@ -613,7 +612,6 @@ export default function SampleDetail() {
                           empty={
                             <Empty
                               title="Belum ada pengajuan sampel sebelumnya"
-                              description="Riwayat pengajuan pelanggan ini akan tampil di sini."
                             />
                           }
                           columns={[
@@ -670,7 +668,6 @@ export default function SampleDetail() {
                           empty={
                             <Empty
                               title="Belum ada sampel diterima"
-                              description="Sampel muncul setelah penerimaan pelanggan dicatat."
                             />
                           }
                           columns={[
@@ -712,7 +709,6 @@ export default function SampleDetail() {
                           empty={
                             <Empty
                               title="Belum ada tindak lanjut tercatat"
-                              description="Jadwal tindak lanjut dari evaluasi sampel akan tampil di sini."
                             />
                           }
                           columns={[
@@ -753,7 +749,6 @@ export default function SampleDetail() {
                           empty={
                             <Empty
                               title="Belum ada pembelian yang ditautkan"
-                              description="Pesanan yang dibuat dari evaluasi sampel akan tampil di sini."
                             />
                           }
                           columns={[

@@ -52,7 +52,7 @@ export default function FormPage() {
         <LayoutContent padding={contentPadding} data-oneflow-scroll>
           <VStack gap={6}>
             {d.activity && (
-              <VStack gap={4}>
+              <VStack className="oneflow-panel" gap={4}>
                 <HStack gap={6} wrap="wrap">
                   <Fact label="Aktivitas">{d.activity.kind_label}</Fact>
                   <Fact label="Jadwal">
@@ -74,7 +74,7 @@ export default function FormPage() {
               </VStack>
             )}
             {(product || d.help_text) && (
-              <VStack gap={4}>
+              <VStack className="oneflow-panel" gap={4}>
                 {(d.help_text || editing) && (
                   <Text color="secondary">
                     {d.help_text ||

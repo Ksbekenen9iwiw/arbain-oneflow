@@ -932,7 +932,7 @@ export default function CustomerDetail() {
                   ) : (
                     <Empty
                       title="Belum ada sampel"
-                      description="Ajukan sampel jika ada kebutuhan pelanggan yang perlu diuji. Riwayat dan hasilnya akan tampil di sini."
+                      
                       action={
                         customer.is_active ? (
                           <Button
@@ -962,7 +962,6 @@ export default function CustomerDetail() {
                     empty={
                       <Empty
                         title="Belum ada pesanan dalam cakupan akun ini"
-                        description="Pesanan baru akan tersimpan pada pelanggan ini."
                         action={
                           customer.is_active ? (
                             <>
@@ -1152,7 +1151,6 @@ export default function CustomerDetail() {
                           ? "Belum ada riwayat pelanggan"
                           : "Belum ada riwayat pada jenis ini"
                       }
-                      description="Hasil interaksi dan perubahan status pesanan akan tampil di sini."
                       action={
                         filter !== "all" ? (
                           <Button

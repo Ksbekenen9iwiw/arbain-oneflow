@@ -304,15 +304,6 @@ export default function ProductDetail() {
                         <Heading level={2}>Batch & masa simpan</Heading>
                       </VStack>
                       <HStack gap={6} wrap="wrap">
-                        <Fact label="Fisik">
-                          {quantity(d.batch_summary.on_hand)} {p.unit}
-                        </Fact>
-                        <Fact label="Dipesan">
-                          {quantity(d.batch_summary.reserved)} {p.unit}
-                        </Fact>
-                        <Fact label="Siap jual">
-                          {quantity(d.batch_summary.available)} {p.unit}
-                        </Fact>
                         <Fact label="Ditahan / kedaluwarsa">
                           {quantity(d.batch_summary.ineligible)} {p.unit}
                         </Fact>
@@ -328,7 +319,7 @@ export default function ProductDetail() {
                         <Banner
                           status="warning"
                           title="Masa simpan minimum belum dikonfigurasi"
-                          description="FEFO berjalan tanpa syarat masa simpan. Isi minimum sisa masa simpan pada Edit produk sesuai kebijakan yang berlaku."
+                          description="Isi minimum sisa masa simpan di Edit produk."
                         />
                       )}
                       {d.batches.some((r: Row) => Number(r.on_hand) <= 0) && (
@@ -714,7 +705,6 @@ export default function ProductDetail() {
                         empty={
                           <Empty
                             title="Tidak ada pesanan yang mereservasi produk ini"
-                            description="Stok dipesan tercatat setelah pesanan dikonfirmasi."
                           />
                         }
                         columns={[

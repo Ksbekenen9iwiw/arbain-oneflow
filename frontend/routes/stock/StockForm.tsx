@@ -205,7 +205,7 @@ export default function StockForm() {
                         <Banner
                           status="warning"
                           title="Siap jual akan negatif"
-                          description="Hasil hitung tetap dapat disimpan. Reservasi tidak dihapus; periksa pesanan terkait sebelum konfirmasi baru."
+                          description="Periksa pesanan terkait sebelum konfirmasi baru."
                         />
                       ) : (
                         <Text type="supporting">

@@ -139,7 +139,7 @@ export default function ShipmentTrend({
               }
             />
             <YAxis
-              width={compact ? 72 : 42}
+              width={compact ? 72 : 52}
               tickCount={compact ? 3 : undefined}
               axisLine={false}
               tickLine={false}
@@ -150,7 +150,7 @@ export default function ShipmentTrend({
               tickFormatter={(v) =>
                 compact
                   ? compactRupiah.format(v * 1000000)
-                  : Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 })
+                  : v ? `${Number(v).toLocaleString("id-ID", { maximumFractionDigits: 1 })} jt` : "0"
               }
             />
             <Tooltip

@@ -811,7 +811,6 @@ export default function Today() {
             empty={
               <Empty
                 title="Tidak ada rekomendasi saat ini"
-                description="Aktivitas terjadwal tetap ada di tab Aktivitas. Rekomendasi muncul saat ada pemicu dari jadwal atau riwayat pembelian."
                 action={
                   <Button
                     label="Lihat aktivitas"
@@ -943,7 +942,6 @@ export default function Today() {
               <Empty
                 kind="complete"
                 title="Tidak ada pesanan menunggu pengiriman"
-                description="Pesanan yang dikonfirmasi akan tampil di sini."
               />
             }
           />
