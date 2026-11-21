@@ -1,7 +1,7 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 form-two-column: context alongside a single-submit form.
-import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
+import { Layout, LayoutContent, LayoutFooter } from "@/kit";
 
 import {
   VStack,

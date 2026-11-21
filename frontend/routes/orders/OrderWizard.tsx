@@ -9,14 +9,14 @@ import {
   LayoutContent,
   LayoutFooter,
   LayoutHeader,
-} from "@astryxdesign/core/Layout";
-import { FormLayout } from "@astryxdesign/core/FormLayout";
-import { Step, Stepper } from "@astryxdesign/core/Stepper";
-import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
+} from "@/kit";
+import { FormLayout } from "@/kit";
+import { Step, Stepper } from "@/kit";
+import { Selector, SelectorOption } from "@/kit";
 import { QuantityInput } from "../../QuantityInput";
-import { proportional } from "@astryxdesign/core/Table";
-import { Divider } from "@astryxdesign/core/Divider";
-import { Icon } from "@astryxdesign/core/Icon";
+import { proportional } from "@/kit";
+import { Divider } from "@/kit";
+import { Icon } from "@/kit";
 import {
   VStack,
   HStack,

@@ -8,9 +8,9 @@ import {
   type ReactNode,
 } from "react";
 import { Theme } from "@astryxdesign/core/theme";
-import { Switch } from "@astryxdesign/core/Switch";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { Icon } from "@astryxdesign/core/Icon";
+import { Switch } from "@/kit";
+import { IconButton } from "@/kit";
+import { Icon } from "@/kit";
 import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { oneflowTheme } from "./theme";
 import {

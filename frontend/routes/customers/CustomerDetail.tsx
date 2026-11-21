@@ -1,5 +1,5 @@
-import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { DropdownMenu } from "@/kit";
+import { Collapsible } from "@/kit";
 import { useEffect, useState } from "react";
 import { ProductIdentity, ProductThumbnail } from "../../ProductIdentity";
 import { MotionPanel } from "../../motion";
@@ -7,15 +7,15 @@ import { MotionStack } from "../../motion";
 import { withReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Astryx detail-page frame: record header, chronological List, and context rail.
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { Grid } from "@astryxdesign/core/Grid";
-import { Card } from "@astryxdesign/core/Card";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { Layout, LayoutContent } from "@/kit";
+import { Grid } from "@/kit";
+import { Card } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import {
   SegmentedControl,
   SegmentedControlItem,
-} from "@astryxdesign/core/SegmentedControl";
-import { List, ListItem } from "@astryxdesign/core/List";
+} from "@/kit";
+import { List, ListItem } from "@/kit";
 import {
   VStack,
   HStack,

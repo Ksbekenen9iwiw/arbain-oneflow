@@ -2,13 +2,13 @@
 // Astryx login-split adapted to a full desktop frame and Django's two-step login.
 import { BrandMark } from "../../BrandMark";
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { Center } from "@astryxdesign/core/Center";
-import { Card } from "@astryxdesign/core/Card";
-import { Grid } from "@astryxdesign/core/Grid";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { TextInput } from "@astryxdesign/core/TextInput";
-import { InputGroup } from "@astryxdesign/core/InputGroup";
+import { Center } from "@/kit";
+import { Card } from "@/kit";
+import { Grid } from "@/kit";
+import { Icon } from "@/kit";
+import { IconButton } from "@/kit";
+import { TextInput } from "@/kit";
+import { InputGroup } from "@/kit";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import {
   VStack,

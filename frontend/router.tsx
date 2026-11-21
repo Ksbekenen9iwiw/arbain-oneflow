@@ -9,10 +9,10 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
-import { VStack, HStack } from "@astryxdesign/core/Layout";
-import { Text } from "@astryxdesign/core/Text";
-import { Button } from "@astryxdesign/core/Button";
+import { Dialog, DialogHeader } from "@/kit";
+import { VStack, HStack } from "@/kit";
+import { Text } from "@/kit";
+import { Button } from "@/kit";
 import type { Page } from "./types";
 import { requestIssue, type RequestIssue } from "./requestState";
 type AppContext = {

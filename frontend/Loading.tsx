@@ -1,6 +1,6 @@
 // Native Astryx placeholders, also rendered to static HTML before the client starts.
 import { BrandMark } from "./BrandMark";
-import { Skeleton } from "@astryxdesign/core/Skeleton";
+import { Skeleton } from "@/kit";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import { SideNav, SideNavHeading } from "@astryxdesign/core/SideNav";
 import {
@@ -9,14 +9,14 @@ import {
   Layout,
   LayoutHeader,
   LayoutContent,
-} from "@astryxdesign/core/Layout";
-import { Grid, GridSpan } from "@astryxdesign/core/Grid";
-import { Icon } from "@astryxdesign/core/Icon";
+} from "@/kit";
+import { Grid, GridSpan } from "@/kit";
+import { Icon } from "@/kit";
 import { NavIcon } from "@astryxdesign/core/NavIcon";
-import { Text } from "@astryxdesign/core/Text";
-import { Banner } from "@astryxdesign/core/Banner";
-import { Button } from "@astryxdesign/core/Button";
-import { VisuallyHidden } from "@astryxdesign/core/VisuallyHidden";
+import { Text } from "@/kit";
+import { Banner } from "@/kit";
+import { Button } from "@/kit";
+import { VisuallyHidden } from "@/kit";
 
 const line = "var(--spacing-4)";
 export function ChartSkeleton() {

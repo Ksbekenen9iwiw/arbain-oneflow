@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { proportional } from "@astryxdesign/core/Table";
+import { proportional } from "@/kit";
 import {
   Text,
   Button,

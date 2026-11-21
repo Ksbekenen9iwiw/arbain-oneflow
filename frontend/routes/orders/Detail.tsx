@@ -1,4 +1,4 @@
-import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
+import { DropdownMenu } from "@/kit";
 import { MotionPanel } from "../../motion";
 import { ProductIdentity } from "../../ProductIdentity";
 import { withReturn, backLabel } from "../../navigation";
@@ -6,15 +6,15 @@ import { withReturn, backLabel } from "../../navigation";
 // Adapted from Astryx 0.7.0 detail-page: status header, line items, totals,
 // chronological history and a hideable customer panel.
 import { useEffect, useState } from "react";
-import { Layout, LayoutHeader, LayoutContent } from "@astryxdesign/core/Layout";
+import { Layout, LayoutHeader, LayoutContent } from "@/kit";
 import {
   MetadataList,
   MetadataListItem,
-} from "@astryxdesign/core/MetadataList";
-import { Avatar } from "@astryxdesign/core/Avatar";
-import { Divider } from "@astryxdesign/core/Divider";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
+} from "@/kit";
+import { Avatar } from "@/kit";
+import { Divider } from "@/kit";
+import { Icon } from "@/kit";
+import { IconButton } from "@/kit";
 import {
   ViewColumnsIcon,
   DocumentTextIcon,
@@ -22,8 +22,8 @@ import {
   TruckIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { proportional } from "@astryxdesign/core/Table";
+import { List, ListItem } from "@/kit";
+import { proportional } from "@/kit";
 import {
   VStack,
   HStack,

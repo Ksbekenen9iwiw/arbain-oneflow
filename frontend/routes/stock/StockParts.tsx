@@ -7,11 +7,11 @@ import {
   proportional,
   useTableSortable,
   type TableColumn,
-} from "@astryxdesign/core/Table";
-import { Pagination } from "@astryxdesign/core/Pagination";
-import { Selector } from "@astryxdesign/core/Selector";
-import { DateInput } from "@astryxdesign/core/DateInput";
-import type { ISODateString } from "@astryxdesign/core/Calendar";
+} from "@/kit";
+import { Pagination } from "@/kit";
+import { Selector } from "@/kit";
+import { DateInput } from "@/kit";
+import type { ISODateString } from "@/kit";
 import {
   FilterRow,
   ResultsSummary,

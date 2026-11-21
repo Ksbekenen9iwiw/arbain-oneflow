@@ -1,15 +1,15 @@
-import { proportional } from "@astryxdesign/core/Table";
-import { Collapsible } from "@astryxdesign/core/Collapsible";
-import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { proportional } from "@/kit";
+import { Collapsible } from "@/kit";
+import { DropdownMenu } from "@/kit";
+import { List, ListItem } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import { MotionPanel, MotionStack } from "../../motion";
 import { ProductIdentity } from "../../ProductIdentity";
 import { sampleJourney, sampleStage } from "../../sampleJourney";
 import { useQueryState } from "../../router";
 import { useEffect, useState } from "react";
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { Divider } from "@astryxdesign/core/Divider";
+import { Layout, LayoutContent } from "@/kit";
+import { Divider } from "@/kit";
 import {
   VStack,
   HStack,

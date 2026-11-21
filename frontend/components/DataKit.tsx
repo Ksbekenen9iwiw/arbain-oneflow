@@ -1,22 +1,22 @@
 import { HoneycombArt } from "../BrandMark";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { HStack, VStack } from "@astryxdesign/core/Layout";
-import { Text, Heading } from "@astryxdesign/core/Text";
-import { Button } from "@astryxdesign/core/Button";
-import { Icon } from "@astryxdesign/core/Icon";
+import { HStack, VStack } from "@/kit";
+import { Text, Heading } from "@/kit";
+import { Button } from "@/kit";
+import { Icon } from "@/kit";
 import {
   CheckCircleIcon,
   InboxIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import { List, ListItem } from "@astryxdesign/core/List";
+import { List, ListItem } from "@/kit";
 import {
-  Table as AstryxTable,
+  Table as KitTable,
   useTableSortable,
   proportional,
   type TableColumn,
   type TableSortState,
-} from "@astryxdesign/core/Table";
+} from "@/kit";
 import type { ComponentProps } from "react";
 import type { Row } from "../types";
 import { MotionStack } from "../motion";
@@ -81,7 +81,7 @@ function MobileRows<T extends AnyRow>({
 }
 
 export function Table<T extends AnyRow>(
-  props: ComponentProps<typeof AstryxTable<T>>,
+  props: ComponentProps<typeof KitTable<T>>,
 ) {
   const { isMobile } = useResponsive();
   if (isMobile && props.data && props.columns) {
@@ -93,7 +93,7 @@ export function Table<T extends AnyRow>(
       />
     );
   }
-  return <AstryxTable {...props} />;
+  return <KitTable {...props} />;
 }
 
 export function Empty({

@@ -1,6 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 shell-side-nav: application frame and navigation.
-import { useToast } from "@astryxdesign/core/Toast";
+import { useToast } from "@/kit";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { BrandMark } from "../BrandMark";
 import {
@@ -11,22 +11,22 @@ import {
   type ReactNode,
 } from "react";
 import { MotionStack, playMotion, useContentMotion } from "../motion";
-import { ProgressBar } from "@astryxdesign/core/ProgressBar";
-import { VisuallyHidden } from "@astryxdesign/core/VisuallyHidden";
+import { ProgressBar } from "@/kit";
+import { VisuallyHidden } from "@/kit";
 import { RequestFeedback, usePendingFeedback } from "../RequestFeedback";
 import { AppShell } from "@astryxdesign/core/AppShell";
-import { Avatar } from "@astryxdesign/core/Avatar";
-import { Card } from "@astryxdesign/core/Card";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { Tooltip } from "@astryxdesign/core/Tooltip";
-import { StackItem } from "@astryxdesign/core/Stack";
+import { Avatar } from "@/kit";
+import { Card } from "@/kit";
+import { IconButton } from "@/kit";
+import { Tooltip } from "@/kit";
+import { StackItem } from "@/kit";
 import {
   SideNav,
   SideNavHeading,
   SideNavItem,
   SideNavSection,
 } from "@astryxdesign/core/SideNav";
-import { Icon } from "@astryxdesign/core/Icon";
+import { Icon } from "@/kit";
 import { NavIcon } from "@astryxdesign/core/NavIcon";
 import {
   CalendarDaysIcon,

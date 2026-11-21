@@ -1,10 +1,10 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 import { MotionPanel } from "../../motion";
 
 import { withReturn } from "../../navigation";
 import { useState } from "react";
-import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
-import { Selector } from "@astryxdesign/core/Selector";
+import { Layout, LayoutContent, LayoutFooter } from "@/kit";
+import { Selector } from "@/kit";
 import {
   VStack,
   HStack,

@@ -8,15 +8,15 @@ import {
   LayoutContent,
   LayoutPanel,
   LayoutFooter,
-} from "@astryxdesign/core/Layout";
+} from "@/kit";
 import {
   MetadataList,
   MetadataListItem,
-} from "@astryxdesign/core/MetadataList";
-import { Avatar } from "@astryxdesign/core/Avatar";
-import { Divider } from "@astryxdesign/core/Divider";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
+} from "@/kit";
+import { Avatar } from "@/kit";
+import { Divider } from "@/kit";
+import { Icon } from "@/kit";
+import { IconButton } from "@/kit";
 import { ViewColumnsIcon } from "@heroicons/react/24/outline";
 import {
   VStack,

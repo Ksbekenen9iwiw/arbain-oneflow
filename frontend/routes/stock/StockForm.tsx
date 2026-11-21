@@ -1,6 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Retains Astryx form-two-column's constrained form and pinned actions.
-import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
+import { Layout, LayoutContent, LayoutFooter } from "@/kit";
 import {
   VStack,
   HStack,

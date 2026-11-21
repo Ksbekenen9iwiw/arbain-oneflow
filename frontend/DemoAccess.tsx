@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Avatar } from "@astryxdesign/core/Avatar";
-import { Card } from "@astryxdesign/core/Card";
-import { Divider } from "@astryxdesign/core/Divider";
-import { Icon } from "@astryxdesign/core/Icon";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { Token } from "@astryxdesign/core/Token";
+import { Avatar } from "@/kit";
+import { Card } from "@/kit";
+import { Divider } from "@/kit";
+import { Icon } from "@/kit";
+import { List, ListItem } from "@/kit";
+import { Token } from "@/kit";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { VStack, HStack, Text, Button, FormDialog, useResponsive } from "./ui";
 import type { Row } from "./types";

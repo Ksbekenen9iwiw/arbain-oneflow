@@ -1,13 +1,13 @@
-import { proportional } from "@astryxdesign/core/Table";
-import { Grid } from "@astryxdesign/core/Grid";
+import { proportional } from "@/kit";
+import { Grid } from "@/kit";
 import { MotionPanel } from "../../motion";
 import { ProductIdentity } from "../../ProductIdentity";
 import { withReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from the scaffolded Astryx detail-page: header, content and end panel.
 import { useState } from "react";
-import { Layout, LayoutHeader, LayoutContent } from "@astryxdesign/core/Layout";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { Layout, LayoutHeader, LayoutContent } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import {
   HStack,
   VStack,
@@ -29,7 +29,7 @@ import {
   useResponsive,
 } from "../../ui";
 import { useApp } from "../../router";
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 import { FormDialog, SimpleForm } from "../../ui";
 import type { Row } from "../../types";
 import { StockCondition, MovementView, stockContext } from "./StockParts";

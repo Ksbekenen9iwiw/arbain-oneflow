@@ -12,16 +12,16 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Card } from "@astryxdesign/core/Card";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { Tooltip as HelpTooltip } from "@astryxdesign/core/Tooltip";
+import { Card } from "@/kit";
+import { Icon } from "@/kit";
+import { IconButton } from "@/kit";
+import { List, ListItem } from "@/kit";
+import { Tooltip as HelpTooltip } from "@/kit";
 import { TableCellsIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import {
   SegmentedControl,
   SegmentedControlItem,
-} from "@astryxdesign/core/SegmentedControl";
+} from "@/kit";
 import {
   VStack,
   HStack,

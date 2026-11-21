@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Avatar } from "@astryxdesign/core/Avatar";
+import { Avatar } from "@/kit";
 import { HStack, VStack, Text } from "./ui";
 
 /** Shared identity rhythm for CRM rows; all sizing comes from Astryx. */

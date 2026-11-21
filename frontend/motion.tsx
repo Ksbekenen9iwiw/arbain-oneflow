@@ -6,7 +6,7 @@ import {
   type ComponentProps,
   type RefObject,
 } from "react";
-import { VStack, LayoutPanel } from "@astryxdesign/core/Layout";
+import { VStack, LayoutPanel } from "@/kit";
 
 type Preset = "page" | "fade" | "step" | "expand";
 export { playMotion } from "./motionRuntime";

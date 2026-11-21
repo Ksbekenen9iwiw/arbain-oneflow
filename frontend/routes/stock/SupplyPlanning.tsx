@@ -1,7 +1,7 @@
 // Uses the existing Astryx table-page frame in Stock.
-import { proportional } from "@astryxdesign/core/Table";
-import { TextInput } from "@astryxdesign/core/TextInput";
-import { Selector } from "@astryxdesign/core/Selector";
+import { proportional } from "@/kit";
+import { TextInput } from "@/kit";
+import { Selector } from "@/kit";
 import {
   ResultsSummary,
   FilterRow,

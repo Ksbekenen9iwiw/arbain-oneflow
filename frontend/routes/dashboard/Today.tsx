@@ -1,4 +1,4 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Collapsible } from "@/kit";
 import { MotionStack } from "../../motion";
 import { RecordIdentity } from "../../RecordIdentity";
 import { ProductIdentity } from "../../ProductIdentity";
@@ -8,21 +8,21 @@ import { withReturn } from "../../navigation";
 // Native scorecards, trend, goal progress and work table; all records supplied by Django.
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ChartSkeleton } from "../../Loading";
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { Icon } from "@astryxdesign/core/Icon";
-import { IconButton } from "@astryxdesign/core/IconButton";
+import { Layout, LayoutContent } from "@/kit";
+import { List, ListItem } from "@/kit";
+import { Icon } from "@/kit";
+import { IconButton } from "@/kit";
 import {
   ArrowPathIcon,
   AdjustmentsHorizontalIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { Card } from "@astryxdesign/core/Card";
-import { Grid, GridSpan } from "@astryxdesign/core/Grid";
-import { ProgressBar } from "@astryxdesign/core/ProgressBar";
-import { Selector } from "@astryxdesign/core/Selector";
-import { proportional } from "@astryxdesign/core/Table";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
+import { Card } from "@/kit";
+import { Grid, GridSpan } from "@/kit";
+import { ProgressBar } from "@/kit";
+import { Selector } from "@/kit";
+import { proportional } from "@/kit";
+import { TabList, Tab } from "@/kit";
 import {
   VStack,
   HStack,

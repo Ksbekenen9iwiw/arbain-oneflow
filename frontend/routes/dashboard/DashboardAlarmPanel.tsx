@@ -1,6 +1,6 @@
-import { Divider } from "@astryxdesign/core/Divider";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+import { Divider } from "@/kit";
+import { List, ListItem } from "@/kit";
+import { ProgressBar } from "@/kit";
 import { MotionPanel } from "../../motion";
 import type { Row } from "../../types";
 import {

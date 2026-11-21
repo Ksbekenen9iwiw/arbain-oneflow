@@ -3,7 +3,7 @@
 import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
 
 import { useEffect, useRef, useState } from "react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import { Calendar, Dialog, Popover, useLocale } from "react-aria-components";
 import type { CalendarDate } from "@internationalized/date";
 import { RiCalendarLine } from "@remixicon/react";
@@ -50,6 +50,8 @@ export interface DatePickerProps {
   isDisabled?: boolean;
   className?: string;
   "aria-label"?: string;
+  /** Replaces the formatted date in the built-in trigger. */
+  triggerLabel?: ReactNode;
   /** Anchor the popover to an external element instead of DatePicker's own
    *  trigger button (which is hidden when this is provided). Pair with
    *  `isOpen`/`onOpenChange` for full external control. */
@@ -65,6 +67,7 @@ export function DatePicker({
   isDisabled,
   className,
   "aria-label": ariaLabel = "Date",
+  triggerLabel,
   triggerRef: externalTriggerRef,
   isOpen: controlledIsOpen,
   onOpenChange: controlledOnOpenChange,
@@ -130,7 +133,7 @@ export function DatePicker({
         >
           <RiCalendarLine className="size-5 shrink-0 text-foreground-icon-primary" aria-hidden />
           <span className="flex items-center justify-center whitespace-nowrap px-1 text-body-medium text-text-primary">
-            {committedValue ? formatTriggerDate(committedValue, locale) : "Select date"}
+            {triggerLabel ?? (committedValue ? formatTriggerDate(committedValue, locale) : "Select date")}
           </span>
         </button>
       )}

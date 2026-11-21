@@ -1,5 +1,5 @@
-import { Collapsible } from "@astryxdesign/core/Collapsible";
-import { Switch } from "@astryxdesign/core/Switch";
+import { Collapsible } from "@/kit";
+import { Switch } from "@/kit";
 import SupplyPlanning from "./SupplyPlanning";
 import { ProductIdentity } from "../../ProductIdentity";
 import {
@@ -10,14 +10,14 @@ import {
 } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Keeps the Astryx table-page frame; separates products from paginated history.
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { TextInput } from "@astryxdesign/core/TextInput";
-import { Selector } from "@astryxdesign/core/Selector";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
-import { IconButton } from "@astryxdesign/core/IconButton";
+import { Layout, LayoutContent } from "@/kit";
+import { TextInput } from "@/kit";
+import { Selector } from "@/kit";
+import { TabList, Tab } from "@/kit";
+import { IconButton } from "@/kit";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
-import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { proportional, type TableColumn } from "@astryxdesign/core/Table";
+import { DropdownMenu } from "@/kit";
+import { proportional, type TableColumn } from "@/kit";
 import {
   ResultsSummary,
   FilterRow,

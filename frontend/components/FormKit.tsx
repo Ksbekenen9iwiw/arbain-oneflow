@@ -13,17 +13,17 @@ import {
   VStack,
   HStack,
   StackItem,
-} from "@astryxdesign/core/Layout";
-import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
-import { Text } from "@astryxdesign/core/Text";
-import { Button } from "@astryxdesign/core/Button";
-import { Banner } from "@astryxdesign/core/Banner";
-import { TextInput } from "@astryxdesign/core/TextInput";
-import { TextArea } from "@astryxdesign/core/TextArea";
-import { Selector } from "@astryxdesign/core/Selector";
-import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
-import type { ISODateString } from "@astryxdesign/core/Calendar";
-import { DateInput } from "@astryxdesign/core/DateInput";
+} from "@/kit";
+import { Dialog, DialogHeader } from "@/kit";
+import { Text } from "@/kit";
+import { Button } from "@/kit";
+import { Banner } from "@/kit";
+import { TextInput } from "@/kit";
+import { TextArea } from "@/kit";
+import { Selector } from "@/kit";
+import { CheckboxInput } from "@/kit";
+import type { ISODateString } from "@/kit";
+import { DateInput } from "@/kit";
 import { useApp } from "../router";
 import type { Field, FormSpec } from "../types";
 import { QuantityInput } from "../QuantityInput";

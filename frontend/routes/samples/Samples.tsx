@@ -1,16 +1,16 @@
 import type { Row } from "../../types";
 import { sampleStage } from "../../sampleJourney";
-import { proportional } from "@astryxdesign/core/Table";
-import { TabList, Tab } from "@astryxdesign/core/TabList";
-import { TextInput } from "@astryxdesign/core/TextInput";
-import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { proportional } from "@/kit";
+import { TabList, Tab } from "@/kit";
+import { TextInput } from "@/kit";
+import { Collapsible } from "@/kit";
 import { RecordIdentity } from "../../RecordIdentity";
 import { useEffect, useState } from "react";
-import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
-import { Selector } from "@astryxdesign/core/Selector";
-import { DateInput } from "@astryxdesign/core/DateInput";
-import { Pagination } from "@astryxdesign/core/Pagination";
-import type { ISODateString } from "@astryxdesign/core/Calendar";
+import { Layout, LayoutContent } from "@/kit";
+import { Selector } from "@/kit";
+import { DateInput } from "@/kit";
+import { Pagination } from "@/kit";
+import type { ISODateString } from "@/kit";
 import {
   ResultsSummary,
   FilterRow,
