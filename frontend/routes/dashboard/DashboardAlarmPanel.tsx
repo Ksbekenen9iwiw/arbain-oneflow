@@ -57,7 +57,7 @@ export function DashboardAlarmPanel({
 
       <VStack gap={3}>
         <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
-          <Heading level={3}>Early warning bahan baku</Heading>
+          <Heading level={3}>Alarm bahan baku</Heading>
           {canEditRaw && rawMaterialAlerts.length > 0 && (
             <Button
               size="sm"
@@ -67,10 +67,6 @@ export function DashboardAlarmPanel({
             />
           )}
         </HStack>
-        <Text type="supporting">
-          Peringatan dini berdasarkan kuantitas &amp; laju produk laku keras agar
-          bahan pokok tidak habis mendadak.
-        </Text>
         {rawMaterialAlerts.length === 0 ? (
           <Text type="supporting">Belum ada data bahan baku.</Text>
         ) : (
@@ -81,10 +77,7 @@ export function DashboardAlarmPanel({
                 label={`${item.name} (${item.code})`}
                 description={
                   <VStack gap={2}>
-                    <Status
-                      value={item.severity}
-                      label={item.severity_label}
-                    />
+                    <Status value={item.severity} label={item.severity_label} />
                     <Text type="supporting">
                       Tersedia{" "}
                       <Text weight="semibold" hasTabularNumbers>
@@ -140,10 +133,6 @@ export function DashboardAlarmPanel({
             />
           )}
         </HStack>
-        <Text type="supporting">
-          Instruksi manajer mengenai barang kurang laku yang tidak perlu
-          dibawa dan produk pengganti yang harus dibawa ke apotek.
-        </Text>
         {directivesAndWeak.length === 0 ? (
           <Text type="supporting">
             Belum ada arahan khusus atau barang kurang laku.
@@ -181,10 +170,9 @@ export function DashboardAlarmPanel({
                       </>
                     ) : (
                       <Text type="supporting">
-                        Stok di apotek: {quantity(item.on_display)}{" "}
-                        {item.unit} · laku 30 hari:{" "}
-                        {quantity(item.consign_sold_30d)} {item.unit} (
-                        {item.sell_through_pct}%).
+                        Stok di apotek: {quantity(item.on_display)} {item.unit}{" "}
+                        · laku 30 hari: {quantity(item.consign_sold_30d)}{" "}
+                        {item.unit} ({item.sell_through_pct}%).
                       </Text>
                     )}
                     {isManager && (

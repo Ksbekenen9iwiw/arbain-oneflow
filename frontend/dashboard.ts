@@ -1,3 +1,19 @@
+export function salesGreeting(
+  name: string | undefined,
+  now: Date = new Date(),
+): string {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Jakarta",
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(now),
+  );
+  const period =
+    hour < 11 ? "pagi" : hour < 15 ? "siang" : hour < 18 ? "sore" : "malam";
+  return name ? `Selamat ${period}, ${name}` : `Selamat ${period}`;
+}
+
 export function dashboardQueue(role: string | null, requested: string): string {
   if (role === "WAREHOUSE")
     return requested === "samples" ? "samples" : "shipping";

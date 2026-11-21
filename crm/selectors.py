@@ -157,6 +157,8 @@ def dashboard_metrics(actor, as_of, sales_id=None):
         order_scope = order_scope.filter(sales_id=sales_id)
     metrics = {'shipped_value_rupiah': 0, 'shipped_order_count': 0, 'planned_activity_count': 0, 'done_activity_count': 0, 'overdue_activity_count': 0, 'pending_shipment_count': order_scope.filter(status='CONFIRMED').count(), 'low_stock_count': Product.objects.filter(is_active=True, balance__on_hand__lt=F('balance__reserved') + F('min_stock')).count(), 'sales_rows': []}
     metrics['stock_conflict_count'] = Product.objects.filter(balance__on_hand__lt=F('balance__reserved')).count()
+    metrics['unverified_stock_count'] = Product.objects.filter(opening_stock_pending=True).count()
+    metrics['verified_active_stock_count'] = Product.objects.filter(is_active=True, opening_stock_pending=False, balance__isnull=False).count()
     if role == 'WAREHOUSE':
         return metrics
     start = min(month, as_of - timedelta(days=29))

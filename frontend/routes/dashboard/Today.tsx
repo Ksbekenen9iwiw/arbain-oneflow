@@ -1,3 +1,4 @@
+import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { MotionStack } from "../../motion";
 import { RecordIdentity } from "../../RecordIdentity";
 import { ProductIdentity } from "../../ProductIdentity";
@@ -5,9 +6,10 @@ import { withReturn } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from original Astryx 0.7 dashboard + dashboard-scorecard templates.
 // Native scorecards, trend, goal progress and work table; all records supplied by Django.
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { ChartSkeleton } from "../../Loading";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
+import { List, ListItem } from "@astryxdesign/core/List";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import {
@@ -19,15 +21,13 @@ import { Card } from "@astryxdesign/core/Card";
 import { Grid, GridSpan } from "@astryxdesign/core/Grid";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Selector } from "@astryxdesign/core/Selector";
-import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from "@astryxdesign/core/SegmentedControl";
+import { proportional } from "@astryxdesign/core/Table";
 import { TabList, Tab } from "@astryxdesign/core/TabList";
 import {
   VStack,
   HStack,
   Text,
+  Token,
   Heading,
   Button,
   Link,
@@ -54,37 +54,13 @@ import { useApp, useQueryState } from "../../router";
 import { useDelayedBusy } from "../../RequestFeedback";
 import {
   dashboardQueue,
+  salesGreeting,
   activityMatches,
   recommendationEffect,
   recommendationSubmitLabel,
 } from "../../dashboard";
 import type { Row, FormSpec } from "../../types";
 const ShipmentTrend = lazy(() => import("./ShipmentTrend"));
-
-function Metric({
-  label,
-  value,
-  detail,
-  action,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  action: ReactNode;
-}) {
-  return (
-    <Card padding={3}>
-      <VStack gap={1}>
-        <Text type="supporting">{label}</Text>
-        <Text size="2xl" weight="semibold" hasTabularNumbers>
-          {value}
-        </Text>
-        <Text type="supporting">{detail}</Text>
-        <HStack hAlign="start">{action}</HStack>
-      </VStack>
-    </Card>
-  );
-}
 
 export default function Today() {
   const { page, busy, navigate, revision } = useApp();
@@ -99,7 +75,7 @@ export default function Today() {
   const hasApprovals = manager && (d.sample_tasks || []).length > 0;
   const [requestedQueue, setQueue] = useQueryState(
     "view",
-    warehouse ? "shipping" : hasApprovals ? "samples" : "activities",
+    warehouse ? "shipping" : manager ? "overview" : "activities",
   );
   const queue = dashboardQueue(page.role, requestedQueue);
   const [requestedSchedule, setSchedule] = useQueryState(
@@ -147,8 +123,11 @@ export default function Today() {
       ),
     );
   }, [revision]);
-  const [alarmPanelState, setAlarmPanelState] = useQueryState("alarm", "shown");
-  const showAlarmPanel = alarmPanelState !== "hidden";
+  const [alarmPanelState, setAlarmPanelState] = useQueryState(
+    "alarm",
+    "hidden",
+  );
+  const showAlarmPanel = alarmPanelState === "shown";
   const [targetView, setTargetView] = useQueryState("targets", "hidden");
   const showTargets = targetView === "shown";
   const setShowTargets = (value: boolean | ((v: boolean) => boolean)) =>
@@ -193,7 +172,17 @@ export default function Today() {
   const agenda: Row[] = d.agenda || [];
   const matches = (a: Row, mode: string) =>
     activityMatches(a.due, mode, page.today);
+  const showQueueTabs = !sales;
   const filtered = agenda.filter((a) => matches(a, schedule));
+  const lateActivities = agenda.filter((a) => matches(a, "late")).length;
+  const todayActivities = agenda.filter((a) => matches(a, "today")).length;
+  const activityIds = new Set(agenda.map((a) => String(a.id)));
+  const additionalRecommendations = (d.actions || []).filter(
+    (item: Row) => !activityIds.has(String(item.reasons.activity_id)),
+  );
+  const hasMoreRecommendations =
+    !d.show_all && Number(d.action_count) > (d.actions || []).length;
+  const visibleRecommendations = sales ? additionalRecommendations : d.actions;
   const focusQueue = (mode: string, scheduleMode = "priority") => {
     setQueue(mode);
     setSchedule(scheduleMode);
@@ -238,56 +227,31 @@ export default function Today() {
         ),
       }
     : undefined;
-  const metrics = warehouse && (
-    <Grid columns={{ minWidth: 220, repeat: "fit", max: 3 }} gap={3}>
-      {warehouse && (
-        <Metric
-          label="Menunggu pengiriman"
-          value={m.pending_shipment_count}
-          detail="Pesanan sudah dikonfirmasi"
-          action={
-            <Button
-              size="sm"
-              variant="secondary"
-              label="Lihat antrean"
-              onClick={() => focusQueue("shipping")}
-            />
-          }
-        />
-      )}
-      {warehouse && (
-        <Metric
-          label="Stok menipis"
-          value={m.low_stock_count}
-          detail="Stok tersedia di bawah minimum"
-          action={
-            <Button
-              size="sm"
-              href="/stock/?filter=low&status=active"
-              variant="secondary"
-              label="Periksa stok"
-            />
-          }
-        />
-      )}
-      {warehouse && (
-        <Metric
-          label="Konflik stok"
-          value={m.stock_conflict_count}
-          detail="Stok fisik di bawah reservasi"
-          action={
-            <Button
-              size="sm"
-              href="/stock/?filter=conflict"
-              variant="secondary"
-              label="Tinjau reservasi"
-            />
-          }
-        />
-      )}
-    </Grid>
+  const unverifiedStock = Number(m.unverified_stock_count || 0);
+  const verifiedStock = Number(m.verified_active_stock_count || 0);
+  const lowStock = Number(m.low_stock_count || 0);
+  const stockConflicts = Number(m.stock_conflict_count || 0);
+  const pendingOutlets = Number(d.company_setup?.outlets || 0);
+  const hasCriticalAlert = (d.raw_material_alerts || []).some(
+    (item: Row) => item.severity === "CRITICAL",
   );
-  const analytics = !warehouse && (
+  const alertCount = (d.raw_material_alerts || []).filter(
+    (item: Row) => item.severity === "CRITICAL" || item.severity === "WARNING",
+  ).length;
+  const activeDirectives = (d.product_traction || []).filter(
+    (item: Row) => item.directive,
+  );
+  const directiveCount = activeDirectives.length;
+  const stockSummary = unverifiedStock
+    ? "Saldo stok masih perlu diverifikasi."
+    : verifiedStock
+      ? "Tidak ada stok menipis pada produk aktif yang dipantau."
+      : "Belum ada saldo produk aktif yang bisa dinilai.";
+  const openAlarm = () => {
+    if (isNarrow) setNarrowAlarmOpen(true);
+    else setAlarmPanelState("shown");
+  };
+  const analytics = manager && (
     <Grid columns={isNarrow ? 1 : 3} gap={4}>
       <GridSpan columns={isNarrow ? 1 : 2}>
         <Card padding={4}>
@@ -295,7 +259,7 @@ export default function Today() {
             <ShipmentTrend
               days={m.shipment_days}
               today={page.today}
-              defaultPeriod={sales ? "30" : "month"}
+              defaultPeriod="month"
             />
           </Suspense>
         </Card>
@@ -318,15 +282,7 @@ export default function Today() {
                 />
               )}
             </HStack>
-            <VStack gap={1}>
-              <Text type="supporting">{monthLabel}</Text>
-              <HStack gap={2} vAlign="center" wrap="wrap">
-                <Text size="2xl" weight="semibold" hasTabularNumbers>
-                  {money(m.shipped_value_rupiah)}
-                </Text>
-                <Text type="supporting">terkirim</Text>
-              </HStack>
-            </VStack>
+            <Text type="supporting">{monthLabel}</Text>
             {goal.achievement_percent != null ? (
               <>
                 <HStack hAlign="between" wrap="wrap" gap={2}>
@@ -360,7 +316,7 @@ export default function Today() {
                 size="sm"
                 variant="secondary"
                 href={ordersUrl("SHIPPED", true)}
-                label={`${m.shipped_order_count} pesanan`}
+                label="Pesanan terkirim bulan ini"
                 tooltip="Lihat pesanan terkirim bulan ini"
               />
               <Button
@@ -380,37 +336,97 @@ export default function Today() {
               />
             </HStack>
           </VStack>
-          <VStack gap={2}>
-            <Text type="supporting">Stok seluruh gudang</Text>
-            {Number(m.stock_conflict_count) > 0 && (
-              <Button
-                href="/stock/?filter=conflict"
-                size="sm"
-                variant="secondary"
-                label={`${m.stock_conflict_count} produk · konflik stok`}
-                icon={<Icon icon="error" color="error" />}
-              />
-            )}
-            {Number(m.low_stock_count) > 0 ? (
-              <Button
-                href="/stock/?filter=low&status=active"
-                size="sm"
-                variant="secondary"
-                label={`${m.low_stock_count} produk di bawah minimum`}
-                icon={<Icon icon="warning" color="warning" />}
-              />
-            ) : (
-              <Text type="supporting">
-                Stok tersedia memenuhi batas minimum.
-              </Text>
-            )}
-          </VStack>
         </VStack>
       </Card>
     </Grid>
   );
   // Astryx Table bleeds through the inherited bottom padding. Reserve that
   // padding within each table section so the next section retains its gap.
+  const salesOverview = sales && (
+    <VStack gap={2} aria-label="Ringkasan sales">
+      <Grid columns={isNarrow ? 1 : 3} gap={3}>
+        <Card padding={3}>
+          <VStack height="100%" gap={3}>
+            <Heading level={2}>Ringkasan</Heading>
+            <Grid
+              columns={2}
+              gap={2}
+              minHeight="calc(2 * var(--spacing-10))"
+              style={{ flex: 1 }}
+            >
+              {[
+                {
+                  mode: "late",
+                  label: "Terlambat",
+                  count: lateActivities,
+                  accent: "var(--color-border-red)",
+                },
+                {
+                  mode: "today",
+                  label: "Hari ini",
+                  count: todayActivities,
+                  accent: "var(--color-border-blue)",
+                },
+              ].map(({ mode, label, count, accent }) => (
+                <Button
+                  key={mode}
+                  label={`${quantity(count)} aktivitas ${label.toLocaleLowerCase("id-ID")}`}
+                  width="100%"
+                  size="lg"
+                  style={{
+                    height: "100%",
+                    borderBlockStart: `var(--spacing-1) solid ${count > 0 ? accent : "var(--color-border)"}`,
+                    borderBlockEnd: "var(--spacing-1) solid transparent",
+                  }}
+                  variant={schedule === mode ? "primary" : "secondary"}
+                  aria-pressed={schedule === mode}
+                  aria-controls="queue-activities"
+                  onClick={() =>
+                    focusQueue(
+                      "activities",
+                      schedule === mode ? "priority" : mode,
+                    )
+                  }
+                >
+                  <VStack as="span" gap={2} vAlign="center" hAlign="center">
+                    <Text size="base" color="inherit">
+                      {label}
+                    </Text>
+                    <Text
+                      size="3xl"
+                      color="inherit"
+                      hasTabularNumbers
+                      weight="semibold"
+                      style={
+                        mode === "late" && count > 0 && schedule !== mode
+                          ? { color: "var(--color-text-red)" }
+                          : undefined
+                      }
+                    >
+                      {quantity(count)}
+                    </Text>
+                  </VStack>
+                </Button>
+              ))}
+            </Grid>
+          </VStack>
+        </Card>
+        <GridSpan columns={isNarrow ? 1 : 2}>
+          <Card padding={3}>
+            <Suspense fallback={<ChartSkeleton />}>
+              <ShipmentTrend
+                days={m.shipment_days}
+                today={page.today}
+                defaultPeriod="30"
+                compact
+              />
+            </Suspense>
+          </Card>
+        </GridSpan>
+      </Grid>
+    </VStack>
+  );
+
   const targets = !warehouse && showTargets && (
     <MotionStack
       preset="expand"
@@ -524,98 +540,97 @@ export default function Today() {
   );
   const workQueue = (
     <VStack gap={3} paddingBlockEnd={6} id="work-queue">
-      <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
-        <VStack gap={1}>
+      {(warehouse || manager) && (
+        <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
           <Heading level={2}>
-            {warehouse
-              ? "Persiapan pengiriman"
-              : sales
-                ? "Pekerjaan saya"
-                : d.selected_sales && queue !== "samples"
-                  ? "Pekerjaan sales"
-                  : "Pekerjaan tim"}
+            {warehouse ? "Persiapan pengiriman" : "Daftar kerja tim"}
           </Heading>
-        </VStack>
-        {!warehouse && (
+          {manager && (
+            <Button
+              label="Tutup daftar"
+              size="sm"
+              variant="secondary"
+              onClick={() => setQueue("overview")}
+            />
+          )}
+        </HStack>
+      )}
+      {sales && queue !== "activities" && (
+        <HStack hAlign="start">
           <Button
-            href={withReturn("/customers/", page.url)}
             size="sm"
             variant="secondary"
-            label="Lihat pelanggan"
+            label="Kembali ke agenda"
+            onClick={() => focusQueue("activities", schedule)}
           />
-        )}
-      </HStack>
-      <TabList
-        value={queue}
-        onChange={setQueue}
-        role="tablist"
-        aria-label="Antrean kerja"
-        hasDivider
-      >
-        {!warehouse && (
-          <Tab
-            value="activities"
-            label={`Aktivitas (${agenda.length})`}
-            panelId="queue-activities"
-          />
-        )}
-        {!warehouse && (
-          <Tab
-            value="recommendations"
-            label={`Rekomendasi (${d.action_count})`}
-            panelId="queue-recommendations"
-          />
-        )}
-        <Tab
-          value="shipping"
-          label={`Pengiriman (${m.pending_shipment_count})`}
-          panelId="queue-shipping"
-        />
-        <Tab
-          value="samples"
-          label={
-            manager
-              ? "Persetujuan sampel"
-              : sales
-                ? "Evaluasi sampel"
-                : "Pengiriman sampel"
-          }
-          panelId="queue-samples"
-        />
-      </TabList>
+        </HStack>
+      )}
+      {showQueueTabs && (
+        <TabList
+          value={queue}
+          onChange={setQueue}
+          role="tablist"
+          aria-label="Antrean kerja"
+          hasDivider
+        >
+          {!warehouse && (
+            <Tab value="activities" label="Agenda" panelId="queue-activities" />
+          )}
+          {!warehouse && manager && (
+            <Tab
+              value="recommendations"
+              label={`Rekomendasi (${d.action_count})`}
+              panelId="queue-recommendations"
+            />
+          )}
+          {(!sales || queue === "shipping") && (
+            <Tab
+              value="shipping"
+              label={`Pengiriman (${m.pending_shipment_count})`}
+              panelId="queue-shipping"
+            />
+          )}
+          {!sales && (
+            <Tab
+              value="samples"
+              label={
+                manager
+                  ? "Persetujuan sampel"
+                  : sales
+                    ? "Evaluasi sampel"
+                    : "Pengiriman sampel"
+              }
+              panelId="queue-samples"
+            />
+          )}
+        </TabList>
+      )}
       {!warehouse && queue === "activities" && (
         <MotionStack
           motionKey={queue}
           gap={3}
           id="queue-activities"
-          role="tabpanel"
-          aria-label="Aktivitas"
+          role={showQueueTabs ? "tabpanel" : "region"}
+          aria-label="Agenda"
         >
-          <HStack hAlign="between" gap={3} vAlign="center" wrap="wrap">
-            <SegmentedControl
-              label="Jadwal aktivitas"
+          <HStack hAlign="between" gap={3} vAlign="end" wrap="wrap">
+            {sales && <Heading level={2}>Agenda</Heading>}
+            <Selector
+              label={sales ? "Filter agenda" : "Jadwal"}
               value={schedule}
-              onChange={(v) => {
-                setSchedule(v);
+              width={isMobile ? "100%" : "14rem"}
+              options={[
+                { value: "priority", label: "Perlu dikerjakan" },
+                { value: "all", label: "Semua jadwal" },
+                { value: "late", label: "Terlambat" },
+                { value: "today", label: "Hari ini" },
+                { value: "future", label: "Mendatang / tanpa jadwal" },
+              ]}
+              onChange={(value) => {
+                setSchedule(value);
                 setAllActivities(false);
               }}
-              size="sm"
-            >
-              <SegmentedControlItem value="priority" label="Perlu dikerjakan" />
-              <SegmentedControlItem value="all" label="Semua" />
-              <SegmentedControlItem
-                value="late"
-                label={`Terlambat (${agenda.filter((a) => matches(a, "late")).length})`}
-              />
-              <SegmentedControlItem
-                value="today"
-                label={`Hari ini (${agenda.filter((a) => matches(a, "today")).length})`}
-              />
-              <SegmentedControlItem
-                value="future"
-                label="Mendatang / tanpa jadwal"
-              />
-            </SegmentedControl>
+            />
             {filtered.length > 5 && (
               <Button
                 label={
@@ -659,6 +674,7 @@ export default function Today() {
               {
                 key: "customer",
                 header: "Pelanggan",
+                width: sales ? proportional(1.45, { minWidth: 120 }) : undefined,
                 renderCell: (a) => (
                   <Link
                     href={withReturn(`/customers/${a.customer.id}/`, page.url)}
@@ -668,19 +684,74 @@ export default function Today() {
                   </Link>
                 ),
               },
-              { key: "kind_label", header: "Aktivitas" },
+              {
+                key: "kind_label",
+                header: "Aktivitas",
+                width: sales ? proportional(1.65, { minWidth: 140 }) : undefined,
+                renderCell: (activity) => (
+                  <VStack gap={1}>
+                    <Text>{activity.kind_label}</Text>
+                    {sales && activity.note?.trim() && (
+                      <Text
+                        type="supporting"
+                        style={{
+                          whiteSpace: "pre-line",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {activity.note.trim()}
+                      </Text>
+                    )}
+                  </VStack>
+                ),
+              },
               {
                 key: "due",
                 header: "Jadwal",
+                width: sales ? proportional(0.9, { minWidth: 106 }) : undefined,
                 renderCell: (a) => (
                   <HStack gap={2} wrap="wrap">
                     <Text>
-                      {a.due ? dateLabel(a.due) : "Belum dijadwalkan"}
+                      {a.due
+                        ? dateLabel(a.due)
+                        : sales
+                          ? "—"
+                          : "Belum dijadwalkan"}
                     </Text>
-                    {a.due && a.due < page.today && <Status value="OVERDUE" />}
+                    {!sales && matches(a, "late") && (
+                      <Status value="OVERDUE" />
+                    )}
                   </HStack>
                 ),
               },
+              ...(sales
+                ? [
+                    {
+                      key: "schedule_status",
+                      header: "Status",
+                      width: proportional(0.9, { minWidth: 110 }),
+                      renderCell: (activity: Row) => {
+                        const status = matches(activity, "late")
+                          ? { label: "Terlambat", color: "red" as const }
+                          : matches(activity, "today")
+                            ? { label: "Hari ini", color: "blue" as const }
+                            : {
+                                label: activity.due
+                                  ? "Mendatang"
+                                  : "Tanpa jadwal",
+                                color: "gray" as const,
+                              };
+                        return (
+                          <Token
+                            {...status}
+                            size="sm"
+                            style={{ borderRadius: "var(--radius-full)" }}
+                          />
+                        );
+                      },
+                    },
+                  ]
+                : []),
               ...(page.role === "MANAGER" && !d.selected_sales
                 ? [
                     {
@@ -697,6 +768,8 @@ export default function Today() {
               {
                 key: "action",
                 header: "Tindakan",
+                align: "end",
+                width: sales ? proportional(0.9, { minWidth: 110 }) : undefined,
                 renderCell: (a) => (
                   <Button
                     href={withReturn(`/activities/${a.id}/complete/`, page.url)}
@@ -715,7 +788,7 @@ export default function Today() {
           motionKey={queue}
           gap={4}
           id="queue-recommendations"
-          role="tabpanel"
+          role={sales ? "region" : "tabpanel"}
           aria-label="Rekomendasi"
         >
           <HStack hAlign="between">
@@ -742,7 +815,7 @@ export default function Today() {
             )}
           </HStack>
           <DataTable
-            rows={d.actions.map((a: Row) => ({ ...a, id: a.key }))}
+            rows={visibleRecommendations.map((a: Row) => ({ ...a, id: a.key }))}
             empty={
               <Empty
                 title="Tidak ada rekomendasi saat ini"
@@ -859,7 +932,7 @@ export default function Today() {
           motionKey={queue}
           gap={4}
           id="queue-shipping"
-          role="tabpanel"
+          role={sales ? "region" : "tabpanel"}
           aria-label="Pengiriman"
         >
           <HStack hAlign="between">
@@ -889,7 +962,7 @@ export default function Today() {
           motionKey={queue}
           gap={3}
           id="queue-samples"
-          role="tabpanel"
+          role={sales ? "region" : "tabpanel"}
           aria-label="Tugas sampel"
         >
           <HStack hAlign="between" gap={3} vAlign="center">
@@ -978,6 +1051,217 @@ export default function Today() {
       )}
     </VStack>
   );
+  const teamRows = (d.sales_options || [])
+    .filter(
+      (person: Row) =>
+        !d.selected_sales || String(person.value) === String(d.selected_sales),
+    )
+    .map((person: Row) => {
+      const assigned = agenda.filter(
+        (activity) => String(activity.sales.id) === String(person.value),
+      );
+      return {
+        id: String(person.value),
+        name: person.label,
+        today: assigned.filter((activity) => matches(activity, "today")).length,
+        late: assigned.filter((activity) => matches(activity, "late")).length,
+        total: assigned.length,
+      };
+    });
+  const teamRecap = manager && (
+    <VStack gap={3} id="team-recap">
+      <HStack gap={3} wrap="wrap" vAlign="center" hAlign="between">
+        <Heading level={2}>Rekap tim</Heading>
+        <HStack gap={2} wrap="wrap" vAlign="center">
+          <Selector
+            label="Cakupan sales"
+            isLabelHidden
+            width="12rem"
+            value={d.selected_sales}
+            options={[{ value: "", label: "Seluruh tim" }, ...d.sales_options]}
+            isDisabled={delayedBusy}
+            onChange={(sales) => void navigate(dashboardUrl({ sales }))}
+          />
+          {requestedQueue === "overview" && (
+            <Button
+              label="Lihat daftar kerja"
+              size="sm"
+              variant="secondary"
+              onClick={() => focusQueue("activities", "all")}
+            />
+          )}
+        </HStack>
+      </HStack>
+      <DataTable
+        rows={teamRows}
+        empty={<Empty title="Belum ada Sales aktif" />}
+        columns={[
+          { key: "name", header: "Sales" },
+          { key: "today", header: "Terjadwal hari ini", align: "end" },
+          {
+            key: "late",
+            header: "Terlambat",
+            align: "end",
+            renderCell: (person) =>
+              person.late ? (
+                <Status value="OVERDUE" label={String(person.late)} />
+              ) : (
+                <Text>0</Text>
+              ),
+          },
+          { key: "total", header: "Agenda terbuka", align: "end" },
+          {
+            key: "action",
+            header: "Tindakan",
+            renderCell: (person) => (
+              <Button
+                size="sm"
+                variant="secondary"
+                label="Lihat agenda"
+                href={dashboardUrl({
+                  sales: person.id,
+                  view: "activities",
+                  schedule: "all",
+                  activities: "limited",
+                })}
+              />
+            ),
+          },
+        ]}
+      />
+    </VStack>
+  );
+  const priorityItems = [
+    !sales &&
+      stockConflicts > 0 && {
+        label: `${quantity(stockConflicts)} konflik stok`,
+        action: "Tinjau konflik",
+        href: "/stock/?filter=conflict",
+      },
+    !sales &&
+      lowStock > 0 && {
+        label: `${quantity(lowStock)} produk menipis`,
+        action: "Periksa produk",
+        href: "/stock/?filter=low&status=active",
+      },
+    !sales &&
+      unverifiedStock > 0 && {
+        label: `${quantity(unverifiedStock)} saldo perlu verifikasi`,
+        action: "Tinjau saldo",
+        href: "/stock/?filter=unverified",
+      },
+    pendingOutlets > 0 && {
+      label: `${quantity(pendingOutlets)} outlet perlu verifikasi`,
+      action: "Tinjau outlet",
+      href: "/customers/?status=pending",
+    },
+    hasApprovals && {
+      label: `${quantity(d.sample_tasks.length)} pengajuan perlu keputusan`,
+      action: "Tinjau sampel",
+      run: () => focusQueue("samples"),
+    },
+    !sales &&
+      alertCount > 0 && {
+        label: `${quantity(alertCount)} alarm bahan baku`,
+        action: "Buka alarm",
+        run: openAlarm,
+      },
+    manager &&
+      directiveCount > 0 && {
+        label: `${quantity(directiveCount)} arahan sales`,
+        action: "Baca arahan",
+        run: openAlarm,
+      },
+  ].filter((item) => item !== false);
+  const salesFollowUp = sales &&
+    queue === "activities" &&
+    (additionalRecommendations.length > 0 ||
+      hasMoreRecommendations ||
+      (d.sample_tasks || []).length > 0 ||
+      directiveCount > 0) && (
+      <VStack gap={2}>
+        <Heading level={2}>Perlu tindak lanjut</Heading>
+        <List hasDividers density="compact">
+          {(d.sample_tasks || []).slice(0, 2).map((sample: Row) => (
+            <ListItem
+              key={sample.id}
+              label={sample.customer_name}
+              description={`Evaluasi sampel · ${sample.number}`}
+              endContent={
+                <Button
+                  label="Buka evaluasi"
+                  size="sm"
+                  variant="secondary"
+                  href={withReturn(
+                    `/samples/${sample.id}/?tab=evaluation`,
+                    page.url,
+                  )}
+                />
+              }
+            />
+          ))}
+          {additionalRecommendations.slice(0, 2).map((item: Row) => (
+            <ListItem
+              key={item.key}
+              label={item.reasons.customer_name}
+              description={
+                item.kind === "REORDER"
+                  ? `Pembelian ulang · ${item.reasons.product_name}`
+                  : "Tindak lanjut pelanggan"
+              }
+              endContent={
+                <Button
+                  label="Tinjau rekomendasi"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setRetryDialog(false);
+                    setOutcome("");
+                    setSelected(item);
+                  }}
+                />
+              }
+            />
+          ))}
+          {directiveCount > 0 && (
+            <ListItem
+              label="Arahan manajer"
+              description={`${activeDirectives[0].name} · ${activeDirectives[0].directive.label}${
+                activeDirectives[0].directive.substitute_name
+                  ? ` · Ganti dengan ${activeDirectives[0].directive.substitute_name}`
+                  : ""
+              }${directiveCount > 1 ? ` · +${directiveCount - 1} arahan` : ""}`}
+              endContent={
+                <Button
+                  label="Baca arahan"
+                  variant="secondary"
+                  size="sm"
+                  onClick={openAlarm}
+                />
+              }
+            />
+          )}
+        </List>
+        {((d.sample_tasks || []).length > 2 ||
+          additionalRecommendations.length > 2 ||
+          hasMoreRecommendations) && (
+          <HStack gap={3} wrap="wrap">
+            {(d.sample_tasks || []).length > 2 && (
+              <Link href={dashboardUrl({ view: "samples" })}>
+                Semua evaluasi
+              </Link>
+            )}
+            {(additionalRecommendations.length > 2 ||
+              hasMoreRecommendations) && (
+              <Link href={dashboardUrl({ view: "recommendations", all: "1" })}>
+                Semua rekomendasi
+              </Link>
+            )}
+          </HStack>
+        )}
+      </VStack>
+    );
+
   return (
     <>
       <Layout
@@ -985,71 +1269,48 @@ export default function Today() {
         defaultHasDividers
         header={
           <PageHeader
-            title="Dashboard"
+            title={
+              sales
+                ? salesGreeting(page.user?.name)
+                : manager
+                  ? "Dashboard manajer"
+                  : "Dashboard"
+            }
             description={dateLabel(page.today)}
+            paddingBlockEnd={sales ? 3 : undefined}
             actions={
-              <HStack gap={2} wrap="wrap" vAlign="center">
-                <IconButton
-                  size="md"
-                  variant="secondary"
-                  label="Perbarui dashboard"
-                  tooltip={`Perbarui · terakhir ${new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }).format(new Date(d.updated_at))} WIB`}
-                  icon={<Icon icon={ArrowPathIcon} />}
-                  isLoading={busy}
-                  onClick={() => void navigate(page.url, true)}
-                />
-                {(isNarrow || !showAlarmPanel) && (
-                  <Button
-                    label="Alarm & arahan"
+              sales ? undefined : (
+                <HStack gap={2} wrap="wrap" vAlign="center">
+                  <IconButton
+                    size="md"
                     variant="secondary"
-                    onClick={() => {
-                      if (isNarrow) setNarrowAlarmOpen(true);
-                      else setAlarmPanelState("shown");
-                    }}
+                    label="Perbarui dashboard"
+                    tooltip={`Perbarui · terakhir ${new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }).format(new Date(d.updated_at))} WIB`}
+                    icon={<Icon icon={ArrowPathIcon} />}
+                    isLoading={busy}
+                    onClick={() => void navigate(page.url, true)}
                   />
-                )}
-                {warehouse && (
+                  {(isNarrow || !showAlarmPanel) && (
+                    <Button
+                      label="Alarm & arahan"
+                      variant="secondary"
+                      onClick={openAlarm}
+                    />
+                  )}
                   <Button
-                    label="Produk & stok"
-                    href={withReturn("/stock/", page.url)}
-                  />
-                )}
-                {page.role === "MANAGER" && (
-                  <Selector
-                    label="Cakupan sales"
-                    isLabelHidden
-                    width={isMobile ? "100%" : "12rem"}
-                    value={d.selected_sales}
-                    options={[
-                      { value: "", label: "Seluruh tim" },
-                      ...d.sales_options,
-                    ]}
-                    isDisabled={delayedBusy}
-                    onChange={(sales) => void navigate(dashboardUrl({ sales }))}
-                  />
-                )}
-                <Button
-                  width={isMobile ? "100%" : undefined}
-                  label={
-                    warehouse
-                      ? "Lihat pengiriman"
-                      : hasApprovals
-                        ? "Tinjau sampel"
-                        : "Buat pesanan"
-                  }
-                  variant="primary"
-                  href={
-                    hasApprovals
-                      ? undefined
-                      : warehouse
+                    width={isMobile ? "100%" : undefined}
+                    label={
+                      warehouse ? "Buka pesanan siap kirim" : "Buat pesanan"
+                    }
+                    variant={warehouse ? "primary" : "secondary"}
+                    href={
+                      warehouse
                         ? ordersUrl("CONFIRMED")
                         : withReturn("/orders/new/", page.url)
-                  }
-                  onClick={
-                    hasApprovals ? () => focusQueue("samples") : undefined
-                  }
-                />
-              </HStack>
+                    }
+                  />
+                </HStack>
+              )
             }
           />
         }
@@ -1074,52 +1335,113 @@ export default function Today() {
           ) : undefined
         }
         content={
-          <LayoutContent padding={contentPadding} data-oneflow-scroll>
-            <VStack gap={6}>
-              {analytics}
-              {metrics}
-              {Number(d.company_setup?.visits || 0) > 0 && (
-                <VStack gap={3}>
-                  <Heading level={2}>Data Arba’in</Heading>
-                  <HStack gap={2} wrap="wrap">
-                    <Button
-                      variant="secondary"
-                      label={`${quantity(d.company_setup.products)} saldo stok perlu dicek`}
-                      href="/stock/?filter=unverified"
-                    />
-                    <Button
-                      variant="secondary"
-                      label={`${quantity(d.company_setup.outlets)} outlet perlu diverifikasi`}
-                      href="/customers/?status=pending"
-                    />
-                    <Button
-                      variant="secondary"
-                      label={`${quantity(d.company_setup.visits)} kunjungan dari laporan`}
-                      href="/company-data/?tab=visits"
-                    />
-                  </HStack>
+          <LayoutContent
+            padding={contentPadding}
+            style={sales ? { paddingBlockStart: "var(--spacing-3)" } : undefined}
+            data-oneflow-scroll
+          >
+            <VStack gap={sales ? 4 : 6}>
+              {priorityItems.length > 0 && (
+                <VStack gap={2}>
+                  <Heading level={2}>Perlu ditangani</Heading>
+                  {warehouse ? (
+                    <HStack gap={2} wrap="wrap">
+                      {priorityItems.map((item) => (
+                        <Button
+                          key={item.label}
+                          label={item.label}
+                          size="sm"
+                          variant="secondary"
+                          href={
+                            item.href
+                              ? withReturn(item.href, page.url)
+                              : undefined
+                          }
+                          onClick={item.run}
+                          icon={
+                            item.action === "Tinjau konflik" ||
+                            (item.action === "Buka alarm" &&
+                              hasCriticalAlert) ? (
+                              <Icon icon="error" color="error" />
+                            ) : (
+                              <Icon icon="warning" color="warning" />
+                            )
+                          }
+                        />
+                      ))}
+                    </HStack>
+                  ) : (
+                    <List hasDividers density="compact">
+                      {priorityItems.map((item) => (
+                        <ListItem
+                          key={item.label}
+                          label={item.label}
+                          endContent={
+                            <Button
+                              label={item.action}
+                              size="sm"
+                              variant="secondary"
+                              href={
+                                item.href
+                                  ? withReturn(item.href, page.url)
+                                  : undefined
+                              }
+                              onClick={item.run}
+                              icon={
+                                item.action === "Buka alarm" &&
+                                hasCriticalAlert ? (
+                                  <Icon icon="error" color="error" />
+                                ) : undefined
+                              }
+                            />
+                          }
+                        />
+                      ))}
+                    </List>
+                  )}
                 </VStack>
               )}
-              <ConsignmentAndAttendanceHub
-                role={page.role}
-                pageUrl={page.url}
-                attendanceRecaps={d.attendance_recaps || []}
-                consignmentOutlets={d.consignment_outlets || []}
-                productTraction={d.product_traction || []}
-                rawMaterialAlerts={d.raw_material_alerts || []}
-                onEditDirective={(product) => {
-                  setRetryDialog(false);
-                  setDirectiveProduct(product || null);
-                  setDirectiveOpen(true);
-                }}
-                onEditRawMaterial={(material) => {
-                  setRetryDialog(false);
-                  setRawMaterialItem(material);
-                  setRawMaterialOpen(true);
-                }}
-              />
-              {workQueue}
-              {(d.supply_alerts || []).length > 0 && (
+              {salesOverview}
+              {teamRecap}
+              {(!manager || requestedQueue !== "overview") && workQueue}
+              {salesFollowUp}
+              {manager &&
+                ((m.shipment_days || []).some(
+                  (day: Row) => Number(day.order_count) > 0,
+                ) ? (
+                  analytics
+                ) : (
+                  <Collapsible trigger="Capaian tim" defaultIsOpen={false}>
+                    {analytics}
+                  </Collapsible>
+                ))}
+              {manager && targets}
+              {!sales && (
+                <Collapsible
+                  trigger="Pantauan outlet & bahan baku"
+                  defaultIsOpen={false}
+                >
+                  <ConsignmentAndAttendanceHub
+                    role={page.role}
+                    pageUrl={page.url}
+                    attendanceRecaps={d.attendance_recaps || []}
+                    consignmentOutlets={d.consignment_outlets || []}
+                    productTraction={d.product_traction || []}
+                    rawMaterialAlerts={d.raw_material_alerts || []}
+                    onEditDirective={(product) => {
+                      setRetryDialog(false);
+                      setDirectiveProduct(product || null);
+                      setDirectiveOpen(true);
+                    }}
+                    onEditRawMaterial={(material) => {
+                      setRetryDialog(false);
+                      setRawMaterialItem(material);
+                      setRawMaterialOpen(true);
+                    }}
+                  />
+                </Collapsible>
+              )}
+              {!sales && (d.supply_alerts || []).length > 0 && (
                 <VStack gap={3}>
                   <HStack hAlign="between" vAlign="center">
                     <Heading level={2}>Peringatan pasokan</Heading>
@@ -1203,87 +1525,116 @@ export default function Today() {
                   />
                 </VStack>
               )}
-              {targets}
               {warehouse && (
-                <VStack gap={3}>
-                  <HStack hAlign="between">
-                    <Heading level={2}>Stok perlu perhatian</Heading>
-                    <Button
-                      href={withReturn("/stock/", page.url)}
-                      size="sm"
-                      variant="secondary"
-                      label="Lihat semua produk"
-                    />
-                  </HStack>
-                  <Text type="supporting">
-                    Konflik reservasi didahulukan, lalu produk aktif di bawah
-                    minimum. Maksimal 5 produk.
-                  </Text>
-                  <DataTable
-                    rows={d.stock_attention || []}
-                    empty={
-                      <Empty
-                        kind="complete"
-                        title="Tidak ada konflik atau stok menipis"
-                        description="Stok tersedia memenuhi batas minimum yang ditetapkan."
+                <Collapsible
+                  trigger="Ringkasan kondisi stok"
+                  defaultIsOpen={Boolean(d.stock_attention?.length)}
+                >
+                  <VStack gap={3}>
+                    <HStack hAlign="between">
+                      <Button
+                        href={withReturn("/stock/", page.url)}
+                        size="sm"
+                        variant="secondary"
+                        label="Lihat semua produk"
                       />
-                    }
-                    columns={[
-                      {
-                        key: "name",
-                        header: "Produk",
-                        renderCell: (p) => (
-                          <ProductIdentity sku={p.sku} name={p.name} size="row">
-                            <VStack gap={1}>
-                              <Link
+                    </HStack>
+                    <DataTable
+                      rows={d.stock_attention || []}
+                      empty={
+                        <Empty
+                          kind={
+                            unverifiedStock || !verifiedStock
+                              ? "empty"
+                              : "complete"
+                          }
+                          title={
+                            unverifiedStock
+                              ? "Saldo belum lengkap"
+                              : verifiedStock
+                                ? "Tidak ada konflik atau stok menipis"
+                                : "Stok belum bisa dinilai"
+                          }
+                          description={stockSummary}
+                          action={
+                            unverifiedStock ? (
+                              <Button
+                                label="Periksa saldo"
+                                size="sm"
                                 href={withReturn(
-                                  `/products/${p.id}/`,
+                                  "/stock/?filter=unverified",
                                   page.url,
                                 )}
-                                weight="semibold"
-                              >
-                                {p.name}
-                              </Link>
-                              <Text type="supporting">
-                                {p.sku}
-                                {!p.is_active ? " · Nonaktif" : ""}
-                              </Text>
-                            </VStack>
-                          </ProductIdentity>
-                        ),
-                      },
-                      {
-                        key: "stock_state",
-                        header: "Kondisi",
-                        renderCell: (p) => <StockCondition product={p} />,
-                      },
-                      { key: "on_hand", header: "Fisik", align: "end" },
-                      { key: "reserved", header: "Direservasi", align: "end" },
-                      {
-                        key: "available",
-                        header: "Tersedia",
-                        align: "end",
-                        renderCell: (p) => (
-                          <Text>
-                            {quantity(p.available)} {p.unit}
-                          </Text>
-                        ),
-                      },
-                      {
-                        key: "action",
-                        header: "Tindakan",
-                        renderCell: (p) => (
-                          <Button
-                            href={withReturn(`/products/${p.id}/`, page.url)}
-                            size="sm"
-                            variant="secondary"
-                            label="Periksa stok"
-                          />
-                        ),
-                      },
-                    ]}
-                  />
-                </VStack>
+                              />
+                            ) : undefined
+                          }
+                        />
+                      }
+                      columns={[
+                        {
+                          key: "name",
+                          header: "Produk",
+                          renderCell: (p) => (
+                            <ProductIdentity
+                              sku={p.sku}
+                              name={p.name}
+                              size="row"
+                            >
+                              <VStack gap={1}>
+                                <Link
+                                  href={withReturn(
+                                    `/products/${p.id}/`,
+                                    page.url,
+                                  )}
+                                  weight="semibold"
+                                >
+                                  {p.name}
+                                </Link>
+                                <Text type="supporting">
+                                  {p.sku}
+                                  {!p.is_active ? " · Nonaktif" : ""}
+                                </Text>
+                              </VStack>
+                            </ProductIdentity>
+                          ),
+                        },
+                        {
+                          key: "stock_state",
+                          header: "Kondisi",
+                          renderCell: (p) => <StockCondition product={p} />,
+                        },
+                        { key: "on_hand", header: "Fisik", align: "end" },
+                        {
+                          key: "reserved",
+                          header: "Direservasi",
+                          align: "end",
+                        },
+                        {
+                          key: "available",
+                          header: "Tersedia",
+                          align: "end",
+                          renderCell: (p) => (
+                            <Text>
+                              {quantity(p.available)} {p.unit}
+                            </Text>
+                          ),
+                        },
+                        {
+                          key: "action",
+                          header: "Tindakan",
+                          renderCell: (p) => (
+                            <Button
+                              href={withReturn(`/products/${p.id}/`, page.url)}
+                              size="sm"
+                              variant="secondary"
+                              label="Periksa stok"
+                            />
+                          ),
+                        },
+                      ]}
+                    />
+                  </VStack>
+                </Collapsible>
               )}
             </VStack>
           </LayoutContent>

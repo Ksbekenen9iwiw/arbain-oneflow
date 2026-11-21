@@ -1,3 +1,4 @@
+import { Collapsible } from "@astryxdesign/core/Collapsible";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx table-page: padded document stack, filters and flat records.
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
@@ -282,30 +283,6 @@ export default function CompanyArchive() {
                           onChange={setQuery}
                           width="20rem"
                         />
-                        {!!data.all_sales.length && (
-                          <Selector
-                            label="Sales sumber"
-                            value={data.sales}
-                            options={options(data.all_sales, "Semua sales")}
-                            onChange={(sales) => update({ sales })}
-                          />
-                        )}
-                        {!!data.all_regions.length && (
-                          <Selector
-                            label="Wilayah"
-                            value={data.region}
-                            options={options(data.all_regions, "Semua wilayah")}
-                            onChange={(region) => update({ region })}
-                          />
-                        )}
-                        <Button
-                          variant={data.flagged ? "primary" : "secondary"}
-                          aria-pressed={data.flagged}
-                          label="Perlu tinjau"
-                          onClick={() =>
-                            update({ review: data.flagged ? "" : "1" })
-                          }
-                        />
                         {filtered && (
                           <Button
                             label="Reset filter"
@@ -319,6 +296,46 @@ export default function CompanyArchive() {
                           />
                         )}
                       </HStack>
+                      <Collapsible
+                        trigger={
+                          data.sales || data.region || data.flagged
+                            ? "Filter · aktif"
+                            : "Filter"
+                        }
+                        defaultIsOpen={Boolean(
+                          data.sales || data.region || data.flagged,
+                        )}
+                      >
+                        <HStack gap={3} vAlign="end" wrap="wrap">
+                          {!!data.all_sales.length && (
+                            <Selector
+                              label="Sales sumber"
+                              value={data.sales}
+                              options={options(data.all_sales, "Semua sales")}
+                              onChange={(sales) => update({ sales })}
+                            />
+                          )}
+                          {!!data.all_regions.length && (
+                            <Selector
+                              label="Wilayah"
+                              value={data.region}
+                              options={options(
+                                data.all_regions,
+                                "Semua wilayah",
+                              )}
+                              onChange={(region) => update({ region })}
+                            />
+                          )}
+                          <Button
+                            variant={data.flagged ? "primary" : "secondary"}
+                            aria-pressed={data.flagged}
+                            label="Perlu tinjau"
+                            onClick={() =>
+                              update({ review: data.flagged ? "" : "1" })
+                            }
+                          />
+                        </HStack>
+                      </Collapsible>
                       <Text color="secondary">{descriptions[tab]}</Text>
                     </>
                   )}

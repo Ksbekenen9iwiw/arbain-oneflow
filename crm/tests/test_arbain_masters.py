@@ -53,6 +53,18 @@ class ArbainMastersTests(TestCase):
         with self.assertRaises(CommandError):
             call_command('seed_demo', stdout=StringIO())
 
+    def test_dashboard_distinguishes_imported_stock_from_verified_active_balances(self):
+        self.import_masters()
+        warehouse = make_user('arbain_gudang', 'WAREHOUSE')
+        for user in (self.manager, warehouse):
+            with self.subTest(role=user.username):
+                self.client.force_login(user)
+                response = self.client.get('/', HTTP_X_ONEFLOW_PAGE='1')
+                self.assertEqual(response.status_code, 200)
+                metrics = response.json()['data']['metrics']
+                self.assertEqual(metrics['unverified_stock_count'], '1')
+                self.assertEqual(metrics['verified_active_stock_count'], '0')
+
     def test_verified_masters_can_enter_normal_workflow_only_after_opening_count(self):
         self.import_masters()
         self.client.force_login(self.manager)

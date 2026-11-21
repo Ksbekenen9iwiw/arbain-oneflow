@@ -15,6 +15,7 @@ import {
 import { Card } from "@astryxdesign/core/Card";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
+import { List, ListItem } from "@astryxdesign/core/List";
 import { Tooltip as HelpTooltip } from "@astryxdesign/core/Tooltip";
 import { TableCellsIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import {
@@ -32,14 +33,23 @@ import {
 } from "../../ui";
 import type { Row } from "../../types";
 
+const compactRupiah = new Intl.NumberFormat("id-ID", {
+  style: "currency",
+  currency: "IDR",
+  notation: "compact",
+  maximumFractionDigits: 2,
+});
+
 export default function ShipmentTrend({
   days,
   today,
   defaultPeriod = "month",
+  compact = false,
 }: {
   days: Row[];
   today: string;
   defaultPeriod?: "30" | "month";
+  compact?: boolean;
 }) {
   const [period, setPeriod] = useQueryState("period", defaultPeriod),
     [table, setTable] = useState(false);
@@ -49,13 +59,21 @@ export default function ShipmentTrend({
     period === "month"
       ? days.filter((d) => d.date.slice(0, 7) === today.slice(0, 7))
       : days.slice(-Number(period));
-  const total = rows.reduce((sum, d) => sum + BigInt(d.value_rupiah), 0n);
   const count = rows.reduce((sum, d) => sum + Number(d.order_count), 0);
+  const recentDays = compact
+    ? rows.filter((d) => Number(d.order_count) > 0).slice(-3).reverse()
+    : [];
+  let total = 0n;
   // Numbers are only used for chart geometry; all monetary labels retain exact integers.
-  const data = rows.map((d) => ({
-    ...d,
-    plot: Number(d.value_rupiah) / 1000000,
-  }));
+  const data = rows.map((d) => {
+    const dailyValue = BigInt(d.value_rupiah);
+    total += dailyValue;
+    return {
+      ...d,
+      cumulativeValue: total.toString(),
+      plot: Number(compact ? total : dailyValue) / 1000000,
+    };
+  });
   return (
     <VStack gap={2} ref={chartRef}>
       <HStack hAlign="between" gap={2} vAlign="center" wrap="wrap">
@@ -78,18 +96,23 @@ export default function ShipmentTrend({
           {money(String(total))}
         </Text>
         <Text type="supporting">
-          {count} pesanan · {dateLabel(rows[0]?.date)} – {dateLabel(today)}
+          {compact && count === 0
+            ? "Belum ada pengiriman"
+            : `${count} pesanan`}
+          {!compact && ` · ${dateLabel(rows[0]?.date)} – ${dateLabel(today)}`}
         </Text>
       </HStack>
-      {total === 0n ? (
-        <VStack minHeight={128} vAlign="center" hAlign="center" gap={2}>
-          <Text weight="medium">Belum ada pengiriman pada periode ini</Text>
-          <Text type="supporting">
-            Pilih periode lain untuk melihat riwayat.
-          </Text>
-        </VStack>
+      {compact && count > 0 && <Text type="supporting">Kumulatif</Text>}
+      {count === 0 ? (
+        compact ? null : (
+          <Text type="supporting">Belum ada pengiriman pada periode ini.</Text>
+        )
       ) : (
-        <ResponsiveContainer width="100%" height={128} minWidth={0}>
+        <ResponsiveContainer
+          width="100%"
+          height={compact ? 96 : 128}
+          minWidth={0}
+        >
           <LineChart
             data={data}
             accessibilityLayer
@@ -98,6 +121,7 @@ export default function ShipmentTrend({
             <CartesianGrid vertical={false} stroke="var(--color-border)" />
             <XAxis
               dataKey="date"
+              height={compact ? 22 : undefined}
               axisLine={false}
               tickLine={false}
               minTickGap={40}
@@ -113,7 +137,8 @@ export default function ShipmentTrend({
               }
             />
             <YAxis
-              width={42}
+              width={compact ? 72 : 42}
+              tickCount={compact ? 3 : undefined}
               axisLine={false}
               tickLine={false}
               tick={{
@@ -121,7 +146,9 @@ export default function ShipmentTrend({
                 fontSize: "var(--font-size-sm)",
               }}
               tickFormatter={(v) =>
-                Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 })
+                compact
+                  ? compactRupiah.format(v * 1000000)
+                  : Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 })
               }
             />
             <Tooltip
@@ -131,9 +158,13 @@ export default function ShipmentTrend({
                   <Card padding={3} elevation="low">
                     <VStack gap={1}>
                       <Text type="supporting">{dateLabel(d.date)}</Text>
-                      <Text weight="semibold">{money(d.value_rupiah)}</Text>
+                      <Text weight="semibold">
+                        {money(compact ? d.cumulativeValue : d.value_rupiah)}
+                      </Text>
                       <Text type="supporting">
-                        {d.order_count} pesanan terkirim
+                        {compact
+                          ? "Total sampai tanggal ini"
+                          : `${d.order_count} pesanan terkirim`}
                       </Text>
                     </VStack>
                   </Card>
@@ -142,8 +173,8 @@ export default function ShipmentTrend({
             />
             <Line
               dataKey="plot"
-              name="Nilai terkirim"
-              type="linear"
+              name={compact ? "Nilai kumulatif" : "Nilai terkirim"}
+              type={compact ? "stepAfter" : "linear"}
               stroke="var(--color-text-blue)"
               strokeWidth={2}
               dot={false}
@@ -153,34 +184,56 @@ export default function ShipmentTrend({
           </LineChart>
         </ResponsiveContainer>
       )}
-      <HStack hAlign="between" vAlign="center">
-        <HStack gap={2} vAlign="center">
-          <Text type="supporting">Nilai barang · Rp juta</Text>
-          <HelpTooltip
-            content="Berdasarkan tanggal pengiriman (WIB). Nilai barang, bukan pembayaran atau laba."
-            touchTrigger="tap"
-            focusTrigger="always"
-          >
-            <IconButton
-              label="Tentang nilai barang terkirim"
-              icon={<Icon icon="info" />}
-              size="sm"
-              variant="secondary"
+      {recentDays.length > 0 && (
+        <List
+          density="compact"
+          hasDividers
+          edgeCompensation="inline"
+          header={<Text weight="semibold">Pengiriman terakhir</Text>}
+        >
+          {recentDays.map((day) => (
+            <ListItem
+              key={day.date}
+              label={dateLabel(day.date)}
+              endContent={
+                <Text hasTabularNumbers weight="semibold">
+                  {money(day.value_rupiah)}
+                </Text>
+              }
             />
-          </HelpTooltip>
+          ))}
+        </List>
+      )}
+      {!compact && count > 0 && (
+        <HStack hAlign="between" vAlign="center">
+          <HStack gap={2} vAlign="center">
+            <Text type="supporting">Nilai barang · Rp juta</Text>
+            <HelpTooltip
+              content="Berdasarkan tanggal pengiriman (WIB). Nilai barang, bukan pembayaran atau laba."
+              touchTrigger="tap"
+              focusTrigger="always"
+            >
+              <IconButton
+                label="Tentang nilai barang terkirim"
+                icon={<Icon icon="info" />}
+                size="sm"
+                variant="secondary"
+              />
+            </HelpTooltip>
+          </HStack>
+          <IconButton
+            size="sm"
+            variant="secondary"
+            label={table ? "Tutup data" : "Lihat data harian"}
+            tooltip={table ? "Tutup data harian" : "Lihat data harian"}
+            icon={<Icon icon={table ? XMarkIcon : TableCellsIcon} />}
+            aria-expanded={table}
+            aria-controls="shipment-daily-data"
+            onClick={() => setTable((v) => !v)}
+          />
         </HStack>
-        <IconButton
-          size="sm"
-          variant="secondary"
-          label={table ? "Tutup data" : "Lihat data harian"}
-          tooltip={table ? "Tutup data harian" : "Lihat data harian"}
-          icon={<Icon icon={table ? XMarkIcon : TableCellsIcon} />}
-          aria-expanded={table}
-          aria-controls="shipment-daily-data"
-          onClick={() => setTable((v) => !v)}
-        />
-      </HStack>
-      {table && (
+      )}
+      {!compact && count > 0 && table && (
         <VStack id="shipment-daily-data" paddingBlockEnd={6}>
           <DataTable
             rows={rows.map((d) => ({ ...d, id: d.date }))}

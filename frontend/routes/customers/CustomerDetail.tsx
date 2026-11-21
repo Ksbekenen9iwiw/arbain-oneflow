@@ -1,3 +1,4 @@
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { useEffect, useState } from "react";
 import { ProductIdentity, ProductThumbnail } from "../../ProductIdentity";
@@ -146,11 +147,29 @@ export default function CustomerDetail() {
             back={{ href: d.back_url, label: backLabel(d.back_url) }}
             actions={
               <HStack gap={2} wrap="wrap">
-                <Button
-                  label="Catat aktivitas"
-                  variant="primary"
-                  href={activityUrl}
-                />
+                {customer.source_pending && page.role === "MANAGER" ? (
+                  <>
+                    <Button
+                      label="Verifikasi outlet"
+                      variant="primary"
+                      href={withReturn(
+                        `/customers/${customer.id}/verify/`,
+                        page.url,
+                      )}
+                    />
+                    <Button
+                      label="Catat aktivitas"
+                      variant="secondary"
+                      href={activityUrl}
+                    />
+                  </>
+                ) : (
+                  <Button
+                    label="Catat aktivitas"
+                    variant="primary"
+                    href={activityUrl}
+                  />
+                )}
                 {d.consignment_form_default && (
                   <Button
                     label="Catat titip jual"
@@ -163,16 +182,21 @@ export default function CustomerDetail() {
                   />
                 )}
                 {customer.is_active && (
-                  <>
-                    <Button label="Buat pesanan" href={orderUrl} />
-                    <Button
-                      label="Ajukan sampel"
-                      href={withReturn(
-                        `/samples/new/?customer=${customer.id}`,
-                        page.url,
-                      )}
-                    />
-                  </>
+                  <DropdownMenu
+                    presentation="popover"
+                    alignment="end"
+                    button={{ label: "Lainnya", variant: "secondary" }}
+                    items={[
+                      { label: "Buat pesanan", href: orderUrl },
+                      {
+                        label: "Ajukan sampel",
+                        href: withReturn(
+                          `/samples/new/?customer=${customer.id}`,
+                          page.url,
+                        ),
+                      },
+                    ]}
+                  />
                 )}
               </HStack>
             }
@@ -202,7 +226,7 @@ export default function CustomerDetail() {
             {customer.source_pending && (
               <Banner status="info" title="Master outlet perlu diverifikasi"
                 description="Cocokkan kode outlet, sales penanggung jawab saat ini, kategori, dan potongan sebelum membuat pesanan."
-                endContent={page.role === "MANAGER" && <Button label="Verifikasi outlet" href={`/customers/${customer.id}/verify/`} />} />
+              />
             )}
             {!customer.source_pending && !customer.is_active && (
               <Banner
@@ -211,22 +235,10 @@ export default function CustomerDetail() {
                 description="Riwayat dan pencatatan aktivitas tetap tersedia. Pesanan baru hanya dapat dibuat untuk pelanggan aktif."
               />
             )}
-            {!!d.source_visits?.length && (
-              <VStack gap={3}>
-                <Heading level={2}>Kunjungan dari laporan Arba’in</Heading>
-                <DataTable rows={d.source_visits} columns={[
-                  {key: "date", header: "Tanggal", renderCell: (r) => dateLabel(r.date)},
-                  {key: "sales", header: "Sales"}, {key: "location", header: "Lokasi sumber"},
-                ]} />
-              </VStack>
-            )}
             <VStack gap={3} aria-label="Tindakan berikutnya">
               <HStack hAlign="between" vAlign="center" gap={3}>
                 <VStack gap={1}>
                   <Heading level={2}>Tindakan berikutnya</Heading>
-                  <Text type="supporting">
-                    Jadwal terdekat dan tindak lanjut pelanggan.
-                  </Text>
                 </VStack>
                 {nextActions.length > 3 && (
                   <Button
@@ -277,6 +289,14 @@ export default function CustomerDetail() {
                 ))}
               </List>
             </VStack>
+            {!!d.source_visits?.length && (
+              <Collapsible defaultIsOpen={false} trigger={`Kunjungan dari laporan (${d.source_visits.length})`}>
+                <DataTable rows={d.source_visits} columns={[
+                  {key: "date", header: "Tanggal", renderCell: (r) => dateLabel(r.date)},
+                  {key: "sales", header: "Sales"}, {key: "location", header: "Lokasi sumber"},
+                ]} />
+              </Collapsible>
+            )}
             <VStack gap={4} data-tour="customer-overview">
               <HStack hAlign="between" vAlign="center" wrap="wrap" gap={2}>
                 <Heading level={2}>Ringkasan pelanggan</Heading>

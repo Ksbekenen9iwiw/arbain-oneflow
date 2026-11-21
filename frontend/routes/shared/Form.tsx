@@ -1,3 +1,4 @@
+import { Collapsible } from "@astryxdesign/core/Collapsible";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Adapted from Astryx 0.7.0 form-two-column: context alongside a single-submit form.
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
@@ -65,9 +66,11 @@ export default function FormPage() {
                   Menyimpan hasil akan menandai aktivitas ini selesai. Isi
                   tanggal tindak lanjut jika perlu membuat aktivitas berikutnya.
                 </Text>
-                <Fact label="Catatan sebelumnya">
-                  {d.activity.note || "Belum ada catatan"}
-                </Fact>
+                {d.activity.note && (
+                  <Collapsible trigger="Catatan sebelumnya" defaultIsOpen={false}>
+                    <Text>{d.activity.note}</Text>
+                  </Collapsible>
+                )}
               </VStack>
             )}
             {(product || d.help_text) && (

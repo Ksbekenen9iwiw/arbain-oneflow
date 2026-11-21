@@ -1,3 +1,4 @@
+import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { RecordIdentity } from "../../RecordIdentity";
 import { withReturn, listReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -239,31 +240,42 @@ export default function Customers() {
                     width="100%"
                   />
                 </StackItem>
-                {manager && (
-                  <Selector
-                    label="Sales"
-                    width="12rem"
-                    value={d.selected_sales}
-                    options={[
-                      { value: "", label: "Semua sales" },
-                      ...d.sales_options,
-                    ]}
-                    onChange={(v) => update({ sales: v })}
-                  />
-                )}
-                <Selector
-                  label="Status pelanggan"
-                  width="12rem"
-                  value={d.selected_status}
-                  options={[
-                    { value: "", label: "Semua status" },
-                    { value: "active", label: "Aktif" },
-                    { value: "inactive", label: "Nonaktif" },
-                    { value: "pending", label: "Perlu verifikasi" },
-                  ]}
-                  onChange={(v) => update({ status: v })}
-                />
               </FilterRow>
+              <Collapsible
+                trigger={
+                  d.selected_sales || d.selected_status
+                    ? "Filter · aktif"
+                    : "Filter"
+                }
+                defaultIsOpen={Boolean(d.selected_sales || d.selected_status)}
+              >
+                <FilterRow>
+                  {manager && (
+                    <Selector
+                      label="Sales"
+                      width="12rem"
+                      value={d.selected_sales}
+                      options={[
+                        { value: "", label: "Semua sales" },
+                        ...d.sales_options,
+                      ]}
+                      onChange={(v) => update({ sales: v })}
+                    />
+                  )}
+                  <Selector
+                    label="Status pelanggan"
+                    width="12rem"
+                    value={d.selected_status}
+                    options={[
+                      { value: "", label: "Semua status" },
+                      { value: "active", label: "Aktif" },
+                      { value: "inactive", label: "Nonaktif" },
+                      { value: "pending", label: "Perlu verifikasi" },
+                    ]}
+                    onChange={(v) => update({ status: v })}
+                  />
+                </FilterRow>
+              </Collapsible>
             </form>
 
             <ResultsSummary
