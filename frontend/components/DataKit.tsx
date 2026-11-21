@@ -8,15 +8,92 @@ import {
   InboxIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import { List, ListItem } from "@astryxdesign/core/List";
 import {
-  Table,
+  Table as AstryxTable,
   useTableSortable,
   proportional,
   type TableColumn,
   type TableSortState,
 } from "@astryxdesign/core/Table";
+import type { ComponentProps } from "react";
 import type { Row } from "../types";
 import { MotionStack } from "../motion";
+import { useResponsive } from "../responsive";
+
+type AnyRow = Record<string, unknown>;
+const actionKeys = new Set(["action", "actions", "tindakan"]);
+const trailingKeys = new Set(["status", "activity_status", "state"]);
+
+function cell<T extends AnyRow>(column: TableColumn<T>, row: T): ReactNode {
+  return column.renderCell
+    ? column.renderCell(row)
+    : String(row[column.key] ?? "—");
+}
+
+// Phones get a scannable row list instead of a horizontally scrolling table:
+// first column is the title, status sits on the trailing edge, the remaining
+// columns become labelled supporting lines, and actions stay reachable below.
+function MobileRows<T extends AnyRow>({
+  data,
+  columns,
+  idKey,
+}: {
+  data: T[];
+  columns: TableColumn<T>[];
+  idKey?: string;
+}) {
+  const [title, ...rest] = columns;
+  const trailing = rest.find((c) => trailingKeys.has(c.key));
+  const actions = rest.filter((c) => actionKeys.has(c.key));
+  const meta = rest.filter((c) => c !== trailing && !actions.includes(c));
+  return (
+    <List hasDividers density="balanced">
+      {data.map((row, index) => (
+        <ListItem
+          key={String(row[idKey || "id"] ?? index)}
+          label={title ? cell(title, row) : ""}
+          endContent={trailing ? cell(trailing, row) : undefined}
+          description={
+            meta.length || actions.length ? (
+              <VStack gap={2} paddingBlockStart={1}>
+                {meta.map((column) => (
+                  <HStack key={column.key} gap={2} vAlign="start" wrap="wrap">
+                    {column.header && (
+                      <Text type="supporting">{column.header}</Text>
+                    )}
+                    {cell(column, row)}
+                  </HStack>
+                ))}
+                {actions.map((column) => (
+                  <HStack key={column.key} gap={2} wrap="wrap">
+                    {cell(column, row)}
+                  </HStack>
+                ))}
+              </VStack>
+            ) : undefined
+          }
+        />
+      ))}
+    </List>
+  );
+}
+
+export function Table<T extends AnyRow>(
+  props: ComponentProps<typeof AstryxTable<T>>,
+) {
+  const { isMobile } = useResponsive();
+  if (isMobile && props.data && props.columns) {
+    return (
+      <MobileRows
+        data={props.data as T[]}
+        columns={props.columns as TableColumn<T>[]}
+        idKey={props.idKey as string | undefined}
+      />
+    );
+  }
+  return <AstryxTable {...props} />;
+}
 
 export function Empty({
   title = "Belum ada data",

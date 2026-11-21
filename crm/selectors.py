@@ -33,8 +33,8 @@ def customer_records(actor, params, as_of):
     status = status if status in ('active', 'inactive', 'pending') else ''
     view = params.get('view', '')
     view = view if view in ('overdue', 'today') else ''
-    sort = params.get('sort', 'name')
-    sort = sort if sort in ('name', '-name', 'next_due', '-next_due') else 'name'
+    sort = params.get('sort', 'next_due')
+    sort = sort if sort in ('name', '-name', 'next_due', '-next_due') else 'next_due'
     records = scope
     if selected_sales:
         records = records.filter(owner_id=selected_sales)
@@ -205,15 +205,25 @@ def dashboard_metrics(actor, as_of, sales_id=None):
     return metrics
 
 
+ORDER_PAGE_SIZE = 25
+
+
 def order_records(actor, params):
     from django.db.models import Count
     from django.utils.dateparse import parse_date
     from django.http import Http404
     role = role_of(actor)
     allowed = ['CONFIRMED', 'SHIPPED'] if role == 'WAREHOUSE' else ['DRAFT', 'CONFIRMED', 'SHIPPED', 'CANCELLED']
-    status = params.get('status', '')
-    status = status if status in allowed else ''
     records = orders_for(actor)
+    if 'status' in params:
+        status = params.get('status', '')
+    elif role == 'WAREHOUSE':
+        status = 'CONFIRMED'
+    elif role == 'SALES' and records.filter(status='DRAFT').exists():
+        status = 'DRAFT'
+    else:
+        status = ''
+    status = status if status in allowed else ''
     sales_options = dashboard_sales() if role == 'MANAGER' else []
     sales = params.get('sales', '')
     if sales:
@@ -261,7 +271,12 @@ def order_records(actor, params):
     from django.db.models import Prefetch
     from crm.models import OrderLine
     records = records.prefetch_related(Prefetch('lines', queryset=OrderLine.objects.select_related('product').order_by('pk'), to_attr='list_lines'))
-    return {'orders': records, 'selected_status': status, 'allowed_statuses': allowed, 'status_counts': counts,
+    from django.core.paginator import Paginator
+    raw_page = params.get('page', '1')
+    number = int(raw_page) if raw_page.isascii() and raw_page.isdecimal() and len(raw_page) <= 9 else 1
+    result = Paginator(records, ORDER_PAGE_SIZE).get_page(number)
+    return {'orders': list(result.object_list), 'page': result.number, 'pages': result.paginator.num_pages,
+            'total': result.paginator.count, 'page_size': ORDER_PAGE_SIZE, 'selected_status': status, 'allowed_statuses': allowed, 'status_counts': counts,
             'query': query, 'selected_sales': sales, 'selected_sort': sort,
             'sales_options': [{'value': str(s.pk), 'label': s.get_full_name() or s.username} for s in sales_options],
             'shipped_from': start, 'shipped_to': end, 'date_error': date_error,

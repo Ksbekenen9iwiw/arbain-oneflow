@@ -12,7 +12,6 @@ import { Banner } from "@astryxdesign/core/Banner";
 import { Link } from "@astryxdesign/core/Link";
 import { Token } from "@astryxdesign/core/Token";
 import { Icon } from "@astryxdesign/core/Icon";
-import { Table } from "@astryxdesign/core/Table";
 import {
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
@@ -29,6 +28,7 @@ export {
   resetLabel,
   ResultsSummary,
   DataTable,
+  Table,
 } from "./components/DataKit";
 export {
   FieldControl,
@@ -49,7 +49,6 @@ export {
   Button,
   Banner,
   Link,
-  Table,
   Token,
 };
 
@@ -135,7 +134,7 @@ const STATUS_LABELS: Row = {
   OVERDUE: "Terlambat",
   DUE_TODAY: "Hari ini",
   STOCK_CONFLICT: "Konflik stok",
-  STOCK_EMPTY: "Stok bebas habis",
+  STOCK_EMPTY: "Siap jual habis",
   STOCK_LOW: "Menipis",
   STOCK_READY: "Cukup",
   PASOKAN_AMAN: "Aman",

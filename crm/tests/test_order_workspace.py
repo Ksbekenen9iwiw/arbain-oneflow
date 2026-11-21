@@ -48,7 +48,11 @@ class OrderWorkspaceTests(TestCase):
         self.assertEqual(data['selected_status'], '')
         self.assertEqual([o['id'] for o in data['orders']], [str(self.pending.pk)])
         self.client.force_login(self.sales)
-        self.assertEqual(len(self.get('/orders/').json()['data']['orders']), 2)
+        self.assertEqual(len(self.get('/orders/', {'status': 'all'}).json()['data']['orders']), 2)
+        self.assertEqual(self.get('/orders/').json()['data']['selected_status'], 'DRAFT')
+        self.client.force_login(self.warehouse)
+        self.assertEqual(self.get('/orders/').json()['data']['selected_status'], 'CONFIRMED')
+        self.client.force_login(self.sales)
         self.assertEqual(self.get('/orders/', {'sales': self.other.pk}).status_code, 403)
         self.assertEqual(self.get(f'/orders/{self.other_draft.pk}/').status_code, 404)
         details = self.get('/orders/new/').json()['data']['customer_details']
@@ -173,3 +177,9 @@ class OrderWorkspaceTests(TestCase):
         self.assertEqual(len(records), 3)
         line_queries = [q['sql'] for q in queries if 'FROM "crm_orderline"' in q['sql']]
         self.assertEqual(len(line_queries), 1)
+
+    def test_order_list_is_paginated(self):
+        from crm.selectors import ORDER_PAGE_SIZE
+        data = self.get('/orders/').json()['data']
+        self.assertEqual((data['page'], data['pages'], data['total'], data['page_size']), ('1', '1', '3', str(ORDER_PAGE_SIZE)))
+        self.assertEqual(self.get('/orders/', {'page': 'x'}).json()['data']['page'], '1')

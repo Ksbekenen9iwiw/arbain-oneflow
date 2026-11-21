@@ -174,6 +174,17 @@ export default function Detail() {
                       {order.customer.name} · Dibuat{" "}
                       {dateLabel(order.created_at)}
                     </Text>
+                    {!d.can_confirm && !d.can_ship && (
+                      <Text type="supporting">
+                        {order.status === "CONFIRMED"
+                          ? "Langkah berikutnya: gudang menyiapkan dan mengirim pesanan ini."
+                          : order.status === "SHIPPED"
+                            ? "Pesanan selesai dikirim. Tidak ada tindakan lagi."
+                            : order.status === "CANCELLED"
+                              ? "Pesanan dibatalkan. Tidak ada tindakan lagi."
+                              : "Menunggu sales mengonfirmasi draf ini."}
+                      </Text>
+                    )}
                   </VStack>
                 </StackItem>
                 <HStack gap={2} wrap="wrap">
@@ -217,6 +228,14 @@ export default function Detail() {
                       ]}
                     />
                   )}
+                  {isNarrow ? (
+                    <Button
+                      label="Detail pelanggan"
+                      variant="secondary"
+                      aria-expanded={narrowPanelOpen}
+                      onClick={() => setNarrowPanelOpen(true)}
+                    />
+                  ) : (
                   <IconButton
                     label={
                       isNarrow
@@ -233,6 +252,7 @@ export default function Detail() {
                       else setPanel(!panel);
                     }}
                   />
+                  )}
                 </HStack>
               </HStack>
             </VStack>
