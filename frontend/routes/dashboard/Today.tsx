@@ -345,39 +345,17 @@ export default function Today() {
   const salesOverview = sales && (
     <VStack gap={2} aria-label="Ringkasan sales">
       <Grid columns={isNarrow ? 1 : 3} gap={3}>
-        <Card padding={3}>
-          <VStack height="100%" gap={3}>
+        <Card padding={4}>
+          <VStack gap={4}>
             <Heading level={2}>Ringkasan</Heading>
-            <Grid
-              columns={2}
-              gap={2}
-              minHeight="calc(2 * var(--spacing-10))"
-              style={{ flex: 1 }}
-            >
+            <HStack gap={2} wrap="wrap">
               {[
-                {
-                  mode: "late",
-                  label: "Terlambat",
-                  count: lateActivities,
-                  accent: "var(--color-border-red)",
-                },
-                {
-                  mode: "today",
-                  label: "Hari ini",
-                  count: todayActivities,
-                  accent: "var(--color-border-blue)",
-                },
-              ].map(({ mode, label, count, accent }) => (
+                { mode: "late", label: "terlambat", count: lateActivities },
+                { mode: "today", label: "hari ini", count: todayActivities },
+              ].map(({ mode, label, count }) => (
                 <Button
                   key={mode}
-                  label={`${quantity(count)} aktivitas ${label.toLocaleLowerCase("id-ID")}`}
-                  width="100%"
-                  size="lg"
-                  style={{
-                    height: "100%",
-                    borderBlockStart: `var(--spacing-1) solid ${count > 0 ? accent : "var(--color-border)"}`,
-                    borderBlockEnd: "var(--spacing-1) solid transparent",
-                  }}
+                  label={`${quantity(count)} ${label}`}
                   variant={schedule === mode ? "primary" : "secondary"}
                   aria-pressed={schedule === mode}
                   aria-controls="queue-activities"
@@ -387,28 +365,34 @@ export default function Today() {
                       schedule === mode ? "priority" : mode,
                     )
                   }
-                >
-                  <VStack as="span" gap={2} vAlign="center" hAlign="center">
-                    <Text size="base" color="inherit">
-                      {label}
-                    </Text>
-                    <Text
-                      size="3xl"
-                      color="inherit"
-                      hasTabularNumbers
-                      weight="semibold"
-                      style={
-                        mode === "late" && count > 0 && schedule !== mode
-                          ? { color: "var(--color-text-red)" }
-                          : undefined
-                      }
-                    >
-                      {quantity(count)}
-                    </Text>
-                  </VStack>
-                </Button>
+                />
               ))}
-            </Grid>
+            </HStack>
+            <VStack gap={2}>
+              <HStack hAlign="between" wrap="wrap" gap={2}>
+                <Text weight="semibold">Target bulan ini</Text>
+                <Text hasTabularNumbers>
+                  {goal.achievement_percent != null
+                    ? pct(goal.achievement_percent)
+                    : "Belum ditetapkan"}
+                </Text>
+              </HStack>
+              {goal.achievement_percent != null && (
+                <ProgressBar
+                  label="Capaian target bulan ini"
+                  isLabelHidden
+                  value={Math.min(100, goal.achievement_percent)}
+                  variant={
+                    goal.achievement_percent >= 100 ? "success" : "accent"
+                  }
+                />
+              )}
+              <Text type="supporting">
+                {goal.achievement_percent != null
+                  ? `dari ${money(goal.target_rupiah)}`
+                  : "Hubungi manajer untuk menetapkan target."}
+              </Text>
+            </VStack>
           </VStack>
         </Card>
         <GridSpan columns={isNarrow ? 1 : 2}>
@@ -1104,9 +1088,11 @@ export default function Today() {
             align: "end",
             renderCell: (person) =>
               person.late ? (
-                <Status value="OVERDUE" label={String(person.late)} />
+                <HStack hAlign="end">
+                  <Status value="OVERDUE" label={String(person.late)} />
+                </HStack>
               ) : (
-                <Text>0</Text>
+                <Text hasTabularNumbers>0</Text>
               ),
           },
           { key: "total", header: "Agenda terbuka", align: "end" },
@@ -1182,6 +1168,24 @@ export default function Today() {
       <VStack gap={2}>
         <Heading level={2}>Perlu tindak lanjut</Heading>
         <List hasDividers density="compact">
+          {directiveCount > 0 && (
+            <ListItem
+              label="Arahan manajer"
+              description={`${activeDirectives[0].name} · ${activeDirectives[0].directive.label}${
+                activeDirectives[0].directive.substitute_name
+                  ? ` · Ganti dengan ${activeDirectives[0].directive.substitute_name}`
+                  : ""
+              }${directiveCount > 1 ? ` · +${directiveCount - 1} arahan` : ""}`}
+              endContent={
+                <Button
+                  label="Baca arahan"
+                  variant="secondary"
+                  size="sm"
+                  onClick={openAlarm}
+                />
+              }
+            />
+          )}
           {(d.sample_tasks || []).slice(0, 2).map((sample: Row) => (
             <ListItem
               key={sample.id}
@@ -1223,24 +1227,6 @@ export default function Today() {
               }
             />
           ))}
-          {directiveCount > 0 && (
-            <ListItem
-              label="Arahan manajer"
-              description={`${activeDirectives[0].name} · ${activeDirectives[0].directive.label}${
-                activeDirectives[0].directive.substitute_name
-                  ? ` · Ganti dengan ${activeDirectives[0].directive.substitute_name}`
-                  : ""
-              }${directiveCount > 1 ? ` · +${directiveCount - 1} arahan` : ""}`}
-              endContent={
-                <Button
-                  label="Baca arahan"
-                  variant="secondary"
-                  size="sm"
-                  onClick={openAlarm}
-                />
-              }
-            />
-          )}
         </List>
         {((d.sample_tasks || []).length > 2 ||
           additionalRecommendations.length > 2 ||
@@ -1295,6 +1281,14 @@ export default function Today() {
                       label="Alarm & arahan"
                       variant="secondary"
                       onClick={openAlarm}
+                    />
+                  )}
+                  {manager && hasApprovals && (
+                    <Button
+                      width={isMobile ? "100%" : undefined}
+                      label={`Tinjau keputusan (${quantity(d.sample_tasks.length)})`}
+                      variant="primary"
+                      onClick={() => focusQueue("samples")}
                     />
                   )}
                   <Button
@@ -1606,7 +1600,7 @@ export default function Today() {
                         { key: "on_hand", header: "Fisik", align: "end" },
                         {
                           key: "reserved",
-                          header: "Direservasi",
+                          header: "Dipesan",
                           align: "end",
                         },
                         {

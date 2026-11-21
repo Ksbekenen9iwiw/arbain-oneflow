@@ -238,7 +238,7 @@ export default function SampleForm() {
                         />
                         {line.product && (
                           <Text type="supporting">
-                            Stok bebas saat ini:{" "}
+                            Siap jual saat ini:{" "}
                             {d.catalog.find(
                               (product: Row) => product.id === line.product,
                             )?.available ?? "—"}{" "}

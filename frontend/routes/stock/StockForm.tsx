@@ -70,13 +70,13 @@ export default function StockForm() {
           },
           {
             id: "reserved",
-            label: "Reservasi",
+            label: "Dipesan",
             before: p.reserved,
             after: p.reserved,
           },
           {
             id: "available",
-            label: "Stok bebas",
+            label: "Siap jual",
             before: p.available,
             after: String(free),
           },
@@ -128,7 +128,7 @@ export default function StockForm() {
                     <Fact label={p.opening_stock_pending ? "Jumlah batch tercatat" : "Fisik saat ini"}>
                       {quantity(p.on_hand)} {p.unit}
                     </Fact>
-                    <Fact label="Reservasi">
+                    <Fact label="Dipesan">
                       {quantity(p.reserved)} {p.unit}
                     </Fact>
                     {!p.opening_stock_pending && <Fact label="Tersedia">
@@ -209,7 +209,7 @@ export default function StockForm() {
                       {free !== null && free < 0n ? (
                         <Banner
                           status="warning"
-                          title="Stok bebas akan negatif"
+                          title="Siap jual akan negatif"
                           description="Hasil hitung tetap dapat disimpan. Reservasi tidak dihapus; periksa pesanan terkait sebelum konfirmasi baru."
                         />
                       ) : (

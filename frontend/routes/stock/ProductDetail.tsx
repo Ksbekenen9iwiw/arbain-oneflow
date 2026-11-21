@@ -40,6 +40,7 @@ export default function ProductDetail() {
   const d = page.data,
     p = d.product;
   const [panel, setPanel] = useState(false);
+  const [showDepleted, setShowDepleted] = useState(false);
   const [supplyDialog, setSupplyDialog] = useState<{
     open: string;
     po: string;
@@ -233,12 +234,12 @@ export default function ProductDetail() {
                           <Fact label="Fisik">
                             {quantity(p.on_hand)} {p.unit}
                           </Fact>
-                          <Fact label="Reservasi">
+                          <Fact label="Dipesan">
                             {quantity(p.reserved)} {p.unit}
                           </Fact>
                         </>
                       )}
-                      <Fact label="Stok bebas">
+                      <Fact label="Siap jual">
                         <Heading level={2}>
                           {quantity(p.available)} {p.unit}
                         </Heading>
@@ -248,7 +249,7 @@ export default function ProductDetail() {
                       </Fact>
                     </HStack>
                     <Text type="supporting">
-                      Stok bebas = fisik − reservasi; belum mengecualikan batch
+                      Siap jual = fisik − dipesan; belum mengecualikan batch
                       ditahan atau kedaluwarsa. Diperbarui{" "}
                       {dateLabel(p.updated_at, true)} WIB
                     </Text>
@@ -260,8 +261,8 @@ export default function ProductDetail() {
                     title="Fisik lebih kecil daripada reservasi"
                     description={
                       d.can_manage
-                        ? "Catat jumlah fisik yang benar, lalu periksa pesanan pada tab Reservasi. Konfirmasi baru diblokir selama stok bebas negatif."
-                        : "Koordinasikan dengan gudang. Konfirmasi baru diblokir selama stok bebas negatif."
+                        ? "Catat jumlah fisik yang benar, lalu periksa pesanan pada tab Dipesan. Konfirmasi baru diblokir selama stok siap jual negatif."
+                        : "Koordinasikan dengan gudang. Konfirmasi baru diblokir selama stok siap jual negatif."
                     }
                   />
                 )}
@@ -293,7 +294,7 @@ export default function ProductDetail() {
                     <Tab value="movements" label="Riwayat mutasi" />
                     <Tab
                       value="reservations"
-                      label={`Reservasi (${d.reservations.length})`}
+                      label={`Dipesan (${d.reservations.length})`}
                     />
                   </TabList>
                   {d.selected_section === "batches" && (
@@ -310,10 +311,10 @@ export default function ProductDetail() {
                         <Fact label="Fisik">
                           {quantity(d.batch_summary.on_hand)} {p.unit}
                         </Fact>
-                        <Fact label="Dicadangkan">
+                        <Fact label="Dipesan">
                           {quantity(d.batch_summary.reserved)} {p.unit}
                         </Fact>
-                        <Fact label="Stok bebas">
+                        <Fact label="Siap jual">
                           {quantity(d.batch_summary.available)} {p.unit}
                         </Fact>
                         <Fact label="Ditahan / kedaluwarsa">
@@ -334,8 +335,26 @@ export default function ProductDetail() {
                           description="FEFO berjalan tanpa syarat masa simpan. Isi minimum sisa masa simpan pada Edit produk sesuai kebijakan yang berlaku."
                         />
                       )}
+                      {d.batches.some((r: Row) => Number(r.remaining) <= 0) && (
+                        <HStack>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            label={
+                              showDepleted
+                                ? "Sembunyikan batch habis"
+                                : `Tampilkan batch habis (${d.batches.filter((r: Row) => Number(r.remaining) <= 0).length})`
+                            }
+                            onClick={() => setShowDepleted((v) => !v)}
+                          />
+                        </HStack>
+                      )}
                       <DataTable
-                        rows={d.batches}
+                        rows={
+                          showDepleted
+                            ? d.batches
+                            : d.batches.filter((r: Row) => Number(r.remaining) > 0)
+                        }
                         empty={
                           <Empty
                             title="Belum ada batch"
@@ -395,7 +414,7 @@ export default function ProductDetail() {
                           {
                             key: "reserved",
                             width: proportional(1.2, { minWidth: 96 }),
-                            header: "Reservasi",
+                            header: "Dipesan",
                             align: "end",
                             renderCell: (r) => (
                               <Text hasTabularNumbers>
@@ -406,7 +425,7 @@ export default function ProductDetail() {
                           {
                             key: "available",
                             width: proportional(1.2, { minWidth: 96 }),
-                            header: "Stok bebas",
+                            header: "Siap jual",
                             align: "end",
                             renderCell: (r) => (
                               <Text hasTabularNumbers>
@@ -704,7 +723,7 @@ export default function ProductDetail() {
                         empty={
                           <Empty
                             title="Tidak ada pesanan yang mereservasi produk ini"
-                            description="Reservasi dibuat setelah pesanan dikonfirmasi."
+                            description="Stok dipesan tercatat setelah pesanan dikonfirmasi."
                           />
                         }
                         columns={[

@@ -160,8 +160,8 @@ export function tourSteps(role: Page["role"]): TourStep[] {
       title: "Baca ketersediaan produk",
       description:
         role === "SALES"
-          ? "Stok bebas adalah fisik dikurangi reservasi. Kelayakan batch tetap diperiksa sebelum pengiriman. Kondisi stok memberi tanda apakah persediaan cukup, menipis, atau habis. Periksa waktu pembaruan saldonya sebelum menindaklanjuti pelanggan."
-          : "Fisik adalah saldo barang tercatat, Reservasi adalah jumlah yang dialokasikan untuk pesanan, dan Stok bebas adalah selisih keduanya. Kelayakan batch diperiksa terpisah. Kondisi stok serta waktu pembaruan membantu Anda menentukan apakah persediaan perlu diperiksa.",
+          ? "Siap jual adalah fisik dikurangi stok dipesan. Kelayakan batch tetap diperiksa sebelum pengiriman. Kondisi stok memberi tanda apakah persediaan cukup, menipis, atau habis. Periksa waktu pembaruan saldonya sebelum menindaklanjuti pelanggan."
+          : "Fisik adalah saldo barang tercatat, Dipesan adalah jumlah yang dialokasikan untuk pesanan, dan Siap jual adalah selisih keduanya. Kelayakan batch diperiksa terpisah. Kondisi stok serta waktu pembaruan membantu Anda menentukan apakah persediaan perlu diperiksa.",
       destination: "product_detail",
     },
     {
