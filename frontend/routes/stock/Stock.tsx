@@ -139,7 +139,7 @@ export default function Stock() {
       : []),
     {
       key: "available",
-      header: "Tersedia",
+      header: "Siap jual",
       sortable: true,
       align: "end",
       width: proportional(1, { minWidth: 60 }),

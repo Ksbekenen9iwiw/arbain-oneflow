@@ -164,6 +164,30 @@ export function FieldControl({
           format="system_date"
           placeholder="Pilih tanggal"
         />
+        {field.key === "followup_date" && (
+          <HStack gap={2} wrap="wrap">
+            {[
+              { label: "Besok", days: 1 },
+              { label: "3 hari", days: 3 },
+              { label: "1 minggu", days: 7 },
+            ].map(({ label, days }) => (
+              <Button
+                key={days}
+                size="sm"
+                variant="secondary"
+                label={label}
+                onClick={() => {
+                  const date = new Date(Date.now() + days * 86400000);
+                  onChange(
+                    new Intl.DateTimeFormat("en-CA", {
+                      timeZone: "Asia/Jakarta",
+                    }).format(date),
+                  );
+                }}
+              />
+            ))}
+          </HStack>
+        )}
       </>
     );
   return (

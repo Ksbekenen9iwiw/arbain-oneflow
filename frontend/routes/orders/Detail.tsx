@@ -429,10 +429,10 @@ export default function Detail() {
                 <VStack gap={4} data-tour="order-allocations">
                   <HStack gap={3} hAlign="between" vAlign="center">
                     <VStack gap={1}>
-                      <Heading level={2}>Alokasi batch</Heading>
+                      <Heading level={2}>Daftar ambil barang</Heading>
                       <Text type="supporting">
-                        Urutan pengambilan berdasarkan kedaluwarsa terdekat
-                        (FEFO).
+                        Ambil batch sesuai daftar (kedaluwarsa terdekat lebih
+                        dulu), lalu tandai terkirim.
                       </Text>
                     </VStack>
                     {d.can_swap && (
@@ -460,20 +460,20 @@ export default function Detail() {
                         ),
                       },
                       {
-                        key: "expiry_date",
-                        header: "Kedaluwarsa",
-                        renderCell: (r) => (
-                          <Text>{dateLabel(r.expiry_date)}</Text>
-                        ),
-                      },
-                      {
                         key: "quantity",
-                        header: "Dialokasikan",
+                        header: "Jumlah ambil",
                         align: "end",
                         renderCell: (r) => (
                           <Text hasTabularNumbers>
                             {quantity(r.quantity)} {r.unit}
                           </Text>
+                        ),
+                      },
+                      {
+                        key: "expiry_date",
+                        header: "Kedaluwarsa",
+                        renderCell: (r) => (
+                          <Text>{dateLabel(r.expiry_date)}</Text>
                         ),
                       },
                       {

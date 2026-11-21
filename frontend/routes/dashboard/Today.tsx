@@ -1522,7 +1522,7 @@ export default function Today() {
               {warehouse && (
                 <Collapsible
                   trigger="Ringkasan kondisi stok"
-                  defaultIsOpen={Boolean(d.stock_attention?.length)}
+                  defaultIsOpen={false}
                 >
                   <VStack gap={3}>
                     <HStack hAlign="between">

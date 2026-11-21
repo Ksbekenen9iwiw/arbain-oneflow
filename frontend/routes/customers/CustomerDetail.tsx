@@ -90,7 +90,14 @@ export default function CustomerDetail() {
   const nextActions: Row[] = d.next_actions || [];
   const history: Row[] = d.history;
   const visibleHistory = history.filter(
-    (e) => filter === "all" || e.category === filter,
+    (e, index) =>
+      (filter === "all" || e.category === filter) &&
+      (filter !== "all" ||
+        e.category !== "orders" ||
+        history.findIndex(
+          (other) =>
+            other.category === "orders" && other.order?.id === e.order?.id,
+        ) === index),
   );
   const last = d.latest_interaction,
     latestOrder = d.latest_order;
@@ -478,18 +485,19 @@ export default function CustomerDetail() {
                       }
                     />
                   ))}
-                  {(d.thin_history || []).map((row: Row) => (
+                  {(d.thin_history || []).length > 0 && (
                     <ListItem
-                      key={row.product_sku}
-                      label={row.product_name}
+                      label={`${(d.thin_history || []).length} produk belum bisa diperkirakan`}
                       description={
                         <Text type="supporting">
-                          Riwayat belum cukup ({row.dates.length} dari minimal 3
-                          tanggal berbeda).
+                          Butuh minimal 3 tanggal pembelian berbeda:{" "}
+                          {(d.thin_history || [])
+                            .map((row: Row) => row.product_name)
+                            .join(", ")}
                         </Text>
                       }
                     />
-                  ))}
+                  )}
                 </List>
               ) : (
                 <Text type="supporting">
