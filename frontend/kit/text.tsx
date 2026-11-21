@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from "react";
 import { cx } from "@/utils/cx";
 
-type TextType = "body" | "supporting" | "label" | "caption" | "code";
+type TextType = "body" | "supporting" | "label" | "caption" | "code" | "display-3";
 type TextColor =
   | "primary"
   | "secondary"
@@ -102,7 +102,7 @@ export function Text({
     <span
       ref={ref}
       className={cx(
-        SCALE[resolved][w],
+        type === "display-3" ? "text-display-4-semibold" : SCALE[resolved][w],
         COLOR[color ?? (type === "supporting" || type === "caption" ? "secondary" : "primary")],
         type === "code" && "font-mono",
         hasTabularNumbers && "tabular-nums",

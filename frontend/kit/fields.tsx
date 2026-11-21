@@ -12,6 +12,7 @@ import { Select, SelectItem } from "@/components/base/select/select";
 import { ComboBox, ComboBoxItem } from "@/components/base/combobox/combobox";
 import { DatePicker } from "@/components/base/date-picker/date-picker";
 import { hintTextClassName } from "@/components/base/input/hint-text";
+import { RiSearchLine } from "@remixicon/react";
 import { cx } from "@/utils/cx";
 
 export type FieldStatus = { type: "error" | "warning" | "success"; message?: string };
@@ -88,6 +89,9 @@ export interface TextInputProps extends FieldBase {
   onBlur?: () => void;
   ref?: Ref<HTMLInputElement>;
   className?: string;
+  /** `"search"` shows the search glyph before the value. */
+  startIcon?: "search";
+  controlStyle?: CSSProperties;
 }
 
 export function TextInput({
@@ -113,6 +117,7 @@ export function TextInput({
   onBlur,
   ref,
   className,
+  startIcon,
 }: TextInputProps) {
   const isInvalid = status?.type === "error";
   return (
@@ -139,6 +144,7 @@ export function TextInput({
         hint={status?.message || description}
         onKeyDown={onKeyDown as never}
         onBlur={onBlur}
+        leadingIcon={startIcon === "search" ? RiSearchLine : undefined}
       />
     </div>
   );
@@ -306,7 +312,7 @@ export function Selector({
             )
           }
         >
-          {(option: SelectorOption) => (
+          {((option: SelectorOption) => (
             <SelectItem
               id={toKey(option.value)}
               textValue={option.label}
@@ -314,7 +320,7 @@ export function Selector({
             >
               {row(option)}
             </SelectItem>
-          )}
+          )) as never}
         </Select>
       )}
       <Message status={status} description={description} />
@@ -417,6 +423,23 @@ export function InputGroupText({ children }: { children: ReactNode }) {
   return <span className="inline-flex shrink-0 items-center">{children}</span>;
 }
 
-export function FormLayout({ children }: { children: ReactNode }) {
+export function FormLayout({
+  children,
+}: {
+  children: ReactNode;
+  defaultOptionality?: string;
+}) {
   return <div className="flex flex-col gap-4">{children}</div>;
+}
+
+/** Two-line option content for `Selector.renderOption`. */
+export function SelectorOption({ label, description }: { label: ReactNode; description?: ReactNode }) {
+  return (
+    <span className="flex min-w-0 flex-col">
+      <span className="truncate">{label}</span>
+      {description && (
+        <span className="truncate text-caption-1-regular text-text-secondary">{description}</span>
+      )}
+    </span>
+  );
 }

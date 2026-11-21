@@ -114,14 +114,14 @@ export function MetadataList({
   children,
   columns,
 }: {
-  label?: string;
+  label?: string | { position: string };
   children: ReactNode;
   columns?: number;
   orientation?: string;
 }) {
   return (
     <dl
-      aria-label={label}
+      aria-label={typeof label === "string" ? label : undefined}
       className="grid gap-x-6 gap-y-3"
       style={{
         gridTemplateColumns: `repeat(${columns ?? 1}, minmax(0, 1fr))`,
@@ -407,7 +407,7 @@ export function LayoutPanel({
   className,
   style,
   ...props
-}: RegionProps & { width?: number }) {
+}: RegionProps & { width?: number | string }) {
   return (
     <aside
       className={cx(

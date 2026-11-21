@@ -181,15 +181,7 @@ export default function Stock() {
                 />
                 <DropdownMenu
                   presentation="popover"
-                  renderTrigger={(props) => (
-                    <IconButton
-                      {...props}
-                      label={`Tindakan untuk ${r.name}`}
-                      icon={<EllipsisHorizontalIcon />}
-                      size="sm"
-                      variant="secondary"
-                    />
-                  )}
+                  iconLabel={`Tindakan untuk ${r.name}`}
                   alignment="end"
                   items={[
                     {

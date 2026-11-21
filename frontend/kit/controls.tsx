@@ -87,6 +87,9 @@ export function Tooltip({
   content: ReactNode;
   placement?: "top" | "bottom" | "start" | "end" | "left" | "right";
   isEnabled?: boolean;
+  touchTrigger?: string;
+  focusTrigger?: string;
+  hasHoverIndication?: boolean;
   children: ReactNode;
 }) {
   if (!isEnabled || !content) return <>{children}</>;
@@ -276,23 +279,26 @@ export function Banner({
   description,
   endContent,
   container: _container,
+  isDismissable: _isDismissable,
+  dismissLabel: _dismissLabel,
   className,
   children,
-}: {
+  ...props
+}: Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   status?: Tone;
   title?: ReactNode;
   description?: ReactNode;
   endContent?: ReactNode;
   container?: BannerContainer;
   isDismissable?: boolean;
-  className?: string;
-  children?: ReactNode;
+  dismissLabel?: string;
 }) {
   const tone = BANNER_TONE[status];
   const Glyph = tone.icon;
   return (
     <div
       role={status === "error" ? "alert" : "status"}
+      {...props}
       className={cx(
         "flex items-start gap-2.5 rounded-2xl border px-3.5 py-3",
         tone.box,
@@ -344,7 +350,9 @@ export function Token({
   icon,
   size: _size,
   className,
+  style,
 }: {
+  style?: CSSProperties;
   label: ReactNode;
   color?: string;
   icon?: ReactNode;
@@ -356,6 +364,7 @@ export function Token({
       variant="caption"
       color={TOKEN_COLOR[color] ?? "neutral"}
       className={cx("gap-1", className)}
+      style={style}
     >
       {icon}
       {label}
@@ -373,9 +382,9 @@ export function Avatar({
   className,
 }: {
   name: string;
-  size?: "xs" | "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg" | number;
   src?: string;
-  tooltip?: boolean;
+  tooltip?: boolean | string;
   shape?: string;
   className?: string;
 }) {
@@ -387,7 +396,7 @@ export function Avatar({
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   const node = (
     <BaseAvatar
-      size={size}
+      size={typeof size === "number" ? (size >= 36 ? "lg" : size >= 32 ? "md" : "sm") : size}
       src={src}
       initials={initials}
       color={AVATAR_COLORS[hash % AVATAR_COLORS.length]}
@@ -396,7 +405,11 @@ export function Avatar({
       className={className}
     />
   );
-  return tooltip === false ? node : <Tooltip content={name}>{node}</Tooltip>;
+  return tooltip === false ? (
+    node
+  ) : (
+    <Tooltip content={typeof tooltip === "string" ? tooltip : name}>{node}</Tooltip>
+  );
 }
 
 export function Divider({
@@ -496,6 +509,8 @@ export function Switch({
   labelPosition?: "start" | "end";
   isDisabled?: boolean;
   htmlName?: string;
+  labelSpacing?: string;
+  width?: string;
 }) {
   return (
     <BaseSwitch
@@ -556,11 +571,15 @@ export function Thumbnail({
   label,
   size = 40,
   className,
+  style,
+  "aria-hidden": ariaHidden,
 }: {
   src?: string;
   label: string;
   size?: number;
   className?: string;
+  style?: CSSProperties;
+  "aria-hidden"?: boolean | "true" | "false";
 }) {
   return (
     <span
@@ -568,7 +587,8 @@ export function Thumbnail({
         "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border-button-default bg-background-secondary-default text-caption-1-semibold text-text-secondary",
         className,
       )}
-      style={{ width: size, height: size }}
+      aria-hidden={ariaHidden}
+      style={{ width: size, height: size, ...style }}
     >
       {src ? (
         <img src={src} alt={label} loading="lazy" className="size-full object-cover" />
