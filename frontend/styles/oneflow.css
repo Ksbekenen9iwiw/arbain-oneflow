@@ -137,3 +137,9 @@ body {
     opacity: 1;
   }
 }
+
+/* Tables sit in a rounded container, so the header draws no top rule. */
+.bui-table th { border-top: 0; }
+.bui-table th:first-child, .bui-table td:first-child { padding-inline-start: 1rem; }
+.bui-table th:last-child, .bui-table td:last-child { padding-inline-end: 1rem; }
+.bui-table tbody tr:hover { background-color: var(--color-background-secondary-default); }

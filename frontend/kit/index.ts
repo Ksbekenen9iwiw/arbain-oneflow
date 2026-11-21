@@ -6,3 +6,4 @@ export * from "./nav";
 export * from "./data";
 export * from "./structure";
 export { useMediaQuery } from "./hooks";
+export * from "./stat";
