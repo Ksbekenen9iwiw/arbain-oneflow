@@ -189,6 +189,8 @@ Pakai database baru tanpa seed demo. Setelah migrasi dan impor arsip, jalankan `
 
 Katalog memakai nama dari rekap penjualan. Profil outlet disatukan hanya jika nama, lokasi, dan sales sumber cocok. Riwayat kunjungan tetap terkait dengan profil tersebut. Untuk mengaktifkan produk, isi SKU, satuan, dan harga, catat batch fisik, lalu sahkan saldo awal lewat **Hitung & koreksi fisik**. Di detail pelanggan, manajer dapat memverifikasi kode dan syarat komersial outlet. Nama sales berasal dari laporan. Kredensial untuk sales perlu dibuat sebelum mereka bisa masuk.
 
+Rekap setor outlet pada arsip dapat dicatat sebagai kunjungan titip jual dan saldo titipan dengan `python manage.py import_arbain_consignment --period 2026-10`; tambahkan `--apply` untuk menyimpan, `--schedule-next` untuk menjadwalkan kunjungan sebulan setelah setor terakhir, dan `--show-skipped` untuk melihat outlet atau produk yang tidak cocok. Angka diambil dari kolom A/M/R/L/S sumber. Harga, penagihan, dan stok gudang tidak diubah, dan pasangan outlet–produk yang sudah punya saldo titipan dilewati.
+
 ## Batas MVP
 
 Satu organisasi, satu gudang, produk jadi, pengiriman penuh. Belum ada maklon/produksi, batch/FEFO/kedaluwarsa, retur, pengiriman sebagian, pajak, pembayaran, akuntansi, impor CSV, pengiriman WhatsApp, atau model ML. Koreksi dan jejak stok tersedia, tetapi kondisi fisik tetap memerlukan pemeriksaan gudang.
