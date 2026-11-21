@@ -184,10 +184,6 @@ export default function SampleForm() {
               <VStack gap={4}>
                 <Heading level={2}>Pelanggan</Heading>
                 {field("customer")}
-                <Text type="supporting">
-                  Cari pelanggan yang sudah tercatat sebelum menambahkan calon
-                  pelanggan baru.
-                </Text>
               </VStack>
               <VStack gap={4}>
                 <HStack hAlign="between" vAlign="center">

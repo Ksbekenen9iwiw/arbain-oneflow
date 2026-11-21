@@ -56,10 +56,7 @@ export default function Samples() {
     setFrom(d.date_from || "");
     setTo(d.date_to || "");
   }, [revision]);
-  const update = (
-    changes: Record<string, string> = {},
-    nextQuery = query,
-  ) => {
+  const update = (changes: Record<string, string> = {}, nextQuery = query) => {
     const params = new URLSearchParams({
       return_to: back || "",
       q: nextQuery,
@@ -75,16 +72,18 @@ export default function Samples() {
     for (const [key, value] of [...params]) if (!value) params.delete(key);
     void navigate("/samples/" + (params.size ? "?" + params : ""));
   };
-  const [query, setQuery] = useSearchInput(d.query || "", revision, (nextQuery) =>
-    update({ q: nextQuery, page: "1" }, nextQuery),
+  const [query, setQuery] = useSearchInput(
+    d.query || "",
+    revision,
+    (nextQuery) => update({ q: nextQuery, page: "1" }, nextQuery),
   );
   const filtered = Boolean(
     d.query ||
-      d.selected_fulfillment ||
-      d.selected_customer ||
-      d.selected_sales ||
-      d.date_from ||
-      d.date_to,
+    d.selected_fulfillment ||
+    d.selected_customer ||
+    d.selected_sales ||
+    d.date_from ||
+    d.date_to,
   );
   return (
     <Layout
@@ -164,7 +163,15 @@ export default function Samples() {
               </FilterRow>
             </form>
             <Collapsible
-              trigger="Filter lanjutan"
+              trigger={
+                d.selected_customer ||
+                d.selected_sales ||
+                d.date_from ||
+                d.date_to ||
+                d.selected_fulfillment
+                  ? "Filter · aktif"
+                  : "Filter"
+              }
               defaultIsOpen={
                 !!(
                   d.selected_customer ||

@@ -1,3 +1,5 @@
+import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Switch } from "@astryxdesign/core/Switch";
 import SupplyPlanning from "./SupplyPlanning";
 import { ProductIdentity } from "../../ProductIdentity";
 import {
@@ -35,7 +37,7 @@ import {
   useSearchInput,
   resetLabel,
 } from "../../ui";
-import { useApp } from "../../router";
+import { useApp, useQueryState } from "../../router";
 import {
   ServerTable,
   StockCondition,
@@ -65,6 +67,10 @@ export default function Stock() {
     d.selected_status ||
     (d.selected_sort && d.selected_sort !== "sku"),
   );
+  const [stockDetail, setStockDetail] = useQueryState("columns", "summary");
+  const showStockDetail =
+    stockDetail === "detail" ||
+    /^(on_hand|reserved)$/.test((d.selected_sort || "").replace(/^-/, ""));
   const columns: TableColumn<Row>[] = [
     {
       key: "name",
@@ -103,7 +109,7 @@ export default function Stock() {
         </Text>
       ),
     },
-    ...(manage
+    ...(manage && showStockDetail
       ? [
           {
             key: "on_hand",
@@ -133,7 +139,7 @@ export default function Stock() {
       : []),
     {
       key: "available",
-      header: "Stok bebas",
+      header: "Tersedia",
       sortable: true,
       align: "end",
       width: proportional(1, { minWidth: 60 }),
@@ -275,17 +281,6 @@ export default function Stock() {
                       />
                     </StackItem>
                     <Selector
-                      label="Status produk"
-                      width="12rem"
-                      value={d.selected_status}
-                      options={[
-                        { value: "", label: "Semua status" },
-                        { value: "active", label: "Aktif" },
-                        { value: "inactive", label: "Nonaktif" },
-                      ]}
-                      onChange={(status) => update({ status, q: query })}
-                    />
-                    <Selector
                       label="Kondisi stok"
                       width="15rem"
                       value={d.stock_filter}
@@ -318,6 +313,50 @@ export default function Stock() {
                       onChange={(filter) => update({ filter, q: query })}
                     />
                   </FilterRow>
+                  <Collapsible
+                    trigger={
+                      d.selected_status || showStockDetail
+                        ? "Tampilan & status · aktif"
+                        : "Tampilan & status"
+                    }
+                    defaultIsOpen={Boolean(
+                      d.selected_status || showStockDetail,
+                    )}
+                  >
+                    <FilterRow>
+                      <Selector
+                        label="Status produk"
+                        width="12rem"
+                        value={d.selected_status}
+                        options={[
+                          { value: "", label: "Semua status" },
+                          { value: "active", label: "Aktif" },
+                          { value: "inactive", label: "Nonaktif" },
+                        ]}
+                        onChange={(status) => update({ status, q: query })}
+                      />
+
+                      {manage && (
+                        <Switch
+                          label="Kolom fisik & reservasi"
+                          value={showStockDetail}
+                          size="sm"
+                          onChange={(value) => {
+                            if (
+                              !value &&
+                              /^(on_hand|reserved)$/.test(
+                                (d.selected_sort || "").replace(/^-/, ""),
+                              )
+                            ) {
+                              update({ sort: "sku", columns: "" });
+                            } else {
+                              setStockDetail(value ? "detail" : "summary");
+                            }
+                          }}
+                        />
+                      )}
+                    </FilterRow>
+                  </Collapsible>
                 </form>
                 <ResultsSummary
                   reset={

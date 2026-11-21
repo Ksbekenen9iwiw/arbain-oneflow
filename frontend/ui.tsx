@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   LayoutHeader,
   VStack,
@@ -76,16 +76,18 @@ export function PageHeader({
   actions,
   back,
   leading,
+  paddingBlockEnd,
 }: {
   title: string;
   description?: string;
   actions?: ReactNode;
   back?: { href: string; label: string };
   leading?: ReactNode;
+  paddingBlockEnd?: ComponentProps<typeof LayoutHeader>["paddingBlockEnd"];
 }) {
   const { isMobile, contentPadding } = useResponsive();
   return (
-    <LayoutHeader padding={contentPadding}>
+    <LayoutHeader padding={contentPadding} paddingBlockEnd={paddingBlockEnd}>
       <VStack gap={3}>
         {back && (
           <HStack gap={2} vAlign="center">

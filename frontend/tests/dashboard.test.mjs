@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { activityMatches, dashboardQueue } from "../dashboard.ts";
+import {
+  activityMatches,
+  dashboardQueue,
+  salesGreeting,
+} from "../dashboard.ts";
 
 test("work queue includes overdue and today; excludes future and undated until requested", () => {
   const dates = ["2026-10-13", "2026-10-14", "2026-10-15", null];
@@ -28,5 +32,20 @@ test("warehouse keeps shipping as fallback and allows sample fulfillment", () =>
     assert.equal(dashboardQueue(role, "recommendations"), "recommendations");
     assert.equal(dashboardQueue(role, "shipping"), "shipping");
     assert.equal(dashboardQueue(role, "bogus"), "activities");
+  }
+});
+
+test("sales greeting uses Jakarta local time and the signed-in name", () => {
+  for (const [time, period] of [
+    ["03:59", "pagi"],
+    ["04:00", "siang"],
+    ["08:00", "sore"],
+    ["11:00", "malam"],
+    ["17:00", "pagi"],
+  ]) {
+    assert.equal(
+      salesGreeting("Endri", new Date(`2026-11-21T${time}:00Z`)),
+      `Selamat ${period}, Endri`,
+    );
   }
 });

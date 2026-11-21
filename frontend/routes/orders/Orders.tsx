@@ -1,3 +1,4 @@
+import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { MotionStack } from "../../motion";
 import { RecordIdentity } from "../../RecordIdentity";
 import { ProductIdentity } from "../../ProductIdentity";
@@ -83,8 +84,10 @@ export default function Orders() {
     for (const [key, value] of [...params]) if (!value) params.delete(key);
     void navigate("/orders/" + (params.size ? "?" + params : ""));
   };
-  const [query, setQuery] = useSearchInput(d.query || "", revision, (nextQuery) =>
-    update({ q: nextQuery }, nextQuery),
+  const [query, setQuery] = useSearchInput(
+    d.query || "",
+    revision,
+    (nextQuery) => update({ q: nextQuery }, nextQuery),
   );
   const sort: TableSortState = [
     {
@@ -305,57 +308,81 @@ export default function Orders() {
                       width="100%"
                     />
                   </StackItem>
-                  {manager && (
-                    <Selector
-                      label="Sales"
-                      width="12rem"
-                      value={d.selected_sales}
-                      options={[
-                        { value: "", label: "Semua sales" },
-                        ...d.sales_options,
-                      ]}
-                      onChange={(sales) => update({ sales })}
-                    />
-                  )}
                 </FilterRow>
-                {shipped && (
-                  <FilterRow>
-                    <StackItem>
-                      <DateInput
-                        label="Dikirim mulai"
-                        value={(from || undefined) as ISODateString | undefined}
-                        onChange={(v) => setFrom(v || "")}
-                        hasClear
-                        format="system_date"
-                        placeholder="Semua tanggal"
-                      />
-                    </StackItem>
-                    <StackItem>
-                      <DateInput
-                        label="Sampai"
-                        value={(to || undefined) as ISODateString | undefined}
-                        onChange={(v) => setTo(v || "")}
-                        hasClear
-                        format="system_date"
-                        placeholder="Pilih tanggal"
-                      />
-                    </StackItem>
-                    <Button
-                      variant="secondary"
-                      label="Terapkan periode"
-                      type="submit"
-                      isDisabled={delayedBusy}
-                    />
-                    {(from || to) && (
-                      <Button
-                        label="Hapus periode"
-                        variant="secondary"
-                        onClick={() =>
-                          update({ shipped_from: "", shipped_to: "" })
-                        }
-                      />
+                {(manager || shipped) && (
+                  <Collapsible
+                    trigger={
+                      d.selected_sales || d.shipped_from || d.shipped_to
+                        ? "Filter · aktif"
+                        : "Filter"
+                    }
+                    defaultIsOpen={Boolean(
+                      d.selected_sales ||
+                      d.shipped_from ||
+                      d.shipped_to ||
+                      d.date_error,
                     )}
-                  </FilterRow>
+                  >
+                    <VStack gap={3}>
+                      {manager && (
+                        <FilterRow>
+                          <Selector
+                            label="Sales"
+                            width="12rem"
+                            value={d.selected_sales}
+                            options={[
+                              { value: "", label: "Semua sales" },
+                              ...d.sales_options,
+                            ]}
+                            onChange={(sales) => update({ sales })}
+                          />
+                        </FilterRow>
+                      )}
+                      {shipped && (
+                        <FilterRow>
+                          <StackItem>
+                            <DateInput
+                              label="Dikirim mulai"
+                              value={
+                                (from || undefined) as ISODateString | undefined
+                              }
+                              onChange={(v) => setFrom(v || "")}
+                              hasClear
+                              format="system_date"
+                              placeholder="Semua tanggal"
+                            />
+                          </StackItem>
+                          <StackItem>
+                            <DateInput
+                              label="Sampai"
+                              value={
+                                (to || undefined) as ISODateString | undefined
+                              }
+                              onChange={(v) => setTo(v || "")}
+                              hasClear
+                              format="system_date"
+                              placeholder="Pilih tanggal"
+                            />
+                          </StackItem>
+                          <Button
+                            variant="secondary"
+                            label="Terapkan periode"
+                            type="submit"
+                            isDisabled={delayedBusy}
+                          />
+                          {(from || to) && (
+                            <Button
+                              label="Hapus periode"
+                              variant="secondary"
+                              onClick={() =>
+                                update({ shipped_from: "", shipped_to: "" })
+                              }
+                            />
+                          )}
+                        </FilterRow>
+                      )}
+                    </VStack>
+                  </Collapsible>
                 )}
               </VStack>
             </form>
