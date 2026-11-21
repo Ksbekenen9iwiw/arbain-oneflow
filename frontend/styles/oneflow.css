@@ -18,3 +18,123 @@
 :root {
   --font-inter: "Inter Variable";
 }
+
+/* Values the app's inline styles and motion helpers read by name. */
+:root {
+  --spacing-0-5: 0.125rem;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --duration-fast-min: 100ms;
+  --duration-fast: 160ms;
+  --duration-medium: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --radius-element: 0.75rem;
+  --radius-container: 1.5rem;
+  --radius-full: 999px;
+  --font-size-sm: 0.8125rem;
+  --font-weight-semibold: 600;
+  --color-accent: var(--color-accent-500);
+  --color-text-accent: var(--color-accent-600);
+  --color-border: var(--color-separator-border);
+  --color-border-emphasized: var(--color-border-button-default);
+  --color-background-surface: var(--color-background-primary-default);
+  --color-overlay: rgb(0 0 0 / 0.4);
+  --color-on-light: #1a1a1a;
+  --color-on-dark: #ffffff;
+  --color-icon-green: var(--color-status-lime-text);
+  --color-kbd-subtle-background: var(--color-background-tertiary-default);
+  --color-chart-neutral: var(--color-text-tertiary);
+  --color-chart-track: var(--color-background-tertiary-default);
+  --color-chart-cursor: var(--color-separator-border);
+  --color-chart-2: var(--color-accent-400);
+  --color-chart-2-active: var(--color-accent-500);
+  --color-chart-9-active: var(--color-status-lime-text);
+}
+.dark {
+  --color-accent: var(--color-accent-300);
+  --color-text-accent: var(--color-accent-300);
+  --color-on-light: #ffffff;
+}
+
+html,
+body,
+#oneflow-root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--color-background-full);
+  color: var(--color-text-primary);
+  font-family: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+::selection {
+  background: var(--color-accent-200);
+  color: var(--color-accent-950);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Rows arrive in a short stagger, capped so long lists never feel slow. */
+  [data-row] {
+    animation: oneflow-rise var(--duration-medium) var(--ease-standard) backwards;
+  }
+  [data-row]:nth-child(2) { animation-delay: 25ms; }
+  [data-row]:nth-child(3) { animation-delay: 50ms; }
+  [data-row]:nth-child(4) { animation-delay: 75ms; }
+  [data-row]:nth-child(5) { animation-delay: 100ms; }
+  [data-row]:nth-child(n + 6) { animation-delay: 125ms; }
+  .oneflow-enter,
+  [data-honeycomb] {
+    animation: oneflow-pop var(--duration-medium) var(--ease-standard);
+  }
+
+  /* Page transition: content cross-fades with a light blur; navigation stays put. */
+  .oneflow-nav {
+    view-transition-name: oneflow-nav;
+  }
+  ::view-transition-group(oneflow-nav),
+  ::view-transition-new(oneflow-nav) {
+    animation: none;
+  }
+  ::view-transition-old(oneflow-nav) {
+    display: none;
+  }
+  ::view-transition-old(root) {
+    animation: oneflow-leave var(--duration-fast) var(--ease-standard) both;
+  }
+  ::view-transition-new(root) {
+    animation: oneflow-enter var(--duration-medium) var(--ease-standard) both;
+  }
+}
+
+@keyframes oneflow-pop {
+  from { opacity: 0; transform: scale(0.96) translateY(0.5rem); }
+}
+@keyframes oneflow-rise {
+  from { opacity: 0; transform: translateY(0.25rem); }
+}
+@keyframes oneflow-leave {
+  to { opacity: 0; filter: blur(4px); }
+}
+@keyframes oneflow-enter {
+  from { opacity: 0; filter: blur(4px); transform: translateY(0.5rem); }
+}
+
+/* Row actions stay visible but quiet until the row is hovered or focused. */
+@media (hover: hover) {
+  .bui-table tbody tr td:last-child button,
+  .bui-table tbody tr td:last-child a {
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+  .bui-table tbody tr:hover td:last-child :is(button, a),
+  .bui-table tbody tr:focus-within td:last-child :is(button, a) {
+    opacity: 1;
+  }
+}

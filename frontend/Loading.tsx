@@ -1,8 +1,6 @@
-// Native Astryx placeholders, also rendered to static HTML before the client starts.
+// Skeleton placeholders, also rendered to static HTML before the client starts.
 import { BrandMark } from "./BrandMark";
 import { Skeleton } from "@/kit";
-import { AppShell } from "@astryxdesign/core/AppShell";
-import { SideNav, SideNavHeading } from "@astryxdesign/core/SideNav";
 import {
   VStack,
   HStack,
@@ -11,8 +9,6 @@ import {
   LayoutContent,
 } from "@/kit";
 import { Grid, GridSpan } from "@/kit";
-import { Icon } from "@/kit";
-import { NavIcon } from "@astryxdesign/core/NavIcon";
 import { Text } from "@/kit";
 import { Banner } from "@/kit";
 import { Button } from "@/kit";
@@ -149,7 +145,7 @@ export function LoadingScreen({
       id="oneflow-boot"
       height="100dvh"
       gap={0}
-      style={{ background: "var(--color-background-surface)" }}
+      className="bg-background-full"
     >
       <VStack
         id="oneflow-boot-status"
@@ -178,34 +174,27 @@ export function LoadingScreen({
             <Skeleton height="100%" radius={4} />
           </Grid>
         ) : (
-          <AppShell
-            contentPadding={0}
-            height="fill"
-            sideNav={
-              <SideNav
-                header={
-                  <SideNavHeading
-                    heading="OneFlow"
-                    icon={<NavIcon icon={<Icon icon={BrandMark} />} />}
-                  />
-                }
-                footer={<Skeleton height="var(--spacing-10)" />}
-              >
-                <VStack gap={6} padding={4}>
+          <div className="flex h-full min-h-0 gap-2 bg-background-full p-0 md:p-2">
+            <aside className="hidden h-full w-64 shrink-0 flex-col justify-between rounded-3xl border border-border-button-white bg-background-secondary-default p-3 shadow-sidebar md:flex">
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-9 items-center justify-center rounded-2lg bg-linear-to-b from-accent-400 to-accent-500 text-white">
+                    <BrandMark className="size-5" />
+                  </span>
+                  <span className="text-headline-semibold text-text-primary">OneFlow</span>
+                </div>
+                <VStack gap={5} padding={2}>
                   {[0, 1, 2, 3].map((index) => (
-                    <Skeleton
-                      key={index}
-                      width="75%"
-                      height={line}
-                      index={index}
-                    />
+                    <Skeleton key={index} width="75%" height={line} index={index} />
                   ))}
                 </VStack>
-              </SideNav>
-            }
-          >
-            {content}
-          </AppShell>
+              </div>
+              <Skeleton height="var(--spacing-10)" />
+            </aside>
+            <div className="min-h-0 min-w-0 flex-1 overflow-hidden bg-background-primary-default md:rounded-3xl md:border md:border-border-button-default">
+              {content}
+            </div>
+          </div>
         )}
       </VStack>
       <VStack
@@ -220,7 +209,6 @@ export function LoadingScreen({
       >
         <Banner
           status="warning"
-          role="alert"
           title="Halaman belum selesai dimuat"
           description="Periksa koneksi Anda, lalu muat ulang halaman."
           endContent={<Button label="Muat ulang" href="" variant="secondary" />}
