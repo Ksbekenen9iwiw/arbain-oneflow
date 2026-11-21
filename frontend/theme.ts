@@ -5,6 +5,13 @@ import { themes, defaultThemeSlug } from "../astryx-themes";
 export const oneflowTheme = defineTheme({
   name: "oneflow",
   extends: themes[defaultThemeSlug],
+  // Brand seeds: honey amber accent, herbal green for success, warm neutrals.
+  color: { accent: ["#B4690E", "#F0B244"], neutralStyle: "warm" },
+  tokens: {
+    "--color-success": ["#3E7B4F", "#5FA872"],
+    "--color-border-green": ["#3E7B4F", "#5FA872"],
+    "--color-icon-green": ["#3E7B4F", "#7CC08D"],
+  },
   motion: {
     fast: 140,
     medium: 240,
@@ -99,6 +106,10 @@ export const oneflowTheme = defineTheme({
       "color:blue": {
         fontWeight: "var(--font-weight-semibold)",
       },
+    },
+    "progress-bar": {
+      "variant:accent": { "--color-accent": "var(--color-text-accent)" },
+      "variant:success": { "--color-success": "var(--color-icon-green)" },
     },
     card: {
       base: {

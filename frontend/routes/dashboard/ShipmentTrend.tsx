@@ -175,7 +175,7 @@ export default function ShipmentTrend({
               dataKey="plot"
               name={compact ? "Nilai kumulatif" : "Nilai terkirim"}
               type={compact ? "stepAfter" : "linear"}
-              stroke="var(--color-text-blue)"
+              stroke="var(--color-accent)"
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}
