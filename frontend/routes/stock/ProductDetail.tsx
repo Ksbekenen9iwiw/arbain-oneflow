@@ -253,11 +253,7 @@ export default function ProductDetail() {
                         caption={<StockCondition product={p} />}
                       />
                     </StatGrid>
-                    <Text type="supporting">
-                      Siap jual = fisik − dipesan; belum mengecualikan batch
-                      ditahan atau kedaluwarsa. Diperbarui{" "}
-                      {dateLabel(p.updated_at, true)} WIB
-                    </Text>
+                    <Text type="supporting">Diperbarui {dateLabel(p.updated_at, true)} WIB</Text>
                   </>
                 )}
                 {p.stock_state === "conflict" && (
@@ -306,11 +302,6 @@ export default function ProductDetail() {
                     <VStack gap={4} data-tour="product-batches">
                       <VStack gap={1}>
                         <Heading level={2}>Batch & masa simpan</Heading>
-                        <Text type="supporting">
-                          FEFO mengambil batch dengan tanggal kedaluwarsa
-                          terdekat lebih dahulu. Stok ditahan atau kedaluwarsa
-                          tetap tercatat fisik tetapi tidak dapat dialokasikan.
-                        </Text>
                       </VStack>
                       <HStack gap={6} wrap="wrap">
                         <Fact label="Fisik">
@@ -491,11 +482,6 @@ export default function ProductDetail() {
                             />
                           )}
                         </HStack>
-                        <Text type="supporting">
-                          Rata-rata harian memakai unit terkirim pada hari
-                          kalender penuh; stok layak mengikuti aturan FEFO.
-                          Rekomendasi hanya saran — keputusan tetap pada Anda.
-                        </Text>
                       </VStack>
                       {d.error && (
                         <Banner

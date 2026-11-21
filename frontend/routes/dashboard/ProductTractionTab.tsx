@@ -33,11 +33,6 @@ export function ProductTractionTab({
       aria-label="Barang Laku vs Kurang Laku"
     >
       <HStack hAlign="between" vAlign="center" wrap="wrap" gap={3}>
-        <Text type="supporting">
-          Evaluasi perputaran barang titip jual di seluruh apotek (30 hari
-          terakhir) beserta arahan manajer mengenai produk yang dihentikan
-          atau diprioritaskan untuk dibawa sales.
-        </Text>
         {isManager && (
           <Button
             size="sm"

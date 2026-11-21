@@ -420,20 +420,12 @@ export default function Detail() {
                     },
                   ]}
                 />
-
-                <Text type="supporting">
-                  Harga satuan tersimpan saat produk ditambahkan ke draf.
-                </Text>
               </VStack>
               {(allocationRows.length > 0 || d.can_swap) && (
                 <VStack gap={4} data-tour="order-allocations">
                   <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
                     <VStack gap={1}>
                       <Heading level={2}>Daftar ambil barang</Heading>
-                      <Text type="supporting">
-                        Ambil batch sesuai daftar (kedaluwarsa terdekat lebih
-                        dulu), lalu tandai terkirim.
-                      </Text>
                     </VStack>
                     {d.can_swap && (
                       <Button
@@ -492,9 +484,6 @@ export default function Detail() {
                 <VStack gap={4} data-tour="order-batch-swaps">
                   <VStack gap={1}>
                     <Heading level={2}>Riwayat penggantian batch</Heading>
-                    <Text type="supporting">
-                      Perubahan batch oleh gudang beserta alasannya.
-                    </Text>
                   </VStack>
                   <List hasDividers>
                     {d.batch_swaps.map((swap: Row) => (

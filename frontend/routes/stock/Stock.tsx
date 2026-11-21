@@ -220,8 +220,7 @@ export default function Stock() {
       header={
         <PageHeader
           back={back ? { href: back, label: backLabel(back) } : undefined}
-          title="Produk & stok"
-          description="Ketersediaan produk dan pencatatan stok gudang."
+          title="Produk & stok"
           actions={
             manage && (
               <Button

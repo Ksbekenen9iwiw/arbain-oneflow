@@ -422,10 +422,6 @@ export default function CustomerDetail() {
             <VStack gap={3} id="customer-reorder">
               <VStack gap={1}>
                 <Heading level={2}>Perkiraan pembelian ulang</Heading>
-                <Text type="supporting">
-                  Pengingat muncul saat perkiraan pembelian tiba, dari minimal 3
-                  tanggal berbeda. Tetap tindak lanjuti meskipun stok kurang.
-                </Text>
               </VStack>
               {(d.reorder_patterns || []).length ||
               (d.thin_history || []).length ? (
@@ -874,10 +870,6 @@ export default function CustomerDetail() {
                   aria-label="Sampel pelanggan"
                   gap={3}
                 >
-                  <Text type="supporting">
-                    Ikuti pengiriman, evaluasi, dan pembelian yang ditautkan
-                    untuk pelanggan ini.
-                  </Text>
                   {(d.samples || []).length ? (
                     <List hasDividers density="balanced">
                       {d.samples.map((sample: Row) => (
@@ -964,10 +956,6 @@ export default function CustomerDetail() {
                   aria-label="Pesanan"
                   gap={3}
                 >
-                  <Text type="supporting">
-                    Pesanan pelanggan ini sesuai akses akun Anda. Buka pesanan
-                    untuk melanjutkan prosesnya.
-                  </Text>
                   <OrderTable
                     rows={d.orders}
                     showCustomer={false}

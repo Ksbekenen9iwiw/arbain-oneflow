@@ -155,10 +155,6 @@ export default function SampleDetail() {
                   <Text key={reason}>{reason}</Text>
                 ),
               )}
-              <Text type="supporting">
-                Dasar pengulangan memakai riwayat produk yang sama. Buka
-                tab Riwayat pelanggan untuk memeriksa bukti pendukung.
-              </Text>
               {page.role === "MANAGER" && (
                 <Button
                   href={withReturn("/samples/policy/", page.url)}

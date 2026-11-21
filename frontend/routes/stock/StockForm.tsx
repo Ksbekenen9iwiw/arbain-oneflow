@@ -148,11 +148,6 @@ export default function StockForm() {
                     <VStack gap={3}>
                       <VStack gap={1}>
                         <Heading level={2}>Data batch</Heading>
-                        <Text type="supporting">
-                          Isi kode batch dan tanggal agar barang dapat dipilih
-                          FEFO. Tanpa data batch, barang masuk ke lot “Belum
-                          lengkap” dan diperlakukan paling akhir.
-                        </Text>
                       </VStack>
                       {field("batch_code")}
                       {field("received_date")}

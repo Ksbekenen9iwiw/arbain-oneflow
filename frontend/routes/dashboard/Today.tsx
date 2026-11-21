@@ -789,9 +789,6 @@ export default function Today() {
           <HStack hAlign="between">
             <VStack gap={1}>
               <Heading level={2}>Prioritas pelanggan</Heading>
-              <Text type="supporting">
-                Saran dari jadwal tindak lanjut dan riwayat pembelian
-              </Text>
             </VStack>
             {Number(d.action_count) > 5 && (
               <Button
@@ -1444,10 +1441,6 @@ export default function Today() {
                       label="Semua pengadaan"
                     />
                   </HStack>
-                  <Text type="supporting">
-                    Produk diurutkan dari risiko paling mendesak. Buka produk
-                    untuk meninjau alasan dan jumlah pengadaan.
-                  </Text>
                   <DataTable
                     rows={d.supply_alerts}
                     columns={[

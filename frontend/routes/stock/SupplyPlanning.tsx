@@ -36,10 +36,6 @@ export default function SupplyPlanning({
   );
   return (
     <VStack gap={4} data-tour="supply-planning">
-      <Text type="supporting">
-        Prioritaskan produk yang berisiko habis. Buka perhitungan untuk meninjau
-        saran dan pengadaan yang sedang berjalan.
-      </Text>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -198,11 +194,6 @@ export default function SupplyPlanning({
           },
         ]}
       />
-      <Text type="supporting">
-        Saran menggunakan penjualan terkirim, waktu pengisian ulang, target
-        cakupan, cadangan, dan pengadaan berjalan. Sampel tidak dihitung sebagai
-        penjualan.
-      </Text>
     </VStack>
   );
 }

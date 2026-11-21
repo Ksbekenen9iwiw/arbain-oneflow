@@ -4,8 +4,9 @@ import { useQueryState } from "../../router";
 import { useRef, useState } from "react";
 import { useContentMotion } from "../../motion";
 import {
-  AreaChart,
+  ComposedChart,
   Area,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -114,7 +115,7 @@ export default function ShipmentTrend({
           height={compact ? 168 : 200}
           minWidth={0}
         >
-          <AreaChart
+          <ComposedChart
             data={data}
             accessibilityLayer
             margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
@@ -178,19 +179,31 @@ export default function ShipmentTrend({
                 <stop offset="100%" stopColor="var(--color-accent-500)" stopOpacity={0} />
               </linearGradient>
             </defs>
+            {compact ? (
             <Area
-              dataKey="plot"
-              name={compact ? "Nilai kumulatif" : "Nilai terkirim"}
-              type="monotone"
-              stroke="var(--color-accent-500)"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              fill="url(#oneflow-trend-fill)"
-              dot={false}
-              activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--color-background-primary-default)" }}
-              animationDuration={600}
-            />
-          </AreaChart>
+                dataKey="plot"
+                name={compact ? "Nilai kumulatif" : "Nilai terkirim"}
+                type="monotone"
+                stroke="var(--color-accent-500)"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                fill="url(#oneflow-trend-fill)"
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--color-background-primary-default)" }}
+                animationDuration={600}
+              />
+            ) : (
+              <Bar
+                dataKey="plot"
+                name="Nilai terkirim"
+                fill="var(--color-accent-500)"
+                radius={[6, 6, 6, 6]}
+                maxBarSize={22}
+                background={{ fill: "var(--color-background-tertiary-default)", radius: 6 }}
+                animationDuration={500}
+              />
+            )}
+          </ComposedChart>
         </ResponsiveContainer>
       )}
       {recentDays.length > 0 && (
