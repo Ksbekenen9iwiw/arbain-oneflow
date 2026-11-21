@@ -1,8 +1,11 @@
 from django.urls import path
 from crm import views
+from crm.views.company_archive import company_archive, company_archive_file
 
 urlpatterns = [
     path('', views.today, name='today'),
+    path('company-data/', company_archive, name='company_archive'),
+    path('company-data/source/<int:report_id>/', company_archive_file, name='company_archive_file'),
     path('actions/decision/', views.action_decision, name='action_decision'),
     path('targets/', views.target_save, name='target_save'),
     path('customers/', views.customers, name='customers'),

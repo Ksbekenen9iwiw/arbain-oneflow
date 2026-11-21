@@ -26,6 +26,7 @@ import {
   ClipboardDocumentListIcon,
   BeakerIcon,
   ArchiveBoxIcon,
+  DocumentDuplicateIcon,
   ArrowRightStartOnRectangleIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -322,6 +323,17 @@ export default function Shell({ children }: { children: ReactNode }) {
                 collapsed={collapsed}
                 isMobile={isMobile}
               />
+              {page.data.can_view_company_archive && (
+                <SidebarItem
+                  label="Data perusahaan"
+                  tooltip="Laporan dan dokumen asli CV Arba’in"
+                  icon={DocumentDuplicateIcon}
+                  href="/company-data/"
+                  isSelected={path === "/company-data/"}
+                  collapsed={collapsed}
+                  isMobile={isMobile}
+                />
+              )}
             </SideNavSection>
             <SideNavSection title="Bantuan">
               <SidebarItem

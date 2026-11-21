@@ -522,3 +522,47 @@ class RawMaterial(models.Model):
     class Meta:
         ordering = ['code']
 
+
+
+class CompanyReport(models.Model):
+    """Private source document for a historical company reporting period."""
+
+    period = models.DateField(db_index=True)
+    path = models.CharField(max_length=350)
+    checksum = models.CharField(max_length=64)
+    content = models.BinaryField()
+    imported_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['path']
+        constraints = [models.UniqueConstraint(fields=['period', 'path'], name='unique_company_report_path')]
+
+
+class CompanyReportRow(models.Model):
+    class Kind(models.TextChoices):
+        SALES = 'sales', 'Penjualan produk'
+        VISITS = 'visits', 'Kunjungan'
+        OUTLET = 'outlet_sales', 'Rekap per outlet'
+        STOCK = 'stock', 'Stok outlet'
+        LEDGER = 'ledger', 'Catatan setor'
+        NOTES = 'notes', 'Catatan mitra'
+
+    report = models.ForeignKey(CompanyReport, on_delete=models.CASCADE, related_name='rows')
+    kind = models.CharField(max_length=20, choices=Kind.choices, db_index=True)
+    page = models.PositiveIntegerField()
+    source_row = models.CharField(max_length=48)
+    sales = models.CharField(max_length=120, blank=True)
+    outlet = models.CharField(max_length=280, blank=True)
+    product = models.CharField(max_length=280, blank=True)
+    region = models.CharField(max_length=100, blank=True)
+    observed_date = models.DateField(null=True, blank=True)
+    quantity = models.PositiveBigIntegerField(null=True, blank=True)
+    returned = models.PositiveBigIntegerField(null=True, blank=True)
+    sold = models.PositiveBigIntegerField(null=True, blank=True)
+    details = models.JSONField(default=dict)
+    issue = models.CharField(max_length=400, blank=True)
+
+    class Meta:
+        ordering = ['report_id', 'page', 'id']
+        indexes = [models.Index(fields=['kind', 'sales', 'region'], name='company_row_filters')]
+        constraints = [models.UniqueConstraint(fields=['report', 'page', 'source_row', 'kind'], name='unique_company_report_row')]
