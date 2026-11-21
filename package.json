@@ -2,7 +2,6 @@
   "name": "arbain-oneflow",
   "private": true,
   "devDependencies": {
-    "@astryxdesign/cli": "^0.7.0",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
@@ -13,14 +12,10 @@
     "vite": "^8.3.4"
   },
   "dependencies": {
-    "@astryxdesign/core": "^0.7.0",
-    "@astryxdesign/theme-neutral": "^0.7.0",
-    "@fontsource-variable/figtree": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
     "@heroicons/react": "^2.2.0",
     "@internationalized/date": "^3.12.4",
     "@remixicon/react": "^4.9.0",
-    "@stylexjs/stylex": "^0.19.1",
     "@tanstack/react-table": "^8.21.3",
     "motion": "^12.42.2",
     "react": "^19.3.0",

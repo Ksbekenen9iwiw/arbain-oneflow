@@ -22,7 +22,6 @@
   },
   "include": [
     "frontend",
-    "astryx-themes.js",
     "vite.config.ts"
   ]
 }

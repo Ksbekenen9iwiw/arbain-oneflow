@@ -10,7 +10,7 @@ tetap berlaku untuk dataset presentasi lama 12 pelanggan.
 
 MVP lokal untuk tantangan ARB-02 UMS: profil pelanggan, aktivitas sales, pesanan, reservasi stok, pengiriman, dan pusat tindakan dalam satu aplikasi. Data demo sepenuhnya sintetis. Produk, nama pelanggan, dan alamat contoh tidak mewakili data CV Arbain.
 
-**Mulai dari file ini.** Backend memakai Python 3.12 dan Django. Frontend memakai React 19, TypeScript, Vite 8, serta komponen dan template resmi Astryx 0.7 (theme Neutral). Node.js 22.12+ diperlukan untuk membangun frontend. Paket, ikon, dan font Figtree dibundel lokal; sesudah instalasi dan build, demo dapat berjalan tanpa CDN atau layanan eksternal.
+**Mulai dari file ini.** Backend memakai Python 3.12 dan Django. Frontend memakai React 19, TypeScript, Vite 8, serta komponen BoardUI Free (React Aria + Tailwind CSS v4) dengan tema OneFlow. Node.js 22.12+ diperlukan untuk membangun frontend. Paket, ikon, dan font Figtree dibundel lokal; sesudah instalasi dan build, demo dapat berjalan tanpa CDN atau layanan eksternal.
 
 ## Jalankan di Windows
 
@@ -58,7 +58,7 @@ Jalankan Django seperti biasa, lalu `npm run dev` di terminal kedua. Perintah in
 - `npm run check`: pemeriksaan TypeScript dan build produksi.
 - `npm run test:frontend`: tes alur wizard, navigasi, kuantitas, motion, dan panduan.
 - `npm run format`: format source frontend.
-- `frontend/templates/`: template Astryx yang sudah diadaptasi untuk seluruh screen.
+- `frontend/components/`: komponen BoardUI (kode sumber). `frontend/kit/`: lapisan OneFlow di atasnya yang dipakai semua screen.
 - `frontend/Walkthrough.tsx` dan `frontend/tourSteps.ts`: panduan interaktif dari sidebar. Undangan muncul pada kunjungan pertama ke dashboard; status pernah dilihat disimpan per akun/peran di browser ini. Jalur gudang tidak membuka CRM. Langkah tindakan menunggu klik pada elemen asli dan respons halaman. Setelah detail terbuka, langkah overview menyorot area konten dan menunggu tombol Lanjut. Tombol Kembali pada overview memulihkan langkah beserta URL/tab asal yang telah dikunjungi; panduan tidak mengirim transaksi. Esc atau tombol tutup mengakhiri panduan, dan menu Panduan aplikasi dapat mengulangnya dari halaman baca.
 - `crm/frontend.py`: serializer data halaman dan formulir; semua POST tetap memakai view, CSRF, form, akses peran, dan layanan transaksi Django.
 - `crm/static/crm/react/`: hasil build ber-hash beserta manifest Vite (tidak masuk Git). Jalankan build sebelum packaging atau `collectstatic`.
