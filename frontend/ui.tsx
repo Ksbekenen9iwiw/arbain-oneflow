@@ -58,6 +58,12 @@ export const money = (value: string | number) =>
 export const quantity = (value: string | number) =>
   BigInt(value || 0).toLocaleString("id-ID");
 
+// Imported records are stored in lowercase; show them as names without changing the data.
+export const displayName = (value?: string) =>
+  value && value === value.toLowerCase()
+    ? value.replace(/(^|[\s.\-/(])(\p{L})/gu, (_, lead, letter) => lead + letter.toUpperCase())
+    : value || "";
+
 export const dateLabel = (value?: string, time = false) =>
   value
     ? new Intl.DateTimeFormat("id-ID", {
