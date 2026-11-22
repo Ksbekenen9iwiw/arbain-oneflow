@@ -15,6 +15,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UsernameField
 from django.core.cache import cache
+from crm.services import assistant
 from django.contrib.messages import get_messages
 from django.http import JsonResponse, Http404
 from django.core.exceptions import PermissionDenied
@@ -177,6 +178,7 @@ def render_page(request, template, context=None, status=200, screen=None):
         data['action_form_default'] = form_data(ActionDecisionForm())
         data.setdefault('action_form', data['action_form_default'])
     data['can_view_company_archive'] = role == 'MANAGER' and settings.ONEFLOW_COMPANY_ARCHIVE
+    data['assistant_suggestions'] = assistant.SUGGESTIONS.get(role, []) if assistant.enabled() else []
     payload = {'screen': screen or Path(template).stem, 'url': page_url, 'data': data,
                'role': role, 'user': person(user) if user and user.is_authenticated else None,
                'csrf': get_token(request), 'demo': settings.ONEFLOW_DEMO, 'today': timezone.localdate().isoformat(),

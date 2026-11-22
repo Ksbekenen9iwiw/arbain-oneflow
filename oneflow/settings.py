@@ -21,6 +21,9 @@ DEBUG = os.environ.get('ONEFLOW_DEBUG', '1') == '1'
 ONEFLOW_DEMO = os.environ.get('ONEFLOW_DEMO', '1') == '1'
 # Opt in only on a private workspace with controlled manager accounts.
 ONEFLOW_COMPANY_ARCHIVE = os.environ.get('ONEFLOW_COMPANY_ARCHIVE', '0') == '1'
+# The chat is hidden when no key is set.
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-flash-lite-latest')
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]'] + [h for h in os.environ.get('ONEFLOW_ALLOWED_HOSTS', '').split(',') if h]
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get('ONEFLOW_CSRF_TRUSTED_ORIGINS', '').split(',') if o]
 RENDER_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')

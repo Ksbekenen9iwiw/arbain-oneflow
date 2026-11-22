@@ -1,12 +1,14 @@
 from django.urls import path
 from crm import views
 from crm.views.customers import customer_verify
+from crm.views.assistant import assistant_ask
 from crm.views.company_archive import company_archive, company_archive_file
 
 urlpatterns = [
     path('', views.today, name='today'),
     path('company-data/', company_archive, name='company_archive'),
     path('company-data/source/<int:report_id>/', company_archive_file, name='company_archive_file'),
+    path('assistant/ask/', assistant_ask, name='assistant_ask'),
     path('attention/', views.attention_page, name='attention'),
     path('actions/decision/', views.action_decision, name='action_decision'),
     path('targets/', views.target_save, name='target_save'),
