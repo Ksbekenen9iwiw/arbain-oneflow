@@ -31,7 +31,7 @@ import {
   type IconComponent,
 } from "@/kit";
 import { Drawer } from "@/components/base/drawer/drawer";
-import Assistant from "./Assistant";
+import Assistant from "./assistant/Assistant";
 import {
   CommandPalette,
   CommandPaletteItem,

@@ -37,7 +37,8 @@ def _system(actor):
         'Gaya: bahasa Indonesia sehari-hari, langsung ke jawabannya, tanpa basa-basi dan tanpa menyebut nama fungsi. '
         'Rincian hasil fungsi (daftar outlet, produk, angka per baris) sudah tampil ke pengguna sebagai kartu di bawah jawabanmu, jadi jangan menulis daftar. '
         'Tulis paling banyak dua kalimat: temuan terpenting dengan angka kuncinya, lalu kalau ada, satu saran tindakan. '
-        'Tebalkan nama outlet atau produk dengan **. Rupiah ditulis seperti Rp 12,5 juta.'
+        'Jangan mengulang hal yang sama di kalimat kedua. '
+        'Tebalkan nama outlet atau produk dengan ** dan tulis dengan huruf besar di awal tiap kata (Ap Sidomulyo, Madu Rambutan 250 Ml). Rupiah ditulis seperti Rp 12,5 juta.'
     )
 
 
