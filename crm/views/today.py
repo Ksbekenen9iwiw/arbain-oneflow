@@ -33,6 +33,7 @@ from crm.services.consignment import (
     raw_material_alerts,
     sales_attendance_recap,
 )
+from crm.services.sales_attendance import completed_visit_weeks
 from crm.services.supply import supply_alerts
 from crm.views.common import page
 
@@ -88,6 +89,7 @@ def _today_page(request, overrides=None, status=200):
     context['sample_tasks'] = sample_tasks(request.user)
     context['supply_alerts'] = supply_alerts(request.user)
     context['attendance_recaps'] = sales_attendance_recap(request.user, as_of, selected_sales or None)
+    context['visit_weeks'] = completed_visit_weeks(request.user, as_of, selected_sales or None)
     # The sales dashboard has no outlet monitoring section.
     context['consignment_outlets'] = [] if role == 'SALES' else pharmacy_consignment_overview(request.user, selected_sales or None, detail=False)
     context['product_traction'] = product_traction_analysis(as_of)

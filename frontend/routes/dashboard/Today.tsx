@@ -64,6 +64,8 @@ import { useApp, useQueryState } from "../../router";
 import { useDelayedBusy } from "../../RequestFeedback";
 import { RollingNumber } from "../../continuity";
 import SalesSummary from "./SalesSummary";
+import ConsignmentShare from "./ConsignmentShare";
+import StockHealth from "./StockHealth";
 import { cx } from "@/utils/cx";
 import {
   dashboardQueue,
@@ -75,6 +77,7 @@ import {
 import type { Row, FormSpec } from "../../types";
 const ShipmentTrend = lazy(() => import("./ShipmentTrend"));
 const SalesWeek = lazy(() => import("./SalesWeek"));
+const VisitWeeks = lazy(() => import("./VisitWeeks"));
 
 export default function Today() {
   const { page, busy, navigate, revision } = useApp();
@@ -378,7 +381,7 @@ export default function Today() {
   );
   // Astryx Table bleeds through the inherited bottom padding. Reserve that
   // padding within each table section so the next section retains its gap.
-  const hasTarget = goal.achievement_percent != null;
+  const hasTarget = goal?.achievement_percent != null;
   const hasShipments = (m.shipment_days || []).some(
     (day: Row) => Number(day.order_count) > 0,
   );
@@ -1094,6 +1097,12 @@ export default function Today() {
         total: assigned.length,
       };
     });
+  const pendingShipments = Number(m.pending_shipment_count || 0);
+  const visitWeeks = (d.visit_weeks || []).length > 0 && (
+    <Suspense fallback={<ChartSkeleton />}>
+      <VisitWeeks weeks={d.visit_weeks} />
+    </Suspense>
+  );
   const teamPeak = Math.max(
     1,
     ...teamRows.map((person: Row) => person.late + person.today),
@@ -1498,6 +1507,66 @@ export default function Today() {
                 </VStack>
               )}
               {salesOverview}
+              {sales && visitWeeks}
+              {manager && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {visitWeeks}
+                  {(d.consignment_outlets || []).length > 0 && (
+                    <ConsignmentShare outlets={d.consignment_outlets} />
+                  )}
+                </div>
+              )}
+              {warehouse && (
+                <div className="grid gap-3 md:grid-cols-3">
+                  <section
+                    aria-label="Perlu dikirim"
+                    className="flex min-w-0 flex-col gap-4 rounded-2xl bg-background-secondary-default p-4"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-body-medium text-text-secondary">
+                        Perlu dikirim
+                      </p>
+                      <p className="text-title-1-medium text-text-primary tabular-nums">
+                        <RollingNumber id="ship-pending" value={pendingShipments} />
+                        <span className="ms-2 text-body-medium text-text-tertiary">
+                          pesanan
+                        </span>
+                      </p>
+                    </div>
+                    <div className="mt-auto">
+                      <Button
+                        label={pendingShipments ? "Siapkan pengiriman" : "Lihat pesanan"}
+                        size="sm"
+                        variant={pendingShipments ? "primary" : "secondary"}
+                        href={
+                          pendingShipments
+                            ? ordersUrl("CONFIRMED")
+                            : withReturn("/orders/", page.url)
+                        }
+                      />
+                    </div>
+                  </section>
+                  <StockHealth
+                    className="md:col-span-2"
+                    conflict={stockConflicts}
+                    low={Math.max(0, lowStock - stockConflicts)}
+                    unverified={unverifiedStock}
+                    safe={Math.max(0, verifiedStock - Math.max(lowStock, stockConflicts))}
+                    onOpen={(filter) =>
+                      void navigate(
+                        withReturn(
+                          filter === "low"
+                            ? "/stock/?filter=low&status=active"
+                            : filter
+                              ? `/stock/?filter=${filter}`
+                              : "/stock/",
+                          page.url,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+              )}
               {warehouse && workQueue}
               {salesFollowUp}
               {manager &&
