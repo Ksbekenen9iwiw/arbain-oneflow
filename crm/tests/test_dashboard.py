@@ -161,3 +161,23 @@ class DashboardTests(TestCase):
         self.client.force_login(self.manager)
         for path in ['/?sales=nope','/?sales='+('9'*200),'/orders/?sales=nope']:
             self.assertEqual(self.client.get(path).status_code,404)
+
+    def test_dashboard_queries_do_not_grow_with_agenda(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        def load():
+            self.client.force_login(self.manager)
+            with CaptureQueriesContext(connection) as queries:
+                self.assertEqual(self.client.get('/', HTTP_X_ONEFLOW_PAGE='1').status_code, 200)
+            return len(queries)
+
+        def plan(code):
+            models.Activity.objects.create(customer=make_customer(self.sales, code), sales=self.sales,
+                                           scheduled_date=self.as_of, status='PLANNED')
+
+        plan('CUS101')
+        baseline = load()
+        for number in range(102, 108):
+            plan(f'CUS{number}')
+        self.assertEqual(load(), baseline)
