@@ -162,6 +162,18 @@ class DashboardTests(TestCase):
         for path in ['/?sales=nope','/?sales='+('9'*200),'/orders/?sales=nope']:
             self.assertEqual(self.client.get(path).status_code,404)
 
+    def test_outlet_monitoring_is_sent_only_to_roles_that_show_it(self):
+        models.ConsignmentStock.objects.create(customer=self.customer, product=self.product,
+                                               quantity_on_display=5, total_placed=5)
+
+        def outlets(user):
+            self.client.force_login(user)
+            return self.client.get('/', HTTP_X_ONEFLOW_PAGE='1').json()['data']['consignment_outlets']
+
+        self.assertEqual(outlets(self.sales), [])
+        for user in (self.manager, self.warehouse):
+            self.assertEqual([o['customer_id'] for o in outlets(user)], [str(self.customer.pk)])
+
     def test_dashboard_queries_do_not_grow_with_agenda(self):
         from django.db import connection
         from django.test.utils import CaptureQueriesContext
