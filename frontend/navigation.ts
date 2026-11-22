@@ -11,7 +11,7 @@ export function listReturn(url: string): string | undefined {
   if (!back || /[\\\s#]/.test(back)) return undefined;
   const pathname = back.split("?")[0];
   if (
-    !/^\/(?:customers\/(?:\d+\/)?|orders\/(?:\d+\/)?|samples\/(?:\d+\/)?|products\/\d+\/|stock\/)?$/.test(
+    !/^\/(?:customers\/(?:\d+\/)?|orders\/(?:\d+\/)?|samples\/(?:\d+\/)?|products\/\d+\/|stock\/|outlets\/)?$/.test(
       pathname,
     )
   )
@@ -29,6 +29,7 @@ export function backLabel(path: string) {
     return pathname === "/orders/" ? "Pesanan" : "Detail pesanan";
   if (pathname.startsWith("/samples/"))
     return pathname === "/samples/" ? "Sampel" : "Detail pengajuan sampel";
+  if (pathname === "/outlets/") return "Stok outlet";
   return "Produk & stok";
 }
 

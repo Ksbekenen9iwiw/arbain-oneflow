@@ -182,7 +182,7 @@ export function SalesAgenda({
                   (schedule === key ? "ring-2 ring-accent-500" : "")
                 }
               >
-                <dt className="text-caption-1-medium text-text-secondary">
+                <dt className="text-caption-1-medium text-text-secondary dark:text-text-primary">
                   {label}
                 </dt>
                 <dd
@@ -268,7 +268,15 @@ function QueueGroup({
   completeUrl: (a: Row) => string;
   customerUrl: (a: Row) => string;
 }) {
-  const [open, setOpen] = useState(false);
+  // Remembered for the session so Back from an outlet lands on the same expanded list.
+  const memo = `oneflow-open:${group.key}`;
+  const [open, setOpenState] = useState(
+    () => sessionStorage.getItem(memo) === "1",
+  );
+  const setOpen = (value: boolean) => {
+    sessionStorage.setItem(memo, value ? "1" : "0");
+    setOpenState(value);
+  };
   const all = open || group.rows.length <= GROUP_LIMIT;
   const rows = all ? group.rows : group.rows.slice(0, GROUP_LIMIT);
   return (
