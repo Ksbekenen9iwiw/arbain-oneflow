@@ -334,6 +334,7 @@ export function Router({
         (
           {
             today: "Dashboard",
+            outlets: "Stok outlet",
             customers: "Pelanggan",
             orders: "Pesanan",
             samples: "Pengajuan sampel",

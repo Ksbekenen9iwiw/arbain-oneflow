@@ -35,6 +35,7 @@ import {
   SimpleForm,
   FormDialog,
   useResponsive,
+  displayName,
 } from "../../ui";
 import { useApp, useQueryState } from "../../router";
 import { OrderTable } from "../orders/OrderTable";
@@ -149,8 +150,8 @@ export default function CustomerDetail() {
         defaultHasDividers
         header={
           <PageHeader
-            title={customer.name}
-            description={customer.source_pending ? "Outlet dari laporan Arba’in" : `${customer.code} · ${customer.is_active ? "Aktif" : "Nonaktif"}`}
+            title={displayName(customer.name)}
+            description={customer.source_pending ? "Perlu verifikasi" : `${customer.code} · ${customer.is_active ? "Aktif" : "Nonaktif"}`}
             back={{ href: d.back_url, label: backLabel(d.back_url) }}
             actions={
               <HStack gap={2} wrap="wrap">

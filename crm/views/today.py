@@ -43,6 +43,14 @@ def today(request):
     return _today_page(request)
 
 
+@login_required
+@require_GET
+def outlets(request):
+    """Consignment stock per outlet, for the roles that monitor it."""
+    require_role(request.user, {'MANAGER', 'WAREHOUSE'})
+    return page(request, 'crm/outlets.html', {'consignment_outlets': pharmacy_consignment_overview(request.user, detail=False)})
+
+
 def _today_page(request, overrides=None, status=200):
     as_of, role = timezone.localdate(), role_of(request.user)
     selected_sales = request.GET.get('sales', '')

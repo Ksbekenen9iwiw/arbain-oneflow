@@ -162,6 +162,16 @@ class DashboardTests(TestCase):
         for path in ['/?sales=nope','/?sales='+('9'*200),'/orders/?sales=nope']:
             self.assertEqual(self.client.get(path).status_code,404)
 
+    def test_outlet_page_is_for_roles_that_monitor_outlets(self):
+        models.ConsignmentStock.objects.create(customer=self.customer, product=self.product,
+                                               quantity_on_display=5, total_placed=5)
+        self.client.force_login(self.manager)
+        page = self.client.get('/outlets/', HTTP_X_ONEFLOW_PAGE='1').json()
+        self.assertEqual(page['screen'], 'outlets')
+        self.assertEqual(len(page['data']['consignment_outlets']), 1)
+        self.client.force_login(self.sales)
+        self.assertEqual(self.client.get('/outlets/').status_code, 403)
+
     def test_outlet_monitoring_is_sent_only_to_roles_that_show_it(self):
         models.ConsignmentStock.objects.create(customer=self.customer, product=self.product,
                                                quantity_on_display=5, total_placed=5)

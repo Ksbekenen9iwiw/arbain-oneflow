@@ -26,6 +26,7 @@ const loaders = {
   company_archive: () => import("./routes/company/CompanyArchive"),
   login: () => import("./routes/auth/Login"),
   today: () => import("./routes/dashboard/Today"),
+  outlets: () => import("./routes/dashboard/Outlets"),
   customers: () => import("./routes/customers/Customers"),
   customer_detail: () => import("./routes/customers/CustomerDetail"),
   crm_form: () => import("./routes/customers/CrmForm"),
@@ -45,6 +46,7 @@ const loaders = {
 const CompanyArchive = lazy(loaders.company_archive);
 const Login = lazy(loaders.login);
 const Today = lazy(loaders.today);
+const Outlets = lazy(loaders.outlets);
 const Customers = lazy(loaders.customers);
 const CustomerDetail = lazy(loaders.customer_detail);
 const CrmForm = lazy(loaders.crm_form);
@@ -210,6 +212,9 @@ function App() {
       break;
     case "today":
       content = <Today />;
+      break;
+    case "outlets":
+      content = <Outlets />;
       break;
     case "customers":
       content = <Customers />;
