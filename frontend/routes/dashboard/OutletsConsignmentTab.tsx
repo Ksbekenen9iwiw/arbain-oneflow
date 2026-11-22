@@ -99,7 +99,7 @@ export function OutletsConsignmentTab({
                   (item: Row) => item.is_near_expiry || item.is_weak,
                 ) && (
                   <Text type="supporting">
-                    {quantity((o.items || []).length)} produk aman
+                    {quantity(o.item_count ?? (o.items || []).length)} produk aman
                   </Text>
                 )}
                 {(o.items || [])

@@ -88,7 +88,7 @@ def _today_page(request, overrides=None, status=200):
     context['sample_tasks'] = sample_tasks(request.user)
     context['supply_alerts'] = supply_alerts(request.user)
     context['attendance_recaps'] = sales_attendance_recap(request.user, as_of, selected_sales or None)
-    context['consignment_outlets'] = pharmacy_consignment_overview(request.user, selected_sales or None)
+    context['consignment_outlets'] = pharmacy_consignment_overview(request.user, selected_sales or None, detail=False)
     context['product_traction'] = product_traction_analysis(as_of)
     context['raw_material_alerts'] = raw_material_alerts(as_of)
     if role == 'MANAGER':

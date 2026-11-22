@@ -109,6 +109,17 @@ class CustomerWorkspaceTests(TestCase):
         self.assertEqual([c['id'] for c in result['customers']], [str(self.b.pk)])
         self.assertEqual(self.data({'status': 'inactive'})['customers'][0]['id'], str(self.c.pk))
 
+    def test_list_is_paged_and_counts_cover_all_pages(self):
+        from crm.selectors import CUSTOMER_PAGE_SIZE
+        for number in range(CUSTOMER_PAGE_SIZE):
+            make_customer(self.sales, f'PG{number:03d}')
+        first = self.data({'sort': 'name'})
+        self.assertEqual((len(first['customers']), first['total'], first['pages']), (CUSTOMER_PAGE_SIZE, str(CUSTOMER_PAGE_SIZE + 3), '2'))
+        second = self.data({'sort': 'name', 'page': '2'})
+        self.assertEqual(len(second['customers']), 3)
+        self.assertFalse({c['id'] for c in first['customers']} & {c['id'] for c in second['customers']})
+        self.assertEqual(self.data({'page': 'x'})['page'], '1')
+
     def test_sales_scope_and_invalid_owner(self):
         for owner in ('abc', '9' * 100, '999999999'):
             self.assertEqual(self.client.get('/customers/', {'sales': owner}).status_code, 404)

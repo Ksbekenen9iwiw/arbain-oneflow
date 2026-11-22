@@ -1,4 +1,4 @@
-import { Collapsible } from "@/kit";
+import { Collapsible, Pagination } from "@/kit";
 import { RecordIdentity } from "../../RecordIdentity";
 import { withReturn, listReturn, backLabel } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -299,7 +299,7 @@ export default function Customers() {
                   : undefined
               }
             >
-              {d.customers.length} pelanggan
+              {d.total ?? d.customers.length} pelanggan
               {d.selected_view === "overdue"
                 ? " dengan aktivitas melewati jadwal"
                 : d.selected_view === "today"
@@ -335,6 +335,15 @@ export default function Customers() {
                     />
                   ) : undefined
                 }
+              />
+            )}
+            {Number(d.pages) > 1 && (
+              <Pagination
+                page={Number(d.page)}
+                totalItems={Number(d.total)}
+                pageSize={Number(d.page_size)}
+                onChange={(pageNumber) => update({ page: String(pageNumber) })}
+                label="Halaman pelanggan"
               />
             )}
           </VStack>

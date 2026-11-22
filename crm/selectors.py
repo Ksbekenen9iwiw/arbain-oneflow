@@ -15,6 +15,9 @@ def activity_due(activity):
     return min(dates) if dates else None
 
 
+CUSTOMER_PAGE_SIZE = 50
+
+
 def customer_records(actor, params, as_of):
     """Filter the authorized scope, independent of the currently visible results."""
     from django.db.models import Prefetch
@@ -68,7 +71,12 @@ def customer_records(actor, params, as_of):
             return (c.summary['next_activity'] or {}).get('due')
         dated = sorted((c for c in records if due(c)), key=lambda c: (due(c), c.pk), reverse=sort.startswith('-'))
         records = dated + sorted((c for c in records if not due(c)), key=lambda c: (c.name.casefold(), c.pk))
-    return {'customers': records, 'query': query, 'selected_sales': selected_sales, 'selected_status': status,
+    from django.core.paginator import Paginator
+    number = params.get('page', '1')
+    result = Paginator(records, CUSTOMER_PAGE_SIZE).get_page(number if number.isascii() and number.isdecimal() and len(number) <= 9 else 1)
+    return {'customers': list(result), 'page': result.number, 'pages': result.paginator.num_pages,
+            'total': result.paginator.count, 'page_size': CUSTOMER_PAGE_SIZE,
+            'query': query, 'selected_sales': selected_sales, 'selected_status': status,
             'selected_view': view, 'selected_sort': sort, 'view_counts': counts,
             'sales_options': [{'value': str(s.pk), 'label': s.get_full_name() or s.username} for s in owners] if role_of(actor) == 'MANAGER' else []}
 
