@@ -55,32 +55,45 @@ export function RollingNumber({
 }
 
 const ROW = "tr, li, [data-row]";
-let origin: string | null = null;
+const pathOf = (url: string) => url.split("?")[0];
+let origin: { list: string; href: string } | null = null;
 
-/** Remember which row a detail page was opened from, and point back at it on return. */
+/** Remember which row a detail page was opened from, and point back at it on return to that list. */
 export function useReturnHighlight(url: string) {
+  const current = useRef(url);
+  current.current = url;
   useEffect(() => {
     const remember = (event: MouseEvent) => {
       const anchor =
         event.target instanceof Element ? event.target.closest("a") : null;
-      if (anchor?.closest(ROW) && anchor.closest("main, [data-oneflow-scroll]"))
-        origin = anchor.getAttribute("href");
+      const href = anchor?.getAttribute("href");
+      if (href && anchor?.closest(ROW) && anchor.closest("[data-oneflow-scroll]"))
+        origin = { list: pathOf(current.current), href: pathOf(href) };
     };
     document.addEventListener("click", remember, true);
     return () => document.removeEventListener("click", remember, true);
   }, []);
   useLayoutEffect(() => {
     if (!origin) return;
-    const path = origin.split("?")[0];
-    if (url.split("?")[0] === path) return;
+    const path = pathOf(url);
+    if (path !== origin.list) {
+      // Still inside the record that was opened; anywhere else ends the trip.
+      if (!path.startsWith(origin.href)) origin = null;
+      return;
+    }
+    const { href } = origin;
+    origin = null;
     const timer = window.setTimeout(() => {
+      const scroller = document.querySelector("[data-oneflow-scroll]");
       const anchor = Array.from(
-        document.querySelectorAll<HTMLAnchorElement>("[data-oneflow-scroll] a"),
-      ).find((a) => a.getAttribute("href")?.split("?")[0] === path);
+        scroller?.querySelectorAll<HTMLAnchorElement>("a") || [],
+      ).find((a) => pathOf(a.getAttribute("href") || "") === href);
       const row = anchor?.closest(ROW);
-      origin = null;
-      if (!row) return;
-      row.scrollIntoView({ block: "nearest" });
+      if (!row || !scroller) return;
+      const box = row.getBoundingClientRect();
+      const view = scroller.getBoundingClientRect();
+      if (box.bottom < view.top || box.top > view.bottom)
+        row.scrollIntoView({ block: "center" });
       row.classList.add("oneflow-returned");
       window.setTimeout(() => row.classList.remove("oneflow-returned"), 1600);
     }, 60);

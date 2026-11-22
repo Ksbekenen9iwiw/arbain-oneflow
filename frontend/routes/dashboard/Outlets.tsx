@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Layout,
   LayoutContent,
@@ -9,7 +8,7 @@ import {
 } from "@/kit";
 import { PageHeader, VStack, HStack, Text, money, quantity, useResponsive } from "../../ui";
 import { backLabel, listReturn } from "../../navigation";
-import { useApp } from "../../router";
+import { useApp, useQueryState } from "../../router";
 import type { Row } from "../../types";
 import { OutletsConsignmentTab } from "./OutletsConsignmentTab";
 import { outletIssues } from "./OutletAttention";
@@ -20,9 +19,12 @@ export default function Outlets() {
   const { page } = useApp();
   const { contentPadding, isMobile } = useResponsive();
   const outlets: Row[] = page.data.consignment_outlets || [];
-  const [query, setQuery] = useState("");
-  const [scope, setScope] = useState("attention");
-  const [pageNumber, setPageNumber] = useState(1);
+  // Kept in the URL so Back from an outlet returns to the same slice of the list.
+  const [query, setQuery] = useQueryState("q", "");
+  const [scope, setScope] = useQueryState("scope", "attention");
+  const [pageParam, setPageParam] = useQueryState("p", "1");
+  const pageNumber = Number(pageParam) || 1;
+  const setPageNumber = (value: number) => setPageParam(String(value));
   const back = listReturn(page.url);
   const flagged = outlets.filter((o) => outletIssues(o) > 0);
   const needle = query.trim().toLowerCase();

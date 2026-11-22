@@ -56,6 +56,7 @@ import {
   FormDialog,
   Empty,
   useResponsive,
+  displayName,
 } from "../../ui";
 import { StockCondition } from "../stock/StockParts";
 import { OrderTable } from "../orders/OrderTable";
@@ -656,7 +657,7 @@ export default function Today() {
                     href={withReturn(`/customers/${a.customer.id}/`, page.url)}
                     weight="semibold"
                   >
-                    {a.customer.name}
+                    {displayName(a.customer.name)}
                   </Link>
                 ),
               },
@@ -813,7 +814,7 @@ export default function Today() {
                       )}
                       weight="semibold"
                     >
-                      {a.reasons.customer_name}
+                      {displayName(a.reasons.customer_name)}
                     </Link>
                     {a.kind === "FOLLOWUP" ? (
                       <Text type="supporting">Tindak lanjut</Text>
