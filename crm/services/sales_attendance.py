@@ -134,3 +134,35 @@ def sales_attendance_recap(actor, as_of=None, selected_sales=None):
             'days': days_list,
         })
     return recaps
+
+
+def completed_visit_weeks(actor, as_of=None, selected_sales=None, weeks=8):
+    """Completed visits per sales for the last `weeks` weeks (Monday start), oldest first."""
+    role = role_of(actor)
+    if role == 'WAREHOUSE':
+        return []
+    as_of = as_of or timezone.localdate()
+    this_week = as_of - timedelta(days=as_of.weekday())
+    starts = [this_week - timedelta(weeks=offset) for offset in reversed(range(weeks))]
+    done = Activity.objects.filter(
+        customer__in=customers_for(actor), status='DONE',
+        completed_at__date__gte=starts[0], completed_at__date__lte=as_of,
+    )
+    if role == 'SALES':
+        done = done.filter(sales=actor)
+    elif selected_sales:
+        done = done.filter(sales_id=selected_sales)
+    names, counts = {}, {}
+    for sales_id, first, last, username, completed_at in done.values_list(
+        'sales_id', 'sales__first_name', 'sales__last_name', 'sales__username', 'completed_at',
+    ):
+        day = timezone.localtime(completed_at).date()
+        key = (day - timedelta(days=day.weekday()), sales_id)
+        counts[key] = counts.get(key, 0) + 1
+        names[sales_id] = f'{first} {last}'.strip() or username
+    people = sorted(names.items(), key=lambda item: item[1])
+    return [{
+        'start': start,
+        'total': sum(counts.get((start, sales_id), 0) for sales_id, _ in people),
+        'by_sales': [{'sales_id': str(sales_id), 'name': name, 'count': counts.get((start, sales_id), 0)} for sales_id, name in people],
+    } for start in starts]

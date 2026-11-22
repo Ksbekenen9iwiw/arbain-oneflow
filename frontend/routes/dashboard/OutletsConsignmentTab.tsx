@@ -5,7 +5,6 @@ import {
   Button,
   DataTable,
   dateLabel,
-  displayName,
   Empty,
   HStack,
   Link,
@@ -40,17 +39,18 @@ export function OutletsConsignmentTab({
         }))}
         empty={
           <Empty
-            title="Tidak ada outlet yang cocok"
+            title="Belum ada stok titipan di apotek"
+            description="Buka profil pelanggan/apotek untuk mencatat penempatan barang titip jual pertama."
           />
         }
         columns={[
           {
             key: "name",
-            header: "Outlet",
+            header: "Apotek / Outlet",
             renderCell: (o: Row) => (
               <VStack gap={1}>
                 {isWarehouse ? (
-                  <Text weight="semibold">{displayName(o.name)}</Text>
+                  <Text weight="semibold">{o.name}</Text>
                 ) : (
                   <Link
                     href={withReturn(
@@ -59,10 +59,13 @@ export function OutletsConsignmentTab({
                     )}
                     weight="semibold"
                   >
-                    {displayName(o.name)}
+                    {o.name}
                   </Link>
                 )}
-                <Text type="supporting">{o.sales_name}</Text>
+                <Text type="supporting">
+                  {o.code} · {o.outlet_type_label || "Apotek"} (Diskon{" "}
+                  {o.discount_percent ?? 16}%) · Sales: {o.sales_name}
+                </Text>
                 {Number(o.deferred_billing_rupiah) > 0 && (
                   <Status
                     value="DEFERRED"
@@ -91,12 +94,42 @@ export function OutletsConsignmentTab({
             key: "items",
             header: "Perlu perhatian",
             renderCell: (o: Row) => (
-              <AttentionCell outlet={o} />
+              <VStack gap={1}>
+                {!(o.items || []).some(
+                  (item: Row) => item.is_near_expiry || item.is_weak,
+                ) && (
+                  <Text type="supporting">
+                    {quantity(o.item_count ?? (o.items || []).length)} produk aman
+                  </Text>
+                )}
+                {(o.items || [])
+                  .filter((item: Row) => item.is_near_expiry || item.is_weak)
+                  .map((item: Row) => (
+                  <HStack key={item.id} gap={2} wrap="wrap" vAlign="center">
+                    <Text>
+                      {item.name}:{" "}
+                      <Text weight="semibold" hasTabularNumbers>
+                        {quantity(item.quantity_on_display)} {item.unit}
+                      </Text>{" "}
+                      (laku {quantity(item.total_sold)})
+                    </Text>
+                    {item.is_near_expiry && (
+                      <Status
+                        value="NEAR_EXPIRY"
+                        label={`Wajib tarik ≤ 6 bln ED (${dateLabel(item.nearest_expiry_date)})`}
+                      />
+                    )}
+                    {item.is_weak && (
+                      <Status value="SLOW" label="Kurang laku di sini" />
+                    )}
+                  </HStack>
+                  ))}
+              </VStack>
             ),
           },
           {
             key: "last_checked_date",
-            header: "Cek terakhir",
+            header: "Cek Terakhir",
             renderCell: (o: Row) => (
               <Text>
                 {o.last_checked_date
@@ -127,42 +160,5 @@ export function OutletsConsignmentTab({
         ]}
       />
     </MotionStack>
-  );
-}
-
-function AttentionCell({ outlet }: { outlet: Row }) {
-  const flagged: Row[] = (outlet.items || []).filter(
-    (item: Row) => item.is_near_expiry || item.is_weak,
-  );
-  if (!flagged.length)
-    return (
-      <Text type="supporting">
-        {quantity(outlet.item_count ?? (outlet.items || []).length)} produk aman
-      </Text>
-    );
-  const expiring = flagged.filter((item) => item.is_near_expiry);
-  const weak = flagged.filter((item) => item.is_weak);
-  const names = [...expiring, ...weak.filter((item) => !item.is_near_expiry)];
-  return (
-    <VStack gap={1}>
-      <HStack gap={1} wrap="wrap">
-        {expiring.length > 0 && (
-          <Status
-            value="NEAR_EXPIRY"
-            label={`${quantity(expiring.length)} dekat kedaluwarsa`}
-          />
-        )}
-        {weak.length > 0 && (
-          <Status value="SLOW" label={`${quantity(weak.length)} kurang laku`} />
-        )}
-      </HStack>
-      <Text type="supporting">
-        {names
-          .slice(0, 2)
-          .map((item) => displayName(item.name))
-          .join(", ")}
-        {names.length > 2 && ` +${quantity(names.length - 2)}`}
-      </Text>
-    </VStack>
   );
 }

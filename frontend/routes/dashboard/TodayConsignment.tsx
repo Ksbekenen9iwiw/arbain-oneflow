@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { TabList, Tab } from "@/kit";
 import type { Row } from "../../types";
-import { quantity, Text, VStack } from "../../ui";
+import { money, quantity, Text, VStack } from "../../ui";
 import { AttendanceRecapTab } from "./AttendanceRecapTab";
 import { DashboardAlarmPanel } from "./DashboardAlarmPanel";
+import { OutletsConsignmentTab } from "./OutletsConsignmentTab";
 import { ProductTractionTab } from "./ProductTractionTab";
 import { RawMaterialAlertsTab } from "./RawMaterialAlertsTab";
 
@@ -13,6 +14,7 @@ export function ConsignmentAndAttendanceHub({
   role,
   pageUrl,
   attendanceRecaps,
+  consignmentOutlets,
   productTraction,
   rawMaterialAlerts,
   onEditDirective,
@@ -21,6 +23,7 @@ export function ConsignmentAndAttendanceHub({
   role: string | null;
   pageUrl: string;
   attendanceRecaps: Row[];
+  consignmentOutlets: Row[];
   productTraction: Row[];
   rawMaterialAlerts: Row[];
   onEditDirective: (product?: Row) => void;
@@ -29,10 +32,22 @@ export function ConsignmentAndAttendanceHub({
   const isWarehouse = role === "WAREHOUSE";
   const isManager = role === "MANAGER";
   const [sectionTab, setSectionTab] = useState(
-    isWarehouse ? "traction" : "attendance",
+    isWarehouse ? "outlets" : "attendance",
   );
   const [attendanceMode, setAttendanceMode] = useState("week");
 
+  const totalDisplayUnits = consignmentOutlets.reduce(
+    (sum, o) => sum + Number(o.total_on_display || 0),
+    0,
+  );
+  const totalSoldUnits = consignmentOutlets.reduce(
+    (sum, o) => sum + Number(o.total_sold || 0),
+    0,
+  );
+  const totalDeferredRupiah = consignmentOutlets.reduce(
+    (sum, o) => sum + Number(o.deferred_billing_rupiah || 0),
+    0,
+  );
   const todayVisitTotal = attendanceRecaps.reduce(
     (sum, r) => sum + Number(r.today_count || 0),
     0,
@@ -53,6 +68,7 @@ export function ConsignmentAndAttendanceHub({
         {!isWarehouse && (
           <Tab value="attendance" label="Kunjungan" panelId="hub-attendance" />
         )}
+        <Tab value="outlets" label="Stok outlet" panelId="hub-outlets" />
         <Tab value="traction" label="Evaluasi produk" panelId="hub-traction" />
         <Tab
           value="raw_materials"
@@ -69,6 +85,15 @@ export function ConsignmentAndAttendanceHub({
           · {quantity(weekVisitTotal)} dalam 7 hari
         </Text>
       )}
+      {sectionTab === "outlets" && consignmentOutlets.length > 0 && (
+        <Text type="supporting">
+          {quantity(totalDisplayUnits)} unit tersisa ·{" "}
+          {quantity(totalSoldUnits)} terjual
+          {totalDeferredRupiah > 0
+            ? ` · Tagihan tunda ${money(totalDeferredRupiah)}`
+            : ""}
+        </Text>
+      )}
       {!isWarehouse && sectionTab === "attendance" && (
         <AttendanceRecapTab
           isManager={isManager}
@@ -76,6 +101,14 @@ export function ConsignmentAndAttendanceHub({
           attendanceMode={attendanceMode}
           onAttendanceModeChange={setAttendanceMode}
           attendanceRecaps={attendanceRecaps}
+        />
+      )}
+
+      {sectionTab === "outlets" && (
+        <OutletsConsignmentTab
+          isWarehouse={isWarehouse}
+          pageUrl={pageUrl}
+          consignmentOutlets={consignmentOutlets}
         />
       )}
 

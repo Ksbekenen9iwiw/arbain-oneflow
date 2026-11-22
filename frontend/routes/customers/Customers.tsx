@@ -32,7 +32,6 @@ import {
   useSearchInput,
   resetLabel,
   Table,
-  displayName,
 } from "../../ui";
 import { useApp } from "../../router";
 import type { Row } from "../../types";
@@ -90,16 +89,16 @@ export default function Customers() {
       width: proportional(2.5),
       renderCell: (r) => (
         <RecordIdentity
-          name={displayName(r.name)}
+          name={r.name}
           company
-          supporting={[r.phone, r.source_pending ? "Perlu verifikasi" : !r.is_active && "Nonaktif"].filter(Boolean).join(" · ")}
+          supporting={`${r.source_pending ? "Outlet dari laporan" : r.code}${r.phone ? ` · ${r.phone}` : ""}${r.source_pending ? " · Perlu verifikasi" : !r.is_active ? " · Nonaktif" : ""}`}
         >
           <Link
             data-tour="customer-record"
             weight="semibold"
             href={customerContext(`/customers/${r.id}/`, page.url)}
           >
-            {displayName(r.name)}
+            {r.name}
           </Link>
         </RecordIdentity>
       ),

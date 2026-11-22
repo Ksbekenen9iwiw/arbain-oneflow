@@ -181,81 +181,25 @@ body {
   border-radius: 1rem;
 }
 
-/* Sales home: the next visit, on a warm honey surface with a faint honeycomb. */
-.oneflow-next {
-  background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in oklab, var(--color-accent-300) 38%, transparent), transparent 60%),
-    linear-gradient(180deg, var(--color-accent-50), var(--color-accent-100));
-  border: 1px solid color-mix(in oklab, var(--color-accent-300) 55%, transparent);
-}
-.oneflow-next::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.5;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'%3E%3Cpath d='M28 1 55 16.5v32L28 64 1 48.5v-32zM28 65v32M1 48.5v0M55 48.5v0' fill='none' stroke='%23c27408' stroke-opacity='.16'/%3E%3C/svg%3E");
-  mask-image: linear-gradient(100deg, transparent 45%, #000);
-  pointer-events: none;
-}
-.dark .oneflow-next {
-  background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in oklab, var(--color-accent-500) 30%, transparent), transparent 60%),
-    color-mix(in oklab, var(--color-accent-950) 70%, var(--color-background-secondary-default));
-  border-color: color-mix(in oklab, var(--color-accent-500) 35%, transparent);
+/* Group heading row inside a table (agenda by due state). */
+.bui-table tbody tr.bui-table-group th {
+  padding: 0.5rem 1rem;
+  text-align: start;
+  background-color: var(--color-background-secondary-default);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
 }
 
-.oneflow-pulse { animation: oneflow-pulse 1.8s ease-out infinite; }
-@keyframes oneflow-pulse {
-  0% { box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 0%, #f43f5e 55%); }
-  100% { box-shadow: 0 0 0 0.5rem transparent; }
-}
-
-/* Touch feedback: surfaces answer the press, not only the hover. */
-.oneflow-press { transition-property: transform, box-shadow, background-color; transition-duration: 160ms; }
-.oneflow-press:active { transform: scale(0.97); }
-
-.oneflow-queue-row { transition: background-color 160ms ease-out; }
-.oneflow-queue-row + .oneflow-queue-row { box-shadow: 0 -1px 0 var(--color-separator-border); }
-.oneflow-queue-row:hover,
-.oneflow-queue-row:focus-within {
-  background-color: var(--color-background-primary-default);
-  box-shadow: var(--shadow-xs);
-}
-.oneflow-queue-row:hover + .oneflow-queue-row,
-.oneflow-queue-row:focus-within + .oneflow-queue-row { box-shadow: none; }
-
-@media (prefers-reduced-motion: reduce) {
-  .oneflow-pulse { animation: none; }
-  .oneflow-press:active { transform: none; }
-}
-
-/* Inline facts under a record name, separated by a middle dot. */
-.oneflow-meta > * + *::before { content: "·"; margin-inline: 0.375rem; color: var(--color-text-tertiary); }
-
-.oneflow-bar { transform-origin: left; animation: oneflow-bar-grow 600ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-@keyframes oneflow-bar-grow { from { transform: scaleX(0); } }
-@media (prefers-reduced-motion: reduce) { .oneflow-bar { animation: none; } }
-
-/* Returning from a detail page: the row you came from glows briefly. */
+/* Returning from a detail page: the row you came from is tinted briefly. */
 .oneflow-returned { animation: oneflow-returned 1.6s ease-out; }
 @keyframes oneflow-returned {
   0%, 35% { background-color: color-mix(in oklab, var(--color-accent-300) 45%, transparent); }
   100% { background-color: transparent; }
 }
-/* Touch feedback on every pressable control, not only on hover. */
-button:not(:disabled):active, a[role="button"]:active, .bui-table tbody tr:active { transition: transform 120ms ease-out; }
-button:not(:disabled):active, a[role="button"]:active { transform: scale(0.97); }
+/* Press feedback on every pressable control, not only on hover. */
+button:not(:disabled):active, a[role="button"]:active { transition: transform 120ms ease-out; transform: scale(0.97); }
 @media (prefers-reduced-motion: reduce) {
   .oneflow-returned { animation: none; outline: 2px solid var(--color-accent-400); outline-offset: -2px; }
   button:not(:disabled):active, a[role="button"]:active { transform: none; }
 }
-
-/* Queue rows arrive in a short cascade whenever the filter changes. */
-.oneflow-queue-row { animation: oneflow-row-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.oneflow-queue-row:nth-child(2) { animation-delay: 30ms; }
-.oneflow-queue-row:nth-child(3) { animation-delay: 60ms; }
-.oneflow-queue-row:nth-child(4) { animation-delay: 90ms; }
-.oneflow-queue-row:nth-child(5) { animation-delay: 120ms; }
-.oneflow-queue-row:nth-child(n + 6) { animation-delay: 150ms; }
-@keyframes oneflow-row-in { from { opacity: 0; transform: translateY(6px); filter: blur(2px); } }
-@media (prefers-reduced-motion: reduce) { .oneflow-queue-row { animation: none; } }

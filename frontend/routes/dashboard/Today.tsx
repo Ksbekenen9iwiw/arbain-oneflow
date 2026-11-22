@@ -1,7 +1,4 @@
 import { Collapsible } from "@/kit";
-import { SalesAgenda } from "./SalesAgenda";
-import { TeamFocus } from "./TeamFocus";
-import { OutletAttention } from "./OutletAttention";
 import { MotionStack } from "../../motion";
 import { RecordIdentity } from "../../RecordIdentity";
 import { ProductIdentity } from "../../ProductIdentity";
@@ -56,7 +53,6 @@ import {
   FormDialog,
   Empty,
   useResponsive,
-  displayName,
 } from "../../ui";
 import { StockCondition } from "../stock/StockParts";
 import { OrderTable } from "../orders/OrderTable";
@@ -66,6 +62,11 @@ import {
 } from "./TodayConsignment";
 import { useApp, useQueryState } from "../../router";
 import { useDelayedBusy } from "../../RequestFeedback";
+import { RollingNumber } from "../../continuity";
+import SalesSummary from "./SalesSummary";
+import ConsignmentShare from "./ConsignmentShare";
+import StockHealth from "./StockHealth";
+import { cx } from "@/utils/cx";
 import {
   dashboardQueue,
   salesGreeting,
@@ -75,6 +76,8 @@ import {
 } from "../../dashboard";
 import type { Row, FormSpec } from "../../types";
 const ShipmentTrend = lazy(() => import("./ShipmentTrend"));
+const SalesWeek = lazy(() => import("./SalesWeek"));
+const VisitWeeks = lazy(() => import("./VisitWeeks"));
 
 export default function Today() {
   const { page, busy, navigate, revision } = useApp();
@@ -96,13 +99,15 @@ export default function Today() {
     "schedule",
     "priority",
   );
-  const schedule = ["priority", "all", "late", "today", "future"].includes(
-    requestedSchedule,
-  )
-    ? requestedSchedule
-    : "priority";
   const [expanded, setExpanded] = useQueryState("activities", "limited");
   const allActivities = expanded === "all";
+  // Sales starts on a short "next up" list; the full agenda opens on request.
+  const compact = sales && !allActivities;
+  const schedule =
+    !compact &&
+    ["priority", "all", "late", "today", "future"].includes(requestedSchedule)
+      ? requestedSchedule
+      : "priority";
   const setAllActivities = (value: boolean | ((v: boolean) => boolean)) =>
     setExpanded(
       (typeof value === "function" ? value(allActivities) : value)
@@ -188,6 +193,26 @@ export default function Today() {
     activityMatches(a.due, mode, page.today);
   const showQueueTabs = !sales;
   const filtered = agenda.filter((a) => matches(a, schedule));
+  const dueGroup = (a: Row) =>
+    matches(a, "late") ? "late" : matches(a, "today") ? "today" : "future";
+  const grouped =
+    sales && !compact && (schedule === "priority" || schedule === "all");
+  const groupLabels: Record<string, string> = {
+    late: "Terlambat",
+    today: "Hari ini",
+    future: "Mendatang",
+  };
+  const groupRows = (key: string) => filtered.filter((a) => dueGroup(a) === key);
+  const agendaLimit = 5;
+  const agendaRows = allActivities
+    ? grouped
+      ? Object.keys(groupLabels).flatMap(groupRows)
+      : filtered
+    : grouped
+      ? Object.keys(groupLabels).flatMap((key) =>
+          groupRows(key).slice(0, agendaLimit),
+        )
+      : filtered.slice(0, agendaLimit);
   const lateActivities = agenda.filter((a) => matches(a, "late")).length;
   const todayActivities = agenda.filter((a) => matches(a, "today")).length;
   const activityIds = new Set(agenda.map((a) => String(a.id)));
@@ -356,51 +381,57 @@ export default function Today() {
   );
   // Astryx Table bleeds through the inherited bottom padding. Reserve that
   // padding within each table section so the next section retains its gap.
+  const hasTarget = goal?.achievement_percent != null;
   const hasShipments = (m.shipment_days || []).some(
     (day: Row) => Number(day.order_count) > 0,
   );
-  const salesOverview = sales && (
-    <VStack gap={4}>
-      {queue === "activities" && (
-        <SalesAgenda
-          agenda={agenda}
-          today={page.today}
-          pageUrl={page.url}
-          schedule={schedule}
-          onSchedule={setSchedule}
-          isMobile={isMobile}
-        />
-      )}
-      {goal.achievement_percent != null && (
-        <Card padding={4}>
-          <VStack gap={2}>
-            <HStack hAlign="between" vAlign="end" wrap="wrap" gap={2}>
-              <Text type="supporting">Target {monthLabel}</Text>
-              <Text weight="semibold" hasTabularNumbers data-figure>
-                {pct(goal.achievement_percent)} dari {money(goal.target_rupiah)}
-              </Text>
-            </HStack>
+  const salesOverview = sales && (hasTarget || hasShipments) && (
+    <VStack gap={2} aria-label="Ringkasan sales">
+      {hasTarget && (
+      <StatGrid>
+        <StatTile
+          icon={RiFocus2Line}
+          tone={
+            goal.achievement_percent != null && goal.achievement_percent >= 100
+              ? "success"
+              : "accent"
+          }
+          label="Target bulan ini"
+          value={
+            goal.achievement_percent != null
+              ? pct(goal.achievement_percent)
+              : "Belum ada"
+          }
+          caption={
+            goal.achievement_percent != null
+              ? `dari ${money(goal.target_rupiah)}`
+              : "Hubungi manajer"
+          }
+        >
+          {goal.achievement_percent != null && (
             <ProgressBar
               label="Capaian target bulan ini"
               isLabelHidden
               value={Math.min(100, goal.achievement_percent)}
               variant={goal.achievement_percent >= 100 ? "success" : "accent"}
             />
-          </VStack>
-        </Card>
+          )}
+        </StatTile>
+      </StatGrid>
       )}
       {hasShipments && (
-        <Card padding={3}>
-          <Suspense fallback={<ChartSkeleton />}>
-            <ShipmentTrend
-              days={m.shipment_days}
-              today={page.today}
-              defaultPeriod="30"
-              compact
-            />
-          </Suspense>
-        </Card>
+      <Card padding={3}>
+        <Suspense fallback={<ChartSkeleton />}>
+          <ShipmentTrend
+            days={m.shipment_days}
+            today={page.today}
+            defaultPeriod="30"
+            compact
+          />
+        </Suspense>
+      </Card>
       )}
+
     </VStack>
   );
 
@@ -591,7 +622,8 @@ export default function Today() {
           aria-label="Agenda"
         >
           <HStack hAlign="between" gap={3} vAlign="end" wrap="wrap">
-            {sales && <Heading level={2}>Agenda</Heading>}
+            {sales && <Heading level={2}>{compact ? "Berikutnya" : "Agenda"}</Heading>}
+            {!sales && (
             <Selector
               label={sales ? "Filter agenda" : "Jadwal"}
               value={schedule}
@@ -608,7 +640,8 @@ export default function Today() {
                 setAllActivities(false);
               }}
             />
-            {filtered.length > 5 && (
+            )}
+            {filtered.length > agendaRows.length || allActivities ? (
               <Button
                 label={
                   allActivities ? "Ringkas" : `Lihat semua (${filtered.length})`
@@ -617,10 +650,51 @@ export default function Today() {
                 variant="secondary"
                 onClick={() => setAllActivities((v) => !v)}
               />
-            )}
+            ) : null}
           </HStack>
+          {sales && !compact && (
+            <TabList
+              value={schedule}
+              onChange={(value) => {
+                setSchedule(value);
+              }}
+              aria-label="Filter agenda"
+              hasDivider
+            >
+              <Tab value="priority" label="Perlu dikerjakan" />
+              <Tab
+                value="late"
+                label={
+                  <span>
+                    Terlambat (<RollingNumber id="late" value={lateActivities} />)
+                  </span>
+                }
+              />
+              <Tab
+                value="today"
+                label={
+                  <span>
+                    Hari ini (<RollingNumber id="today" value={todayActivities} />)
+                  </span>
+                }
+              />
+              <Tab value="future" label="Mendatang" />
+              <Tab value="all" label="Semua" />
+            </TabList>
+          )}
           <DataTable
-            rows={allActivities ? filtered : filtered.slice(0, 5)}
+            rows={agendaRows}
+            group={
+              grouped
+                ? (a) => {
+                    const key = dueGroup(a);
+                    return {
+                      key,
+                      label: `${groupLabels[key]} · ${groupRows(key).length}`,
+                    };
+                  }
+                : undefined
+            }
             empty={
               <Empty
                 kind={schedule === "priority" ? "complete" : "search"}
@@ -652,20 +726,31 @@ export default function Today() {
                 key: "customer",
                 header: "Pelanggan",
                 width: sales ? proportional(1.45, { minWidth: 120 }) : undefined,
-                renderCell: (a) => (
-                  <Link
-                    href={withReturn(`/customers/${a.customer.id}/`, page.url)}
-                    weight="semibold"
-                  >
-                    {displayName(a.customer.name)}
-                  </Link>
-                ),
+                renderCell: (a) => {
+                  const name = (
+                    <Link
+                      href={withReturn(`/customers/${a.customer.id}/`, page.url)}
+                      weight="semibold"
+                    >
+                      {a.customer.name}
+                    </Link>
+                  );
+                  const where = compact && a.customer.address?.trim();
+                  return where ? (
+                    <VStack gap={1}>
+                      {name}
+                      <Text type="supporting">{where}</Text>
+                    </VStack>
+                  ) : (
+                    name
+                  );
+                },
               },
-              {
+              ...(compact ? [] : [{
                 key: "kind_label",
                 header: "Aktivitas",
                 width: sales ? proportional(1.65, { minWidth: 140 }) : undefined,
-                renderCell: (activity) => (
+                renderCell: (activity: Row) => (
                   <VStack gap={1}>
                     <Text>{activity.kind_label}</Text>
                     {sales && activity.note?.trim() && (
@@ -681,14 +766,14 @@ export default function Today() {
                     )}
                   </VStack>
                 ),
-              },
+              }]),
               {
                 key: "due",
                 header: "Jadwal",
                 width: sales ? proportional(0.9, { minWidth: 106 }) : undefined,
                 renderCell: (a) => (
                   <HStack gap={2} wrap="wrap">
-                    <Text>
+                    <Text color={sales && matches(a, "late") ? "danger" : undefined}>
                       {a.due
                         ? dateLabel(a.due)
                         : sales
@@ -701,34 +786,6 @@ export default function Today() {
                   </HStack>
                 ),
               },
-              ...(sales
-                ? [
-                    {
-                      key: "schedule_status",
-                      header: "Status",
-                      width: proportional(0.9, { minWidth: 110 }),
-                      renderCell: (activity: Row) => {
-                        const status = matches(activity, "late")
-                          ? { label: "Terlambat", color: "red" as const }
-                          : matches(activity, "today")
-                            ? { label: "Hari ini", color: "blue" as const }
-                            : {
-                                label: activity.due
-                                  ? "Mendatang"
-                                  : "Tanpa jadwal",
-                                color: "gray" as const,
-                              };
-                        return (
-                          <Token
-                            {...status}
-                            size="sm"
-                            style={{ borderRadius: "var(--radius-full)" }}
-                          />
-                        );
-                      },
-                    },
-                  ]
-                : []),
               ...(page.role === "MANAGER" && !d.selected_sales
                 ? [
                     {
@@ -814,7 +871,7 @@ export default function Today() {
                       )}
                       weight="semibold"
                     >
-                      {displayName(a.reasons.customer_name)}
+                      {a.reasons.customer_name}
                     </Link>
                     {a.kind === "FOLLOWUP" ? (
                       <Text type="supporting">Tindak lanjut</Text>
@@ -1040,19 +1097,34 @@ export default function Today() {
         total: assigned.length,
       };
     });
+  const pendingShipments = Number(m.pending_shipment_count || 0);
+  const visitWeeks = (d.visit_weeks || []).length > 0 && (
+    <Suspense fallback={<ChartSkeleton />}>
+      <VisitWeeks weeks={d.visit_weeks} />
+    </Suspense>
+  );
+  const teamPeak = Math.max(
+    1,
+    ...teamRows.map((person: Row) => person.late + person.today),
+  );
+  const teamStats = manager && (
+    <div className="grid gap-3 md:grid-cols-2">
+      <SalesSummary
+        id="team"
+        late={lateActivities}
+        today={todayActivities}
+        onOpen={(mode) => focusQueue("activities", mode)}
+      />
+      <Suspense fallback={<ChartSkeleton />}>
+        <SalesWeek agenda={agenda} today={page.today} />
+      </Suspense>
+    </div>
+  );
   const teamRecap = manager && (
-    <TeamFocus
-      people={teamRows}
-      agendaUrl={(salesId, mode) =>
-        dashboardUrl({
-          sales: salesId,
-          view: "activities",
-          schedule: mode,
-          activities: "limited",
-        })
-      }
-      controls={
-        <>
+    <VStack gap={3} id="team-recap" className="oneflow-panel">
+      <HStack gap={3} wrap="wrap" vAlign="center" hAlign="between">
+        <Heading level={2}>Rekap tim</Heading>
+        <HStack gap={2} wrap="wrap" vAlign="center">
           <Selector
             label="Cakupan sales"
             isLabelHidden
@@ -1065,16 +1137,83 @@ export default function Today() {
           {requestedQueue === "overview" && (
             <Button
               label="Lihat daftar kerja"
+              size="sm"
               variant="secondary"
-              onClick={() => focusQueue("activities", "priority")}
+              onClick={() => focusQueue("activities", "all")}
             />
           )}
-        </>
-      }
-    />
-  );
-  const outletAttention = !sales && (
-    <OutletAttention outlets={d.consignment_outlets || []} pageUrl={page.url} canOpen={manager} />
+        </HStack>
+      </HStack>
+      <DataTable
+        rows={teamRows}
+        empty={<Empty title="Belum ada Sales aktif" />}
+        columns={[
+          { key: "name", header: "Sales" },
+          {
+            key: "load",
+            header: "Perlu dikerjakan",
+            width: proportional(2, { minWidth: 160 }),
+            renderCell: (person) => (
+              <div
+                className="flex h-2 w-full gap-0.5 overflow-hidden rounded-full bg-chart-track"
+                role="img"
+                aria-label={`${person.late} terlambat, ${person.today} hari ini`}
+              >
+                {person.late > 0 && (
+                  <span
+                    className="h-full bg-text-error-primary"
+                    style={{ flexGrow: person.late }}
+                  />
+                )}
+                {person.today > 0 && (
+                  <span
+                    className="h-full bg-chart-2-active"
+                    style={{ flexGrow: person.today }}
+                  />
+                )}
+                <span
+                  className="h-full"
+                  style={{ flexGrow: teamPeak - person.late - person.today }}
+                />
+              </div>
+            ),
+          },
+          {
+            key: "late",
+            header: "Terlambat",
+            align: "end",
+            renderCell: (person) => (
+              <span
+                className={cx(
+                  "tabular-nums",
+                  person.late > 0 && "text-text-error-primary",
+                )}
+              >
+                {person.late}
+              </span>
+            ),
+          },
+          { key: "today", header: "Hari ini", align: "end" },
+          {
+            key: "action",
+            header: "Tindakan",
+            renderCell: (person) => (
+              <Button
+                size="sm"
+                variant="secondary"
+                label="Lihat agenda"
+                href={dashboardUrl({
+                  sales: person.id,
+                  view: "activities",
+                  schedule: "all",
+                  activities: "limited",
+                })}
+              />
+            ),
+          },
+        ]}
+      />
+    </VStack>
   );
   const priorityItems = [
     !sales &&
@@ -1294,7 +1433,32 @@ export default function Today() {
             data-oneflow-scroll
           >
             <VStack gap={sales ? 4 : 6}>
+              {teamStats}
               {teamRecap}
+              {manager && requestedQueue !== "overview" && workQueue}
+              {sales && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <SalesSummary
+                    late={lateActivities}
+                    today={todayActivities}
+                    onOpen={(mode) => {
+                      setSchedule(mode);
+                      setAllActivities(true);
+                    }}
+                  />
+                  {!isMobile && (
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <SalesWeek agenda={agenda} today={page.today} />
+                    </Suspense>
+                  )}
+                </div>
+              )}
+              {sales && workQueue}
+              {sales && isMobile && (
+                <Suspense fallback={<ChartSkeleton />}>
+                  <SalesWeek agenda={agenda} today={page.today} />
+                </Suspense>
+              )}
               {priorityItems.length > 0 && (
                 <VStack gap={2}>
                   <Heading level={2}>Perlu ditangani</Heading>
@@ -1343,9 +1507,67 @@ export default function Today() {
                 </VStack>
               )}
               {salesOverview}
-              {(manager
-                ? requestedQueue !== "overview"
-                : !sales || queue !== "activities") && workQueue}
+              {sales && visitWeeks}
+              {manager && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {visitWeeks}
+                  {(d.consignment_outlets || []).length > 0 && (
+                    <ConsignmentShare outlets={d.consignment_outlets} />
+                  )}
+                </div>
+              )}
+              {warehouse && (
+                <div className="grid gap-3 md:grid-cols-3">
+                  <section
+                    aria-label="Perlu dikirim"
+                    className="flex min-w-0 flex-col gap-4 rounded-2xl bg-background-secondary-default p-4"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-body-medium text-text-secondary">
+                        Perlu dikirim
+                      </p>
+                      <p className="text-title-1-medium text-text-primary tabular-nums">
+                        <RollingNumber id="ship-pending" value={pendingShipments} />
+                        <span className="ms-2 text-body-medium text-text-tertiary">
+                          pesanan
+                        </span>
+                      </p>
+                    </div>
+                    <div className="mt-auto">
+                      <Button
+                        label={pendingShipments ? "Siapkan pengiriman" : "Lihat pesanan"}
+                        size="sm"
+                        variant={pendingShipments ? "primary" : "secondary"}
+                        href={
+                          pendingShipments
+                            ? ordersUrl("CONFIRMED")
+                            : withReturn("/orders/", page.url)
+                        }
+                      />
+                    </div>
+                  </section>
+                  <StockHealth
+                    className="md:col-span-2"
+                    conflict={stockConflicts}
+                    low={Math.max(0, lowStock - stockConflicts)}
+                    unverified={unverifiedStock}
+                    safe={Math.max(0, verifiedStock - Math.max(lowStock, stockConflicts))}
+                    onOpen={(filter) =>
+                      void navigate(
+                        withReturn(
+                          filter === "low"
+                            ? "/stock/?filter=low&status=active"
+                            : filter
+                              ? `/stock/?filter=${filter}`
+                              : "/stock/",
+                          page.url,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+              )}
+              {warehouse && workQueue}
               {salesFollowUp}
               {manager &&
                 ((m.shipment_days || []).some(
@@ -1358,17 +1580,17 @@ export default function Today() {
                   </Collapsible>
                 ))}
               {manager && targets}
-              {outletAttention}
               {!sales && (
                 <Collapsible
-                  trigger={manager ? "Kunjungan, evaluasi produk & bahan baku" : "Evaluasi produk & bahan baku"}
+                  trigger="Pantauan outlet & bahan baku"
                   defaultIsOpen={false}
                 >
                   <ConsignmentAndAttendanceHub
                     role={page.role}
                     pageUrl={page.url}
                     attendanceRecaps={d.attendance_recaps || []}
-                          productTraction={d.product_traction || []}
+                    consignmentOutlets={d.consignment_outlets || []}
+                    productTraction={d.product_traction || []}
                     rawMaterialAlerts={d.raw_material_alerts || []}
                     onEditDirective={(product) => {
                       setRetryDialog(false);

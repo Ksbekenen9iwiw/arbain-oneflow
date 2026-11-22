@@ -162,15 +162,22 @@ class DashboardTests(TestCase):
         for path in ['/?sales=nope','/?sales='+('9'*200),'/orders/?sales=nope']:
             self.assertEqual(self.client.get(path).status_code,404)
 
-    def test_outlet_page_is_for_roles_that_monitor_outlets(self):
-        models.ConsignmentStock.objects.create(customer=self.customer, product=self.product,
-                                               quantity_on_display=5, total_placed=5)
-        self.client.force_login(self.manager)
-        page = self.client.get('/outlets/', HTTP_X_ONEFLOW_PAGE='1').json()
-        self.assertEqual(page['screen'], 'outlets')
-        self.assertEqual(len(page['data']['consignment_outlets']), 1)
-        self.client.force_login(self.sales)
-        self.assertEqual(self.client.get('/outlets/').status_code, 403)
+    def test_completed_visits_are_counted_per_week_and_scoped_by_role(self):
+        from datetime import timedelta
+        from crm.services.sales_attendance import completed_visit_weeks
+        now = timezone.now()
+        other_customer = make_customer(self.other, 'OTH1')
+        for sales, customer, when in [(self.sales, self.customer, now), (self.sales, self.customer, now - timedelta(weeks=2)),
+                                      (self.other, other_customer, now), (self.sales, self.customer, now - timedelta(weeks=20))]:
+            models.Activity.objects.create(customer=customer, sales=sales, status='DONE', result='Selesai', completed_at=when)
+        models.Activity.objects.create(customer=self.customer, sales=self.sales, status='PLANNED', scheduled_date=self.as_of)
+        team = completed_visit_weeks(self.manager, self.as_of)
+        self.assertEqual([week['total'] for week in team], [0, 0, 0, 0, 0, 1, 0, 2])
+        self.assertEqual(len(team[-1]['by_sales']), 2)
+        self.assertEqual([week['total'] for week in completed_visit_weeks(self.sales, self.as_of)], [0, 0, 0, 0, 0, 1, 0, 1])
+        self.assertEqual(completed_visit_weeks(self.warehouse, self.as_of), [])
+        self.client.force_login(self.warehouse)
+        self.assertEqual(self.client.get('/', HTTP_X_ONEFLOW_PAGE='1').status_code, 200)
 
     def test_outlet_monitoring_is_sent_only_to_roles_that_show_it(self):
         models.ConsignmentStock.objects.create(customer=self.customer, product=self.product,

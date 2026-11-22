@@ -1,4 +1,3 @@
-import { useReturnHighlight } from "../continuity";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   RiArchiveLine,
@@ -14,7 +13,6 @@ import {
   RiSearchLine,
   RiSideBarLine,
   RiMoonLine,
-  RiStore2Line,
 } from "@remixicon/react";
 import { BrandMark } from "../BrandMark";
 import { useContentMotion } from "../motion";
@@ -40,6 +38,7 @@ import { Kbd } from "@/components/base/kbd/kbd";
 import { cx } from "@/utils/cx";
 import { ServerForm, useResponsive } from "../ui";
 import { useApp } from "../router";
+import { useReturnHighlight } from "../continuity";
 import Walkthrough, { canStartTour } from "../Walkthrough";
 import { ThemeSwitch, useThemeMode } from "../ThemeSwitch";
 
@@ -148,6 +147,7 @@ function SectionLabel({ children, collapsed }: { children: ReactNode; collapsed:
 
 export default function Shell({ children }: { children: ReactNode }) {
   const { page, revision, busy, issue, requestKind, leaveAndSubmit, navigate } = useApp();
+  useReturnHighlight(page.url);
   const { isMobile } = useResponsive();
   const { toggleMode } = useThemeMode();
   const [tourRequest, setTourRequest] = useState(0);
@@ -166,7 +166,6 @@ export default function Shell({ children }: { children: ReactNode }) {
   const path = page.url.split("?")[0];
   useContentMotion(contentRef, `${page.screen}:${path}`, "page");
   useEffect(() => setIsDrawerOpen(false), [page.url]);
-  useReturnHighlight(page.url);
 
   const pendingStage = usePendingFeedback(busy);
   const pendingLabel = requestKind === "write" ? "Menyimpan perubahan" : "Memuat halaman";
@@ -231,18 +230,6 @@ export default function Shell({ children }: { children: ReactNode }) {
       isSelected: path.startsWith("/stock") || path.startsWith("/products"),
       tourId: "nav-stock",
     },
-    ...(page.role !== "SALES"
-      ? [
-          {
-            id: "/outlets/",
-            label: "Stok outlet",
-            hint: "Stok titipan per outlet dan produk yang perlu perhatian",
-            icon: RiStore2Line,
-            href: "/outlets/",
-            isSelected: path.startsWith("/outlets"),
-          },
-        ]
-      : []),
     ...(page.data.can_view_company_archive
       ? [
           {
