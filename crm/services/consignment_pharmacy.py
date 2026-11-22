@@ -1,7 +1,7 @@
 """Pharmacy consignment ('titip jual') stock visits, warehouse adjustments, and overview."""
 from uuid import uuid4
 
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -262,8 +262,11 @@ def record_consignment_visit(
     )
 
 
-def pharmacy_consignment_overview(actor, selected_sales=None, customer_id=None, as_of=None):
-    """Return per-pharmacy ('apotek') consignment stock breakdown scoped to actor's role."""
+def pharmacy_consignment_overview(actor, selected_sales=None, customer_id=None, as_of=None, detail=True):
+    """Return per-pharmacy ('apotek') consignment stock breakdown scoped to actor's role.
+
+    With detail=False only the outlet totals and the products needing attention are returned.
+    """
     as_of = as_of or timezone.localdate()
     role = role_of(actor)
     if role == 'WAREHOUSE':
@@ -275,18 +278,23 @@ def pharmacy_consignment_overview(actor, selected_sales=None, customer_id=None, 
     if customer_id is not None:
         scope = scope.filter(pk=customer_id)
 
-    customers = list(
-        scope.select_related('owner').prefetch_related(
-            Prefetch(
-                'consignment_stocks',
-                queryset=ConsignmentStock.objects.select_related('product', 'product__carry_directive').order_by('product__sku'),
-            ),
-            Prefetch(
-                'consignment_entries',
-                queryset=ConsignmentVisitEntry.objects.select_related('product', 'sales').order_by('-visit_date', '-pk'),
-            ),
+    prefetches = [Prefetch(
+        'consignment_stocks',
+        queryset=ConsignmentStock.objects.select_related('product', 'product__carry_directive').order_by('product__sku'),
+    )]
+    deferred_by_customer = {}
+    if detail:
+        prefetches.append(Prefetch(
+            'consignment_entries',
+            queryset=ConsignmentVisitEntry.objects.select_related('product', 'sales').order_by('-visit_date', '-pk'),
+        ))
+    else:
+        deferred_by_customer = dict(
+            ConsignmentVisitEntry.objects
+            .filter(customer__in=scope, billing_status=ConsignmentVisitEntry.BillingStatus.DEFERRED)
+            .values_list('customer_id').annotate(total=Sum('net_billed_rupiah'))
         )
-    )
+    customers = list(scope.select_related('owner').prefetch_related(*prefetches))
     outlets = []
     for customer in customers:
         stocks = [s for s in customer.consignment_stocks.all() if s.quantity_on_display > 0 or s.total_placed > 0]
@@ -312,6 +320,8 @@ def pharmacy_consignment_overview(actor, selected_sales=None, customer_id=None, 
             is_near_expiry = bool(s.quantity_on_display > 0 and days_to_expiry is not None and days_to_expiry <= 180)
             if is_near_expiry:
                 near_expiry_items.append(s.product.name)
+            if not detail and not (is_weak or is_near_expiry):
+                continue
             directive = getattr(s.product, 'carry_directive', None)
             items.append({
                 'id': str(s.pk),
@@ -333,11 +343,11 @@ def pharmacy_consignment_overview(actor, selected_sales=None, customer_id=None, 
                 'directive_code': directive.directive if directive else '',
                 'directive_label': directive.get_directive_display() if directive else '',
             })
-        all_entries = list(customer.consignment_entries.all())
+        all_entries = list(customer.consignment_entries.all()) if detail else []
         deferred_billing_rupiah = sum(
             e.net_billed_rupiah for e in all_entries
             if e.billing_status == ConsignmentVisitEntry.BillingStatus.DEFERRED
-        )
+        ) if detail else deferred_by_customer.get(customer.pk, 0)
         recent_entries = [
             {
                 'id': str(e.pk),
@@ -380,6 +390,7 @@ def pharmacy_consignment_overview(actor, selected_sales=None, customer_id=None, 
             'near_expiry_items': near_expiry_items,
             'deferred_billing_rupiah': deferred_billing_rupiah,
             'last_checked_date': last_checked.isoformat() if last_checked else None,
+            'item_count': len(stocks),
             'items': items,
             'recent_entries': recent_entries,
         })

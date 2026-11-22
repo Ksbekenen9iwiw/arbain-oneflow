@@ -85,6 +85,17 @@ class ConsignmentAndAttendanceTests(TestCase):
         self.assertEqual(self.fast_product.balance.on_hand, 78)
         self.assertTrue(Activity.objects.filter(customer=self.apotek_a1, status='DONE', kind='VISIT').exists())
 
+    def test_summary_overview_matches_detail_totals_without_product_lines(self):
+        record_consignment_visit(self.sales_a, self.apotek_a1.id, self.fast_product.id, sold_quantity=0,
+                                 remaining_stock=0, added_quantity=12, visit_date=self.today - timedelta(days=1))
+        full = pharmacy_consignment_overview(self.sales_a)[0]
+        summary = pharmacy_consignment_overview(self.sales_a, detail=False)[0]
+        self.assertEqual(summary['recent_entries'], [])
+        self.assertEqual(summary['items'], [i for i in full['items'] if i['is_weak'] or i['is_near_expiry']])
+        for key in ('customer_id', 'item_count', 'total_on_display', 'total_sold', 'weak_items',
+                    'near_expiry_items', 'deferred_billing_rupiah', 'last_checked_date'):
+            self.assertEqual(summary[key], full[key], key)
+
     def test_sales_isolation_prevents_cross_sales_input_and_attendance_leak(self):
         # Sales A cannot record consignment on Sales B's pharmacy
         with self.assertRaises(Http404):
