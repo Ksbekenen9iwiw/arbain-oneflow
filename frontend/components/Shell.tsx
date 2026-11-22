@@ -12,6 +12,7 @@ import {
   RiAddLine,
   RiQuestionLine,
   RiSearchLine,
+  RiSparkling2Line,
   RiSideBarLine,
   RiMoonLine,
 } from "@remixicon/react";
@@ -30,6 +31,7 @@ import {
   type IconComponent,
 } from "@/kit";
 import { Drawer } from "@/components/base/drawer/drawer";
+import Assistant from "./Assistant";
 import {
   CommandPalette,
   CommandPaletteItem,
@@ -133,7 +135,13 @@ function NavItem({
   );
 }
 
-function SectionLabel({ children, collapsed }: { children: ReactNode; collapsed: boolean }) {
+function SectionLabel({
+  children,
+  collapsed,
+}: {
+  children: ReactNode;
+  collapsed: boolean;
+}) {
   return (
     <span
       className={cx(
@@ -147,13 +155,16 @@ function SectionLabel({ children, collapsed }: { children: ReactNode; collapsed:
 }
 
 export default function Shell({ children }: { children: ReactNode }) {
-  const { page, revision, busy, issue, requestKind, leaveAndSubmit, navigate } = useApp();
+  const { page, revision, busy, issue, requestKind, leaveAndSubmit, navigate } =
+    useApp();
   useReturnHighlight(page.url);
   const { isMobile } = useResponsive();
   const { toggleMode } = useThemeMode();
   const [tourRequest, setTourRequest] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const canAsk = (page.data.assistant_suggestions || []).length > 0;
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
@@ -161,7 +172,8 @@ export default function Shell({ children }: { children: ReactNode }) {
   // Successful saves confirm themselves in a toast and never push content down.
   useEffect(() => {
     for (const message of page.messages)
-      if (message.type === "success") toast({ body: message.text, status: "success" });
+      if (message.type === "success")
+        toast({ body: message.text, status: "success" });
   }, [revision]);
 
   const path = page.url.split("?")[0];
@@ -169,7 +181,8 @@ export default function Shell({ children }: { children: ReactNode }) {
   useEffect(() => setIsDrawerOpen(false), [page.url]);
 
   const pendingStage = usePendingFeedback(busy);
-  const pendingLabel = requestKind === "write" ? "Menyimpan perubahan" : "Memuat halaman";
+  const pendingLabel =
+    requestKind === "write" ? "Menyimpan perubahan" : "Memuat halaman";
   const slowLabel =
     requestKind === "write"
       ? "Masih menunggu konfirmasi. Jangan kirim ulang atau tutup halaman."
@@ -178,7 +191,11 @@ export default function Shell({ children }: { children: ReactNode }) {
   const accountName = page.user?.name || "Pengguna";
   const role = page.role;
   const roleLabel =
-    role === "MANAGER" ? "Manajer" : role === "WAREHOUSE" ? "Tim gudang" : "Tim sales";
+    role === "MANAGER"
+      ? "Manajer"
+      : role === "WAREHOUSE"
+        ? "Tim gudang"
+        : "Tim sales";
   const canTour = canStartTour(page.screen);
 
   const nav: NavEntry[] = [
@@ -211,7 +228,8 @@ export default function Shell({ children }: { children: ReactNode }) {
             hint: "Daftar apotek & mitra, aktivitas, serta stok titipan",
             icon: RiGroupLine,
             href: "/customers/",
-            isSelected: path.startsWith("/customers") || path.startsWith("/activities"),
+            isSelected:
+              path.startsWith("/customers") || path.startsWith("/activities"),
             tourId: "nav-customers",
           },
         ]
@@ -281,7 +299,12 @@ export default function Shell({ children }: { children: ReactNode }) {
   const sidebar = (collapsed: boolean, inDrawer: boolean) => (
     <div className="flex h-full min-h-0 flex-col justify-between gap-4">
       <div className="flex min-h-0 flex-col gap-3">
-        <div className={cx("flex items-center gap-2", collapsed ? "flex-col" : "justify-between")}>
+        <div
+          className={cx(
+            "flex items-center gap-2",
+            collapsed ? "flex-col" : "justify-between",
+          )}
+        >
           <a
             href="/"
             aria-label="OneFlow, ke Dashboard"
@@ -292,7 +315,9 @@ export default function Shell({ children }: { children: ReactNode }) {
             </span>
             {!collapsed && (
               <span className="flex min-w-0 flex-col">
-                <span className="text-headline-semibold text-text-primary">OneFlow</span>
+                <span className="text-headline-semibold text-text-primary">
+                  OneFlow
+                </span>
                 <span className="truncate text-caption-1-regular text-text-tertiary">
                   {page.demo ? "Workspace demo" : "CV Arba’in"}
                 </span>
@@ -325,7 +350,10 @@ export default function Shell({ children }: { children: ReactNode }) {
             collapsed ? "w-9" : "w-full",
           )}
         >
-          <RiSearchLine aria-hidden className="size-5 shrink-0 text-foreground-icon-secondary" />
+          <RiSearchLine
+            aria-hidden
+            className="size-5 shrink-0 text-foreground-icon-secondary"
+          />
           {!collapsed && (
             <>
               <span className="flex-1 text-body-medium whitespace-nowrap text-text-tertiary">
@@ -335,7 +363,35 @@ export default function Shell({ children }: { children: ReactNode }) {
             </>
           )}
         </button>
-        <nav aria-label="Workspace" className="flex min-h-0 flex-col gap-1 overflow-y-auto">
+        {canAsk && (
+          <button
+            type="button"
+            aria-label="Tanya OneFlow"
+            onClick={() => {
+              setIsDrawerOpen(false);
+              setIsAssistantOpen(true);
+            }}
+            className={cx(
+              "flex h-9 shrink-0 cursor-pointer items-center gap-2 overflow-hidden rounded-full border border-separator-border p-2 text-start outline-none",
+              "transition-[width,background-color] duration-300 ease-in-out hover:bg-background-tertiary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+              collapsed ? "w-9 justify-center" : "w-full",
+            )}
+          >
+            <RiSparkling2Line
+              aria-hidden
+              className="size-5 shrink-0 text-accent-500"
+            />
+            {!collapsed && (
+              <span className="text-body-medium whitespace-nowrap text-text-primary">
+                Tanya OneFlow
+              </span>
+            )}
+          </button>
+        )}
+        <nav
+          aria-label="Workspace"
+          className="flex min-h-0 flex-col gap-1 overflow-y-auto"
+        >
           {nav.map((item) => (
             <NavItem key={item.id} {...item} collapsed={collapsed} />
           ))}
@@ -358,7 +414,11 @@ export default function Shell({ children }: { children: ReactNode }) {
       {collapsed ? (
         <div className="flex flex-col items-center gap-3">
           <ThemeSwitch compact />
-          <Avatar name={accountName} size="sm" tooltip={`${accountName} · ${roleLabel}`} />
+          <Avatar
+            name={accountName}
+            size="sm"
+            tooltip={`${accountName} · ${roleLabel}`}
+          />
           {logoutButton}
         </div>
       ) : (
@@ -369,7 +429,9 @@ export default function Shell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2.5 rounded-2xl border border-border-button-default bg-background-primary-default p-2 shadow-xs">
             <Avatar name={accountName} size="md" tooltip={false} />
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-body-semibold text-text-primary">{accountName}</span>
+              <span className="truncate text-body-semibold text-text-primary">
+                {accountName}
+              </span>
               <span className="truncate text-caption-1-regular text-text-secondary">
                 {roleLabel}
               </span>
@@ -382,7 +444,10 @@ export default function Shell({ children }: { children: ReactNode }) {
   );
 
   const logoutButton = (
-    <ServerForm action="/logout/" onSubmit={(data) => void leaveAndSubmit("/logout/", data)}>
+    <ServerForm
+      action="/logout/"
+      onSubmit={(data) => void leaveAndSubmit("/logout/", data)}
+    >
       <IconButton
         type="submit"
         label="Keluar dari akun"
@@ -418,16 +483,29 @@ export default function Shell({ children }: { children: ReactNode }) {
               icon={<Icon icon={RiMenuLine} />}
               onClick={() => setIsDrawerOpen(true)}
             />
-            <a href="/" className="flex items-center gap-2 text-headline-semibold text-text-primary">
+            <a
+              href="/"
+              className="flex items-center gap-2 text-headline-semibold text-text-primary"
+            >
               <BrandMark className="size-5 text-accent-500" />
               OneFlow
             </a>
-            <IconButton
-              label="Cari atau lompat ke halaman"
-              variant="ghost"
-              icon={<Icon icon={RiSearchLine} />}
-              onClick={() => setIsPaletteOpen(true)}
-            />
+            <div className="flex items-center">
+              {canAsk && (
+                <IconButton
+                  label="Tanya OneFlow"
+                  variant="ghost"
+                  icon={<Icon icon={RiSparkling2Line} />}
+                  onClick={() => setIsAssistantOpen(true)}
+                />
+              )}
+              <IconButton
+                label="Cari atau lompat ke halaman"
+                variant="ghost"
+                icon={<Icon icon={RiSearchLine} />}
+                onClick={() => setIsPaletteOpen(true)}
+              />
+            </div>
           </header>
         )}
         {issue ? (
@@ -436,7 +514,12 @@ export default function Shell({ children }: { children: ReactNode }) {
           </div>
         ) : pendingStage === "slow" ? (
           <div role="status" className="oneflow-enter shrink-0 pb-2">
-            <Banner container="section" status="info" title={pendingLabel} description={slowLabel} />
+            <Banner
+              container="section"
+              status="info"
+              title={pendingLabel}
+              description={slowLabel}
+            />
           </div>
         ) : null}
         <main
@@ -455,7 +538,13 @@ export default function Shell({ children }: { children: ReactNode }) {
                 m.type === "success" ? null : (
                   <Banner
                     key={`${revision}:${i}`}
-                    status={m.type === "error" ? "error" : m.type === "warning" ? "warning" : "info"}
+                    status={
+                      m.type === "error"
+                        ? "error"
+                        : m.type === "warning"
+                          ? "warning"
+                          : "info"
+                    }
                     title={m.text}
                     role={m.type === "error" ? "alert" : "status"}
                   />
@@ -477,6 +566,9 @@ export default function Shell({ children }: { children: ReactNode }) {
         >
           {sidebar(false, true)}
         </Drawer>
+      )}
+      {canAsk && (
+        <Assistant isOpen={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
       )}
       <CommandPalette
         isOpen={isPaletteOpen}
@@ -523,8 +615,13 @@ export default function Shell({ children }: { children: ReactNode }) {
           </CommandPaletteItem>
         </CommandPaletteSection>
       </CommandPalette>
-      <VisuallyHidden role="status">{pendingStage === "loading" ? pendingLabel : ""}</VisuallyHidden>
-      <Walkthrough key={`${page.user?.id}:${page.role}`} request={tourRequest} />
+      <VisuallyHidden role="status">
+        {pendingStage === "loading" ? pendingLabel : ""}
+      </VisuallyHidden>
+      <Walkthrough
+        key={`${page.user?.id}:${page.role}`}
+        request={tourRequest}
+      />
     </div>
   );
 }
