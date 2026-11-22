@@ -65,6 +65,7 @@ import { useDelayedBusy } from "../../RequestFeedback";
 import { RollingNumber } from "../../continuity";
 import SalesSummary from "./SalesSummary";
 import ConsignmentShare from "./ConsignmentShare";
+import VisitPlan from "./VisitPlan";
 import StockHealth from "./StockHealth";
 import { cx } from "@/utils/cx";
 import {
@@ -103,6 +104,7 @@ export default function Today() {
   const allActivities = expanded === "all";
   // Sales starts on a short "next up" list; the full agenda opens on request.
   const compact = sales && !allActivities;
+  const plan: Row[] = d.visit_plan || [];
   const schedule =
     !compact &&
     ["priority", "all", "late", "today", "future"].includes(requestedSchedule)
@@ -621,6 +623,21 @@ export default function Today() {
           role={showQueueTabs ? "tabpanel" : "region"}
           aria-label="Agenda"
         >
+          {compact && plan.length > 0 ? (
+            <VisitPlan
+              plan={plan}
+              pageUrl={page.url}
+              action={
+                <Button
+                  label={`Lihat semua (${filtered.length})`}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setAllActivities(true)}
+                />
+              }
+            />
+          ) : (
+            <>
           <HStack hAlign="between" gap={3} vAlign="end" wrap="wrap">
             {sales && <Heading level={2}>{compact ? "Berikutnya" : "Agenda"}</Heading>}
             {!sales && (
@@ -815,6 +832,8 @@ export default function Today() {
               },
             ]}
           />
+            </>
+          )}
         </MotionStack>
       )}
       {!warehouse && queue === "recommendations" && (

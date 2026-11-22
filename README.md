@@ -187,6 +187,10 @@ Perintah pertama tanpa `--apply` memvalidasi sumber. Impor menyimpan alamat bari
 
 Pakai database baru tanpa seed demo. Setelah migrasi dan impor arsip, jalankan `python manage.py import_arbain_masters --period 2026-10` untuk validasi, lalu ulangi dengan `--apply`. Gunakan `ONEFLOW_DEMO=0`, `ONEFLOW_COMPANY_ARCHIVE=1`, dan database tujuan yang sama saat migrasi, impor, dan menjalankan aplikasi.
 
+### Tanya OneFlow
+
+Chat tanya data muncul bila `GEMINI_API_KEY` diisi (opsional: `GEMINI_MODEL`, bawaan `gemini-flash-lite-latest`). Gemini hanya memilih fungsi yang tersedia untuk peran pengguna dan merangkai jawaban; angkanya dari database. Nama outlet, produk, dan angka dalam jawaban terkirim ke Google.
+
 Katalog memakai nama dari rekap penjualan. Profil outlet disatukan hanya jika nama, lokasi, dan sales sumber cocok. Riwayat kunjungan tetap terkait dengan profil tersebut. Untuk mengaktifkan produk, isi SKU, satuan, dan harga, catat batch fisik, lalu sahkan saldo awal lewat **Hitung & koreksi fisik**. Di detail pelanggan, manajer dapat memverifikasi kode dan syarat komersial outlet. Nama sales berasal dari laporan. Kredensial untuk sales perlu dibuat sebelum mereka bisa masuk.
 
 Rekap setor outlet pada arsip dapat dicatat sebagai kunjungan titip jual dan saldo titipan dengan `python manage.py import_arbain_consignment --period 2026-10`; tambahkan `--apply` untuk menyimpan, `--schedule-next` untuk menjadwalkan kunjungan sebulan setelah setor terakhir, dan `--show-skipped` untuk melihat outlet atau produk yang tidak cocok. Angka diambil dari kolom A/M/R/L/S sumber. Harga, penagihan, dan stok gudang tidak diubah, dan pasangan outlet–produk yang sudah punya saldo titipan dilewati.

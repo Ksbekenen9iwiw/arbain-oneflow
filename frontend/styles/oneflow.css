@@ -203,3 +203,71 @@ button:not(:disabled):active, a[role="button"]:active { transition: transform 12
   .oneflow-returned { animation: none; outline: 2px solid var(--color-accent-400); outline-offset: -2px; }
   button:not(:disabled):active, a[role="button"]:active { transform: none; }
 }
+
+/* Tanya OneFlow: answers arrive as cards that settle in, then their bars fill. */
+.assistant-fold {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--duration-medium) var(--ease-standard),
+    opacity var(--duration-medium) var(--ease-standard);
+}
+.assistant-fold.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.assistant-bar {
+  width: var(--bar);
+}
+.assistant-skeleton {
+  background: linear-gradient(
+    100deg,
+    var(--color-background-tertiary-default) 30%,
+    var(--color-background-secondary-default) 50%,
+    var(--color-background-tertiary-default) 70%
+  );
+  background-size: 300% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .assistant-card {
+    animation: assistant-settle 420ms var(--ease-standard) backwards;
+    animation-delay: calc(var(--order, 0) * 90ms);
+  }
+  .assistant-row {
+    animation: oneflow-rise 320ms var(--ease-standard) backwards;
+  }
+  .assistant-bar {
+    animation: assistant-fill 700ms var(--ease-standard) backwards;
+  }
+  .assistant-word {
+    animation: assistant-word 280ms var(--ease-standard) backwards;
+  }
+  .assistant-skeleton {
+    animation: ai-chat-text-shimmer 1.8s linear infinite;
+  }
+  .assistant-spark {
+    animation: assistant-spark 1.6s var(--ease-standard) infinite;
+  }
+  .assistant-press {
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
+  }
+  .assistant-press:active {
+    transform: scale(0.97);
+  }
+}
+@keyframes assistant-settle {
+  from { opacity: 0; filter: blur(6px); transform: translateY(0.75rem) scale(0.98); }
+}
+@keyframes assistant-fill {
+  from { width: 0; }
+}
+@keyframes assistant-word {
+  from { opacity: 0; filter: blur(3px); }
+}
+@keyframes assistant-spark {
+  50% { transform: scale(0.8) rotate(20deg); opacity: 0.55; }
+}
