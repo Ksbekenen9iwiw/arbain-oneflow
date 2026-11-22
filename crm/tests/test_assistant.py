@@ -41,13 +41,15 @@ class AssistantTests(TestCase):
         self.assertIn('error', run_tool(self.sales, 'hapus_data', {})[0])
 
     def test_sales_only_gets_own_outlets_even_when_naming_another_sales(self):
-        data, links = run_tool(self.sales, 'kunjungan_terlambat', {'sales_name': 'other'})
+        data, links, cards = run_tool(self.sales, 'kunjungan_terlambat', {'sales_name': 'other'})
         self.assertEqual((data['jumlah'], data['per_sales']), (1, {'sales': 1}))
         self.assertIn('hanya outlet milik sales', data['cakupan'])
         self.assertEqual(run_tool(self.sales, 'saran_outlet', {'nama_outlet': 'Pelanggan B'})[0]['ditemukan'], False)
-        plan, _ = run_tool(self.sales, 'rencana_kunjungan', {})
+        plan, _, cards = run_tool(self.sales, 'rencana_kunjungan', {})
         self.assertEqual([item['outlet'] for item in plan['outlet']], ['Pelanggan A'])
         self.assertEqual(plan['outlet'][0]['bawa'], ['Produk P1 (4 unit)'])
+        self.assertEqual(cards[0]['stops'][0]['rows'], [{'label': 'Produk P1', 'value': '4 unit'}])
+        self.assertEqual(run_tool(self.sales, 'saran_outlet', {'nama_outlet': 'Pelanggan A'})[2][0]['groups'][0]['label'], 'Bawa')
 
     def test_manager_can_scope_to_one_sales(self):
         self.assertEqual(run_tool(self.manager, 'kunjungan_terlambat', {})[0]['jumlah'], 2)
@@ -55,15 +57,20 @@ class AssistantTests(TestCase):
         self.assertIn('error', run_tool(self.manager, 'kunjungan_terlambat', {'sales_name': 'budi'})[0])
 
     def test_stock_lookup(self):
-        data, links = run_tool(self.warehouse, 'stok_gudang', {'nama_produk': 'produk p1'})
+        data, links, cards = run_tool(self.warehouse, 'stok_gudang', {'nama_produk': 'produk p1'})
         self.assertEqual(data['produk'][0]['tersedia'], 3)
         self.assertEqual(links[0]['href'], '/stock/?q=produk+p1')
-        self.assertEqual(run_tool(self.warehouse, 'stok_gudang', {})[0]['jumlah_menipis'], 1)
+        data, _, cards = run_tool(self.warehouse, 'stok_gudang', {})
+        self.assertEqual((data['jumlah_menipis'], cards[0]['value'], cards[1]['items'][0]['tone']), (1, 1, 'warning'))
 
     def test_answer_uses_tool_result_and_returns_sources(self):
         with mock.patch.object(assistant, '_call', side_effect=[calls('kunjungan_terlambat'), says('Ada 1 kunjungan terlambat.')]) as call:
             result = assistant.ask(self.sales, 'Berapa yang terlambat?', [{'role': 'user', 'text': 'halo'}, {'role': 'model', 'text': 'Halo.'}])
-        self.assertEqual(result, {'answer': 'Ada 1 kunjungan terlambat.', 'sources': [{'label': 'Agenda terlambat', 'href': '/?all=1'}]})
+        self.assertEqual((result['answer'], result['sources']), ('Ada 1 kunjungan terlambat.', [{'label': 'Agenda terlambat', 'href': '/?all=1'}]))
+        self.assertEqual(result['tools'], ['Agenda kunjungan'])
+        self.assertEqual([(card['kind'], card.get('value')) for card in result['cards']], [('stat', 1), ('ranking', None)])
+        self.assertEqual(result['cards'][1]['items'][0]['name'], 'Pelanggan A')
+        self.assertEqual(result['follow_ups'], ['Bagaimana capaian target bulan ini?', 'Hari ini sebaiknya ke outlet mana?'])
         sent = call.call_args_list[1].args[0]['contents']
         self.assertEqual(sent[-1]['parts'][0]['functionResponse']['response']['result']['jumlah'], 1)
         self.assertEqual([tool['name'] for tool in call.call_args_list[0].args[0]['tools'][0]['functionDeclarations']], list(tools_for(self.sales)))
@@ -75,7 +82,7 @@ class AssistantTests(TestCase):
         self.assertEqual(post({'question': ' '}).status_code, 400)
         self.assertEqual(post({'question': 'x' * 401}).status_code, 400)
         with mock.patch.object(assistant, '_call', return_value=says('Baik.')):
-            self.assertEqual(post({'question': 'Halo'}).json(), {'answer': 'Baik.', 'sources': []})
+            self.assertEqual(post({'question': 'Halo'}).json(), {'answer': 'Baik.', 'sources': [], 'cards': [], 'tools': [], 'follow_ups': []})
             self.assertEqual(self.client.get('/', HTTP_X_ONEFLOW_PAGE='1').json()['data']['assistant_suggestions'], assistant.SUGGESTIONS['SALES'])
         with mock.patch.object(assistant, '_call', return_value={'candidates': []}):
             self.assertEqual(post({'question': 'Halo'}).status_code, 503)

@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from crm.access import role_of
 from crm.errors import BusinessError
-from crm.services.assistant_tools import run_tool, tools_for
+from crm.services.assistant_tools import LABELS, follow_ups, run_tool, tools_for
 
 ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
 ROLE_LABELS = {'SALES': 'sales', 'MANAGER': 'manajer', 'WAREHOUSE': 'petugas gudang'}
@@ -34,9 +34,10 @@ def _system(actor):
         'Salin nama outlet dan produk persis seperti di hasil fungsi. '
         'Kalau tidak ada fungsi yang cocok, katakan dengan singkat bahwa datanya tidak tersedia dan sebutkan apa yang bisa ditanyakan. '
         'Kalau fungsi menjawab dengan jumlah 0 atau daftar kosong, itu jawabannya: katakan tidak ada (misalnya "Tidak ada produk yang menipis").\n'
-        'Gaya: bahasa Indonesia sehari-hari, singkat, langsung ke jawabannya, tanpa basa-basi dan tanpa menyebut nama fungsi. '
-        'Untuk daftar pakai baris berawalan "- ", paling banyak 8 butir, dan di tiap butir sertakan alasan serta angkanya (jumlah unit, hari terlambat, terjual dan dipajang) dari hasil fungsi. Tebalkan nama outlet atau produk dengan **. Rupiah ditulis seperti Rp 12,5 juta. '
-        'Nama outlet dan produk ditulis dengan huruf kapital di awal kata.'
+        'Gaya: bahasa Indonesia sehari-hari, langsung ke jawabannya, tanpa basa-basi dan tanpa menyebut nama fungsi. '
+        'Rincian hasil fungsi (daftar outlet, produk, angka per baris) sudah tampil ke pengguna sebagai kartu di bawah jawabanmu, jadi jangan menulis daftar. '
+        'Tulis paling banyak dua kalimat: temuan terpenting dengan angka kuncinya, lalu kalau ada, satu saran tindakan. '
+        'Tebalkan nama outlet atau produk dengan **. Rupiah ditulis seperti Rp 12,5 juta.'
     )
 
 
@@ -64,7 +65,7 @@ def ask(actor, question, history=()):
         'systemInstruction': {'parts': [{'text': _system(actor)}]}, 'contents': contents,
         'tools': [{'functionDeclarations': declarations}], 'generationConfig': {'temperature': 0},
     }
-    sources = []
+    sources, cards, used = [], [], []
     for _ in range(MAX_STEPS):
         candidates = _call(body).get('candidates') or [{}]
         content = candidates[0].get('content') or {}
@@ -74,12 +75,16 @@ def ask(actor, question, history=()):
             text = ''.join(part.get('text', '') for part in parts if not part.get('thought')).strip()
             if not text:
                 break
-            return {'answer': text, 'sources': sources}
+            return {'answer': text, 'sources': sources, 'cards': cards[:4],
+                    'tools': [LABELS[name] for name in used], 'follow_ups': follow_ups(actor, used)}
         contents.append(content)
         replies = []
         for call in calls:
-            data, links = run_tool(actor, call.get('name', ''), call.get('args'))
+            data, links, found = run_tool(actor, call.get('name', ''), call.get('args'))
             sources += [link for link in links if link not in sources]
+            cards += [card for card in found if card not in cards]
+            if call.get('name') in LABELS and 'error' not in data and call['name'] not in used:
+                used.append(call['name'])
             reply = {'name': call.get('name', ''), 'response': {'result': data}}
             if call.get('id'):
                 reply['id'] = call['id']
