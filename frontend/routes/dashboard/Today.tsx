@@ -63,6 +63,8 @@ import {
 import { useApp, useQueryState } from "../../router";
 import { useDelayedBusy } from "../../RequestFeedback";
 import { RollingNumber } from "../../continuity";
+import SalesSummary from "./SalesSummary";
+import { cx } from "@/utils/cx";
 import {
   dashboardQueue,
   salesGreeting,
@@ -72,6 +74,7 @@ import {
 } from "../../dashboard";
 import type { Row, FormSpec } from "../../types";
 const ShipmentTrend = lazy(() => import("./ShipmentTrend"));
+const SalesWeek = lazy(() => import("./SalesWeek"));
 
 export default function Today() {
   const { page, busy, navigate, revision } = useApp();
@@ -93,13 +96,15 @@ export default function Today() {
     "schedule",
     "priority",
   );
-  const schedule = ["priority", "all", "late", "today", "future"].includes(
-    requestedSchedule,
-  )
-    ? requestedSchedule
-    : "priority";
   const [expanded, setExpanded] = useQueryState("activities", "limited");
   const allActivities = expanded === "all";
+  // Sales starts on a short "next up" list; the full agenda opens on request.
+  const compact = sales && !allActivities;
+  const schedule =
+    !compact &&
+    ["priority", "all", "late", "today", "future"].includes(requestedSchedule)
+      ? requestedSchedule
+      : "priority";
   const setAllActivities = (value: boolean | ((v: boolean) => boolean)) =>
     setExpanded(
       (typeof value === "function" ? value(allActivities) : value)
@@ -187,14 +192,15 @@ export default function Today() {
   const filtered = agenda.filter((a) => matches(a, schedule));
   const dueGroup = (a: Row) =>
     matches(a, "late") ? "late" : matches(a, "today") ? "today" : "future";
-  const grouped = sales && (schedule === "priority" || schedule === "all");
+  const grouped =
+    sales && !compact && (schedule === "priority" || schedule === "all");
   const groupLabels: Record<string, string> = {
     late: "Terlambat",
     today: "Hari ini",
     future: "Mendatang",
   };
   const groupRows = (key: string) => filtered.filter((a) => dueGroup(a) === key);
-  const agendaLimit = sales ? 6 : 5;
+  const agendaLimit = 5;
   const agendaRows = allActivities
     ? grouped
       ? Object.keys(groupLabels).flatMap(groupRows)
@@ -613,7 +619,7 @@ export default function Today() {
           aria-label="Agenda"
         >
           <HStack hAlign="between" gap={3} vAlign="end" wrap="wrap">
-            {sales && <Heading level={2}>Agenda</Heading>}
+            {sales && <Heading level={2}>{compact ? "Berikutnya" : "Agenda"}</Heading>}
             {!sales && (
             <Selector
               label={sales ? "Filter agenda" : "Jadwal"}
@@ -643,12 +649,11 @@ export default function Today() {
               />
             ) : null}
           </HStack>
-          {sales && (
+          {sales && !compact && (
             <TabList
               value={schedule}
               onChange={(value) => {
                 setSchedule(value);
-                setAllActivities(false);
               }}
               aria-label="Filter agenda"
               hasDivider
@@ -718,20 +723,31 @@ export default function Today() {
                 key: "customer",
                 header: "Pelanggan",
                 width: sales ? proportional(1.45, { minWidth: 120 }) : undefined,
-                renderCell: (a) => (
-                  <Link
-                    href={withReturn(`/customers/${a.customer.id}/`, page.url)}
-                    weight="semibold"
-                  >
-                    {a.customer.name}
-                  </Link>
-                ),
+                renderCell: (a) => {
+                  const name = (
+                    <Link
+                      href={withReturn(`/customers/${a.customer.id}/`, page.url)}
+                      weight="semibold"
+                    >
+                      {a.customer.name}
+                    </Link>
+                  );
+                  const where = compact && a.customer.address?.trim();
+                  return where ? (
+                    <VStack gap={1}>
+                      {name}
+                      <Text type="supporting">{where}</Text>
+                    </VStack>
+                  ) : (
+                    name
+                  );
+                },
               },
-              {
+              ...(compact ? [] : [{
                 key: "kind_label",
                 header: "Aktivitas",
                 width: sales ? proportional(1.65, { minWidth: 140 }) : undefined,
-                renderCell: (activity) => (
+                renderCell: (activity: Row) => (
                   <VStack gap={1}>
                     <Text>{activity.kind_label}</Text>
                     {sales && activity.note?.trim() && (
@@ -747,7 +763,7 @@ export default function Today() {
                     )}
                   </VStack>
                 ),
-              },
+              }]),
               {
                 key: "due",
                 header: "Jadwal",
@@ -1078,36 +1094,22 @@ export default function Today() {
         total: assigned.length,
       };
     });
+  const teamPeak = Math.max(
+    1,
+    ...teamRows.map((person: Row) => person.late + person.today),
+  );
   const teamStats = manager && (
-    <StatGrid>
-      <StatTile
-        icon={RiAlarmWarningLine}
-        tone={lateActivities > 0 ? "danger" : "neutral"}
-        label="Terlambat"
-        value={<RollingNumber id="team-late" value={lateActivities} />}
-        action="Lihat daftar"
-        aria-controls="queue-activities"
-        onClick={() => focusQueue("activities", "late")}
+    <div className="grid gap-3 md:grid-cols-2">
+      <SalesSummary
+        id="team"
+        late={lateActivities}
+        today={todayActivities}
+        onOpen={(mode) => focusQueue("activities", mode)}
       />
-      <StatTile
-        icon={RiCalendarCheckLine}
-        tone="neutral"
-        label="Jadwal hari ini"
-        value={<RollingNumber id="team-today" value={todayActivities} />}
-        action="Lihat daftar"
-        aria-controls="queue-activities"
-        onClick={() => focusQueue("activities", "today")}
-      />
-      <StatTile
-        icon={RiFocus2Line}
-        tone="neutral"
-        label="Agenda terbuka"
-        value={<RollingNumber id="team-open" value={agenda.length} />}
-        action="Lihat daftar"
-        aria-controls="queue-activities"
-        onClick={() => focusQueue("activities", "all")}
-      />
-    </StatGrid>
+      <Suspense fallback={<ChartSkeleton />}>
+        <SalesWeek agenda={agenda} today={page.today} />
+      </Suspense>
+    </div>
   );
   const teamRecap = manager && (
     <VStack gap={3} id="team-recap" className="oneflow-panel">
@@ -1138,21 +1140,51 @@ export default function Today() {
         empty={<Empty title="Belum ada Sales aktif" />}
         columns={[
           { key: "name", header: "Sales" },
-          { key: "today", header: "Terjadwal hari ini", align: "end" },
+          {
+            key: "load",
+            header: "Perlu dikerjakan",
+            width: proportional(2, { minWidth: 160 }),
+            renderCell: (person) => (
+              <div
+                className="flex h-2 w-full gap-0.5 overflow-hidden rounded-full bg-chart-track"
+                role="img"
+                aria-label={`${person.late} terlambat, ${person.today} hari ini`}
+              >
+                {person.late > 0 && (
+                  <span
+                    className="h-full bg-text-error-primary"
+                    style={{ flexGrow: person.late }}
+                  />
+                )}
+                {person.today > 0 && (
+                  <span
+                    className="h-full bg-chart-2-active"
+                    style={{ flexGrow: person.today }}
+                  />
+                )}
+                <span
+                  className="h-full"
+                  style={{ flexGrow: teamPeak - person.late - person.today }}
+                />
+              </div>
+            ),
+          },
           {
             key: "late",
             header: "Terlambat",
             align: "end",
-            renderCell: (person) =>
-              person.late ? (
-                <HStack hAlign="end">
-                  <Status value="OVERDUE" label={String(person.late)} />
-                </HStack>
-              ) : (
-                <Text hasTabularNumbers>0</Text>
-              ),
+            renderCell: (person) => (
+              <span
+                className={cx(
+                  "tabular-nums",
+                  person.late > 0 && "text-text-error-primary",
+                )}
+              >
+                {person.late}
+              </span>
+            ),
           },
-          { key: "total", header: "Agenda terbuka", align: "end" },
+          { key: "today", header: "Hari ini", align: "end" },
           {
             key: "action",
             header: "Tindakan",
@@ -1395,7 +1427,29 @@ export default function Today() {
               {teamStats}
               {teamRecap}
               {manager && requestedQueue !== "overview" && workQueue}
+              {sales && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <SalesSummary
+                    late={lateActivities}
+                    today={todayActivities}
+                    onOpen={(mode) => {
+                      setSchedule(mode);
+                      setAllActivities(true);
+                    }}
+                  />
+                  {!isMobile && (
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <SalesWeek agenda={agenda} today={page.today} />
+                    </Suspense>
+                  )}
+                </div>
+              )}
               {sales && workQueue}
+              {sales && isMobile && (
+                <Suspense fallback={<ChartSkeleton />}>
+                  <SalesWeek agenda={agenda} today={page.today} />
+                </Suspense>
+              )}
               {priorityItems.length > 0 && (
                 <VStack gap={2}>
                   <Heading level={2}>Perlu ditangani</Heading>
