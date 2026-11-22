@@ -180,3 +180,26 @@ body {
   box-shadow: var(--shadow-xs);
   border-radius: 1rem;
 }
+
+/* Group heading row inside a table (agenda by due state). */
+.bui-table tbody tr.bui-table-group th {
+  padding: 0.5rem 1rem;
+  text-align: start;
+  background-color: var(--color-background-secondary-default);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Returning from a detail page: the row you came from is tinted briefly. */
+.oneflow-returned { animation: oneflow-returned 1.6s ease-out; }
+@keyframes oneflow-returned {
+  0%, 35% { background-color: color-mix(in oklab, var(--color-accent-300) 45%, transparent); }
+  100% { background-color: transparent; }
+}
+/* Press feedback on every pressable control, not only on hover. */
+button:not(:disabled):active, a[role="button"]:active { transition: transform 120ms ease-out; transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .oneflow-returned { animation: none; outline: 2px solid var(--color-accent-400); outline-offset: -2px; }
+  button:not(:disabled):active, a[role="button"]:active { transform: none; }
+}

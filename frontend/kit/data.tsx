@@ -64,6 +64,8 @@ export interface TableProps<T> {
   verticalAlign?: string;
   textOverflow?: string;
   hasHover?: boolean;
+  /** Consecutive rows sharing a key sit under one labelled group row. */
+  group?: (row: T) => { key: string; label: ReactNode };
   "aria-label"?: string;
 }
 
@@ -74,6 +76,7 @@ export function Table<T extends AnyRow>({
   idKey = "id",
   plugins,
   hasHover,
+  group,
   "aria-label": ariaLabel,
 }: TableProps<T>) {
   const sort = plugins?.sort;
@@ -148,8 +151,18 @@ export function Table<T extends AnyRow>({
             const key = String(row[idKey] ?? index);
             const rowKey = expansion?.getRowKey(row);
             const isOpen = expansion ? expansion.expandedKeys.has(rowKey) : false;
+            const heading = group?.(row);
+            const startsGroup =
+              heading && (index === 0 || group?.(data[index - 1]).key !== heading.key);
             return (
               <Fragment key={key}>
+                {startsGroup && (
+                  <tr className="bui-table-group">
+                    <th scope="rowgroup" colSpan={columns.length + (expansion ? 1 : 0)}>
+                      {heading.label}
+                    </th>
+                  </tr>
+                )}
                 <tr
                   data-row
                   className={cx(

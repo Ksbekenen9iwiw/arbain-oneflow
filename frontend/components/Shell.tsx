@@ -38,6 +38,7 @@ import { Kbd } from "@/components/base/kbd/kbd";
 import { cx } from "@/utils/cx";
 import { ServerForm, useResponsive } from "../ui";
 import { useApp } from "../router";
+import { useReturnHighlight } from "../continuity";
 import Walkthrough, { canStartTour } from "../Walkthrough";
 import { ThemeSwitch, useThemeMode } from "../ThemeSwitch";
 
@@ -146,6 +147,7 @@ function SectionLabel({ children, collapsed }: { children: ReactNode; collapsed:
 
 export default function Shell({ children }: { children: ReactNode }) {
   const { page, revision, busy, issue, requestKind, leaveAndSubmit, navigate } = useApp();
+  useReturnHighlight(page.url);
   const { isMobile } = useResponsive();
   const { toggleMode } = useThemeMode();
   const [tourRequest, setTourRequest] = useState(0);

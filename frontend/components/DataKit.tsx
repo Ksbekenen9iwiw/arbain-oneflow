@@ -39,11 +39,34 @@ function MobileRows<T extends AnyRow>({
   data,
   columns,
   idKey,
+  group,
 }: {
   data: T[];
   columns: TableColumn<T>[];
   idKey?: string;
+  group?: (row: T) => { key: string; label: ReactNode };
 }) {
+  if (group) {
+    const sections: { key: string; label: ReactNode; rows: T[] }[] = [];
+    for (const row of data) {
+      const { key, label } = group(row);
+      const last = sections[sections.length - 1];
+      if (last?.key === key) last.rows.push(row);
+      else sections.push({ key, label, rows: [row] });
+    }
+    return (
+      <VStack gap={2}>
+        {sections.map((section) => (
+          <VStack key={section.key} gap={1}>
+            <div className="rounded-lg bg-background-secondary-default px-3 py-1.5 text-body-2-medium text-text-secondary">
+              {section.label}
+            </div>
+            <MobileRows data={section.rows} columns={columns} idKey={idKey} />
+          </VStack>
+        ))}
+      </VStack>
+    );
+  }
   const [title, ...rest] = columns;
   const trailing = rest.find((c) => trailingKeys.has(c.key));
   const actions = rest.filter((c) => actionKeys.has(c.key));
@@ -92,6 +115,7 @@ export function Table<T extends AnyRow>(
         data={props.data as T[]}
         columns={props.columns as TableColumn<T>[]}
         idKey={props.idKey as string | undefined}
+        group={props.group as ((row: T) => { key: string; label: ReactNode }) | undefined}
       />
     );
   }
@@ -213,10 +237,12 @@ export function DataTable({
   rows,
   columns,
   empty,
+  group,
 }: {
   rows: Row[];
   columns: TableColumn<Row>[];
   empty?: ReactNode;
+  group?: (row: Row) => { key: string; label: ReactNode };
 }) {
   const [sort, setSort] = useState<TableSortState>([]);
   const sorting = useTableSortable({
@@ -246,8 +272,9 @@ export function DataTable({
   return rows.length ? (
     <Table
       {...tablePresentation}
-      data={ordered}
-      plugins={{ sort: sorting }}
+      data={group ? rows : ordered}
+      plugins={group ? undefined : { sort: sorting }}
+      group={group}
       columns={columns.map((column) => ({
         ...column,
         width: column.width || proportional(1, { minWidth: 96 }),

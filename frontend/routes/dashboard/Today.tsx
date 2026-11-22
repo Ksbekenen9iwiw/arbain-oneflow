@@ -62,6 +62,7 @@ import {
 } from "./TodayConsignment";
 import { useApp, useQueryState } from "../../router";
 import { useDelayedBusy } from "../../RequestFeedback";
+import { RollingNumber } from "../../continuity";
 import {
   dashboardQueue,
   salesGreeting,
@@ -184,6 +185,25 @@ export default function Today() {
     activityMatches(a.due, mode, page.today);
   const showQueueTabs = !sales;
   const filtered = agenda.filter((a) => matches(a, schedule));
+  const dueGroup = (a: Row) =>
+    matches(a, "late") ? "late" : matches(a, "today") ? "today" : "future";
+  const grouped = sales && (schedule === "priority" || schedule === "all");
+  const groupLabels: Record<string, string> = {
+    late: "Terlambat",
+    today: "Hari ini",
+    future: "Mendatang",
+  };
+  const groupRows = (key: string) => filtered.filter((a) => dueGroup(a) === key);
+  const agendaLimit = sales ? 6 : 5;
+  const agendaRows = allActivities
+    ? grouped
+      ? Object.keys(groupLabels).flatMap(groupRows)
+      : filtered
+    : grouped
+      ? Object.keys(groupLabels).flatMap((key) =>
+          groupRows(key).slice(0, agendaLimit),
+        )
+      : filtered.slice(0, agendaLimit);
   const lateActivities = agenda.filter((a) => matches(a, "late")).length;
   const todayActivities = agenda.filter((a) => matches(a, "today")).length;
   const activityIds = new Set(agenda.map((a) => String(a.id)));
@@ -352,33 +372,14 @@ export default function Today() {
   );
   // Astryx Table bleeds through the inherited bottom padding. Reserve that
   // padding within each table section so the next section retains its gap.
-  const salesOverview = sales && (
+  const hasTarget = goal.achievement_percent != null;
+  const hasShipments = (m.shipment_days || []).some(
+    (day: Row) => Number(day.order_count) > 0,
+  );
+  const salesOverview = sales && (hasTarget || hasShipments) && (
     <VStack gap={2} aria-label="Ringkasan sales">
+      {hasTarget && (
       <StatGrid>
-        <StatTile
-          icon={RiAlarmWarningLine}
-          tone={lateActivities > 0 ? "danger" : "neutral"}
-          label="Terlambat"
-          value={quantity(lateActivities)}
-          action={schedule === "late" ? "Tampilkan semua" : "Kerjakan dulu"}
-          isSelected={schedule === "late"}
-          aria-controls="queue-activities"
-          onClick={() =>
-            focusQueue("activities", schedule === "late" ? "priority" : "late")
-          }
-        />
-        <StatTile
-          icon={RiCalendarCheckLine}
-          tone={todayActivities > 0 ? "accent" : "neutral"}
-          label="Jadwal hari ini"
-          value={quantity(todayActivities)}
-          action={schedule === "today" ? "Tampilkan semua" : "Lihat jadwal"}
-          isSelected={schedule === "today"}
-          aria-controls="queue-activities"
-          onClick={() =>
-            focusQueue("activities", schedule === "today" ? "priority" : "today")
-          }
-        />
         <StatTile
           icon={RiFocus2Line}
           tone={
@@ -408,6 +409,8 @@ export default function Today() {
           )}
         </StatTile>
       </StatGrid>
+      )}
+      {hasShipments && (
       <Card padding={3}>
         <Suspense fallback={<ChartSkeleton />}>
           <ShipmentTrend
@@ -418,6 +421,7 @@ export default function Today() {
           />
         </Suspense>
       </Card>
+      )}
 
     </VStack>
   );
@@ -610,6 +614,7 @@ export default function Today() {
         >
           <HStack hAlign="between" gap={3} vAlign="end" wrap="wrap">
             {sales && <Heading level={2}>Agenda</Heading>}
+            {!sales && (
             <Selector
               label={sales ? "Filter agenda" : "Jadwal"}
               value={schedule}
@@ -626,7 +631,8 @@ export default function Today() {
                 setAllActivities(false);
               }}
             />
-            {filtered.length > 5 && (
+            )}
+            {filtered.length > agendaRows.length || allActivities ? (
               <Button
                 label={
                   allActivities ? "Ringkas" : `Lihat semua (${filtered.length})`
@@ -635,10 +641,52 @@ export default function Today() {
                 variant="secondary"
                 onClick={() => setAllActivities((v) => !v)}
               />
-            )}
+            ) : null}
           </HStack>
+          {sales && (
+            <TabList
+              value={schedule}
+              onChange={(value) => {
+                setSchedule(value);
+                setAllActivities(false);
+              }}
+              aria-label="Filter agenda"
+              hasDivider
+            >
+              <Tab value="priority" label="Perlu dikerjakan" />
+              <Tab
+                value="late"
+                label={
+                  <span>
+                    Terlambat (<RollingNumber id="late" value={lateActivities} />)
+                  </span>
+                }
+              />
+              <Tab
+                value="today"
+                label={
+                  <span>
+                    Hari ini (<RollingNumber id="today" value={todayActivities} />)
+                  </span>
+                }
+              />
+              <Tab value="future" label="Mendatang" />
+              <Tab value="all" label="Semua" />
+            </TabList>
+          )}
           <DataTable
-            rows={allActivities ? filtered : filtered.slice(0, 5)}
+            rows={agendaRows}
+            group={
+              grouped
+                ? (a) => {
+                    const key = dueGroup(a);
+                    return {
+                      key,
+                      label: `${groupLabels[key]} · ${groupRows(key).length}`,
+                    };
+                  }
+                : undefined
+            }
             empty={
               <Empty
                 kind={schedule === "priority" ? "complete" : "search"}
@@ -706,7 +754,7 @@ export default function Today() {
                 width: sales ? proportional(0.9, { minWidth: 106 }) : undefined,
                 renderCell: (a) => (
                   <HStack gap={2} wrap="wrap">
-                    <Text>
+                    <Text color={sales && matches(a, "late") ? "danger" : undefined}>
                       {a.due
                         ? dateLabel(a.due)
                         : sales
@@ -719,34 +767,6 @@ export default function Today() {
                   </HStack>
                 ),
               },
-              ...(sales
-                ? [
-                    {
-                      key: "schedule_status",
-                      header: "Status",
-                      width: proportional(0.9, { minWidth: 110 }),
-                      renderCell: (activity: Row) => {
-                        const status = matches(activity, "late")
-                          ? { label: "Terlambat", color: "red" as const }
-                          : matches(activity, "today")
-                            ? { label: "Hari ini", color: "blue" as const }
-                            : {
-                                label: activity.due
-                                  ? "Mendatang"
-                                  : "Tanpa jadwal",
-                                color: "gray" as const,
-                              };
-                        return (
-                          <Token
-                            {...status}
-                            size="sm"
-                            style={{ borderRadius: "var(--radius-full)" }}
-                          />
-                        );
-                      },
-                    },
-                  ]
-                : []),
               ...(page.role === "MANAGER" && !d.selected_sales
                 ? [
                     {
@@ -1058,6 +1078,37 @@ export default function Today() {
         total: assigned.length,
       };
     });
+  const teamStats = manager && (
+    <StatGrid>
+      <StatTile
+        icon={RiAlarmWarningLine}
+        tone={lateActivities > 0 ? "danger" : "neutral"}
+        label="Terlambat"
+        value={<RollingNumber id="team-late" value={lateActivities} />}
+        action="Lihat daftar"
+        aria-controls="queue-activities"
+        onClick={() => focusQueue("activities", "late")}
+      />
+      <StatTile
+        icon={RiCalendarCheckLine}
+        tone="neutral"
+        label="Jadwal hari ini"
+        value={<RollingNumber id="team-today" value={todayActivities} />}
+        action="Lihat daftar"
+        aria-controls="queue-activities"
+        onClick={() => focusQueue("activities", "today")}
+      />
+      <StatTile
+        icon={RiFocus2Line}
+        tone="neutral"
+        label="Agenda terbuka"
+        value={<RollingNumber id="team-open" value={agenda.length} />}
+        action="Lihat daftar"
+        aria-controls="queue-activities"
+        onClick={() => focusQueue("activities", "all")}
+      />
+    </StatGrid>
+  );
   const teamRecap = manager && (
     <VStack gap={3} id="team-recap" className="oneflow-panel">
       <HStack gap={3} wrap="wrap" vAlign="center" hAlign="between">
@@ -1341,6 +1392,10 @@ export default function Today() {
             data-oneflow-scroll
           >
             <VStack gap={sales ? 4 : 6}>
+              {teamStats}
+              {teamRecap}
+              {manager && requestedQueue !== "overview" && workQueue}
+              {sales && workQueue}
               {priorityItems.length > 0 && (
                 <VStack gap={2}>
                   <Heading level={2}>Perlu ditangani</Heading>
@@ -1389,8 +1444,7 @@ export default function Today() {
                 </VStack>
               )}
               {salesOverview}
-              {teamRecap}
-              {(!manager || requestedQueue !== "overview") && workQueue}
+              {warehouse && workQueue}
               {salesFollowUp}
               {manager &&
                 ((m.shipment_days || []).some(
