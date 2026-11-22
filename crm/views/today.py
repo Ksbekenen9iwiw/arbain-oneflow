@@ -79,7 +79,7 @@ def _today_page(request, overrides=None, status=200):
         saved_target = SalesTarget.objects.filter(sales_id=selected_sales, month=as_of.replace(day=1)).first() if selected_sales else None
         context['target_form'] = SalesTargetForm(actor=request.user, initial={'month': as_of.replace(day=1), 'sales': selected_sales or None, 'target_rupiah': saved_target.target_rupiah if saved_target else None})
     if role != 'WAREHOUSE':
-        agenda = list(dashboard_activities(request.user, selected_sales or None).filter(status='PLANNED').select_related('customer', 'sales'))
+        agenda = list(dashboard_activities(request.user, selected_sales or None).filter(status='PLANNED').select_related('customer__owner', 'sales'))
         for activity in agenda:
             dates = [date for date in (activity.scheduled_date, activity.followup_date) if date]
             activity.due = min(dates) if dates else None

@@ -6,10 +6,14 @@ BUSINESS_ROLES = {'SALES', 'WAREHOUSE', 'MANAGER'}
 def role_of(actor):
     if not actor.is_authenticated or not actor.is_active:
         raise PermissionDenied('Akun aktif dengan satu peran bisnis diperlukan.')
-    roles = list(actor.groups.filter(name__in=BUSINESS_ROLES).values_list('name', flat=True))
-    if len(roles) != 1:
-        raise PermissionDenied('Akun harus memiliki tepat satu peran bisnis. Hubungi manajer.')
-    return roles[0]
+    # request.user is rebuilt for every request, so this never outlives one.
+    role = getattr(actor, '_business_role', None)
+    if role is None:
+        roles = list(actor.groups.filter(name__in=BUSINESS_ROLES).values_list('name', flat=True))
+        if len(roles) != 1:
+            raise PermissionDenied('Akun harus memiliki tepat satu peran bisnis. Hubungi manajer.')
+        role = actor._business_role = roles[0]
+    return role
 
 
 def require_role(actor, allowed):
