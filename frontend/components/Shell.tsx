@@ -3,6 +3,7 @@ import {
   RiArchiveLine,
   RiCalendarTodoLine,
   RiFileCopy2Line,
+  RiLightbulbLine,
   RiFileList3Line,
   RiFlaskLine,
   RiGroupLine,
@@ -190,6 +191,18 @@ export default function Shell({ children }: { children: ReactNode }) {
       isSelected: path === "/",
       tourId: "nav-dashboard",
     },
+    ...(role === "MANAGER"
+      ? [
+          {
+            id: "/attention/",
+            label: "Perlu perhatian",
+            hint: "Produk dan outlet titip jual yang melambat, serta peluang",
+            icon: RiLightbulbLine,
+            href: "/attention/",
+            isSelected: path === "/attention/",
+          },
+        ]
+      : []),
     ...(role !== "WAREHOUSE"
       ? [
           {

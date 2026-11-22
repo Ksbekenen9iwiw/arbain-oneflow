@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.today, name='today'),
     path('company-data/', company_archive, name='company_archive'),
     path('company-data/source/<int:report_id>/', company_archive_file, name='company_archive_file'),
+    path('attention/', views.attention_page, name='attention'),
     path('actions/decision/', views.action_decision, name='action_decision'),
     path('targets/', views.target_save, name='target_save'),
     path('customers/', views.customers, name='customers'),

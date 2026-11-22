@@ -34,6 +34,7 @@ from crm.services.consignment import (
     sales_attendance_recap,
 )
 from crm.services.sales_attendance import completed_visit_weeks
+from crm.services.visit_plan import attention as consignment_attention, visit_plan
 from crm.services.supply import supply_alerts
 from crm.views.common import page
 
@@ -90,6 +91,7 @@ def _today_page(request, overrides=None, status=200):
     context['supply_alerts'] = supply_alerts(request.user)
     context['attendance_recaps'] = sales_attendance_recap(request.user, as_of, selected_sales or None)
     context['visit_weeks'] = completed_visit_weeks(request.user, as_of, selected_sales or None)
+    context['visit_plan'] = visit_plan(request.user, as_of) if role == 'SALES' else []
     # The sales dashboard has no outlet monitoring section.
     context['consignment_outlets'] = [] if role == 'SALES' else pharmacy_consignment_overview(request.user, selected_sales or None, detail=False)
     context['product_traction'] = product_traction_analysis(as_of)
@@ -172,3 +174,20 @@ def target_save(request):
         messages.success(request, 'Target bulanan tersimpan.')
         return redirect(_dashboard_return(request))
     return _dashboard_error(request, {'target_form': form, 'target_dialog': True})
+
+
+@login_required
+@require_GET
+def attention_page(request):
+    require_role(request.user, {'MANAGER'})
+    selected_sales = request.GET.get('sales', '')
+    sales_options = dashboard_sales()
+    if selected_sales:
+        if not selected_sales.isascii() or not selected_sales.isdecimal() or len(selected_sales) > 18:
+            from django.http import Http404
+            raise Http404
+        selected_sales = str(get_object_or_404(sales_options, pk=selected_sales).pk)
+    context = consignment_attention(request.user, selected_sales or None)
+    context['selected_sales'] = selected_sales
+    context['sales_options'] = [{'value': str(s.pk), 'label': s.get_full_name() or s.username} for s in sales_options]
+    return page(request, 'crm/attention.html', context)
