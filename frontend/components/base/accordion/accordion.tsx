@@ -10,7 +10,7 @@ import {
   Heading as AriaHeading,
 } from "react-aria-components";
 import type { DisclosureGroupProps as AriaDisclosureGroupProps, DisclosureProps as AriaDisclosureProps } from "react-aria-components";
-import { RiAddLine, RiArrowDownSLine } from "@remixicon/react";
+import { IconChevronDown, IconPlus } from "@/icons";
 import { cx, sortCx } from "@/utils/cx";
 
 /**
@@ -115,7 +115,7 @@ export function AccordionItem({
   ...props
 }: AccordionItemProps) {
   const { variant, indicator } = useContext(AccordionContext);
-  const Indicator = indicator === "plus" ? RiAddLine : RiArrowDownSLine;
+  const Indicator = indicator === "plus" ? IconPlus : IconChevronDown;
 
   return (
     <AriaDisclosure

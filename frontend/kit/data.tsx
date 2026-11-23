@@ -1,5 +1,5 @@
 import { Fragment, type CSSProperties, type ReactNode } from "react";
-import { RiArrowDownSLine, RiArrowUpDownLine, RiArrowUpLine, RiArrowDownLine } from "@remixicon/react";
+import { IconArrowDown, IconArrowUp, IconArrowUpDown, IconChevronDown } from "@/icons";
 import { cx } from "@/utils/cx";
 
 type AnyRow = Record<string, any>;
@@ -108,10 +108,10 @@ export function Table<T extends AnyRow>({
               const canSort = Boolean(sort && column.sortable !== false && column.header);
               const Arrow =
                 active === "ascending"
-                  ? RiArrowUpLine
+                  ? IconArrowUp
                   : active === "descending"
-                    ? RiArrowDownLine
-                    : RiArrowUpDownLine;
+                    ? IconArrowDown
+                    : IconArrowUpDown;
               return (
                 <th
                   key={column.key}
@@ -179,7 +179,7 @@ export function Table<T extends AnyRow>({
                         onClick={() => expansion.onToggle(rowKey)}
                         className="inline-flex size-7 cursor-pointer items-center justify-center rounded-lg text-text-secondary outline-none hover:bg-background-tertiary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring"
                       >
-                        <RiArrowDownSLine
+                        <IconChevronDown
                           aria-hidden
                           className={cx(
                             "size-4 transition-transform duration-200",

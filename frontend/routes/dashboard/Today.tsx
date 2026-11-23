@@ -12,22 +12,8 @@ import { Layout, LayoutContent } from "@/kit";
 import { List, ListItem } from "@/kit";
 import { Icon } from "@/kit";
 import { IconButton } from "@/kit";
-import {
-  ArrowPathIcon,
-  AdjustmentsHorizontalIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { IconAlertCircle, IconAlertTriangle, IconCalendar, IconClockAlert, IconClose, IconFlag, IconRefresh, IconSample, IconSliders, IconStore, IconTarget } from "@/icons";
 import { Card, StatGrid, StatTile } from "@/kit";
-import {
-  RiAlarmWarningLine,
-  RiAlertLine,
-  RiCalendarCheckLine,
-  RiErrorWarningLine,
-  RiFlaskLine,
-  RiFocus2Line,
-  RiMegaphoneLine,
-  RiStore2Line,
-} from "@remixicon/react";
 import { Grid, GridSpan } from "@/kit";
 import { ProgressBar } from "@/kit";
 import { Selector } from "@/kit";
@@ -316,7 +302,7 @@ export default function Today() {
                 <IconButton
                   label="Atur target bulanan"
                   tooltip="Atur target bulanan"
-                  icon={<Icon icon={AdjustmentsHorizontalIcon} />}
+                  icon={<Icon icon={IconSliders} />}
                   size="sm"
                   variant="secondary"
                   onClick={() => setTarget(true)}
@@ -392,7 +378,7 @@ export default function Today() {
       {hasTarget && (
       <StatGrid>
         <StatTile
-          icon={RiFocus2Line}
+          icon={IconTarget}
           tone={
             goal.achievement_percent != null && goal.achievement_percent >= 100
               ? "success"
@@ -451,7 +437,7 @@ export default function Today() {
         <IconButton
           label="Tutup rincian target"
           tooltip="Tutup rincian target"
-          icon={<Icon icon={XMarkIcon} />}
+          icon={<Icon icon={IconClose} />}
           variant="secondary"
           size="sm"
           onClick={() => {
@@ -1389,7 +1375,7 @@ export default function Today() {
                     variant="secondary"
                     label="Perbarui dashboard"
                     tooltip={`Perbarui · terakhir ${new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }).format(new Date(d.updated_at))} WIB`}
-                    icon={<Icon icon={ArrowPathIcon} />}
+                    icon={<Icon icon={IconRefresh} />}
                     isLoading={busy}
                     onClick={() => void navigate(page.url, true)}
                   />
@@ -1493,14 +1479,14 @@ export default function Today() {
                           key={item.label}
                           icon={
                             item.action === "Baca arahan"
-                              ? RiMegaphoneLine
+                              ? IconFlag
                               : item.action === "Tinjau sampel"
-                                ? RiFlaskLine
+                                ? IconSample
                                 : item.action === "Tinjau outlet"
-                                  ? RiStore2Line
+                                  ? IconStore
                                   : urgent
-                                    ? RiErrorWarningLine
-                                    : RiAlertLine
+                                    ? IconAlertCircle
+                                    : IconAlertTriangle
                           }
                           tone={
                             urgent

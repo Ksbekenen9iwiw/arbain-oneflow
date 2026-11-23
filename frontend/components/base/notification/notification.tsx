@@ -16,12 +16,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
-import {
-  RiCheckboxCircleFill,
-  RiErrorWarningFill,
-  RiInformationFill,
-  RiNotification3Fill,
-} from "@remixicon/react";
+import { IconAlertCircle, IconChat, IconCheckCircle, IconInfo } from "@/icons";
 import { AnimatePresence, motion } from "motion/react";
 import { Avatar, type AvatarProps } from "@/components/base/avatar/avatar";
 import { Button, type ButtonProps } from "@/components/base/buttons/button";
@@ -116,10 +111,10 @@ export interface NotificationViewportProps
 }
 
 const STATUS_ICON: Record<NotificationStatus, IconComponent> = {
-  neutral: RiNotification3Fill,
-  information: RiInformationFill,
-  success: RiCheckboxCircleFill,
-  error: RiErrorWarningFill,
+  neutral: IconChat,
+  information: IconInfo,
+  success: IconCheckCircle,
+  error: IconAlertCircle,
 };
 
 const styles = sortCx({

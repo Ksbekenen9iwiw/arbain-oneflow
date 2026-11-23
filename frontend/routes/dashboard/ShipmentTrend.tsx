@@ -18,7 +18,7 @@ import { Icon } from "@/kit";
 import { IconButton } from "@/kit";
 import { List, ListItem } from "@/kit";
 import { Tooltip as HelpTooltip } from "@/kit";
-import { TableCellsIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { IconClose, IconTable } from "@/icons";
 import {
   SegmentedControl,
   SegmentedControlItem,
@@ -248,7 +248,7 @@ export default function ShipmentTrend({
             variant="secondary"
             label={table ? "Tutup data" : "Lihat data harian"}
             tooltip={table ? "Tutup data harian" : "Lihat data harian"}
-            icon={<Icon icon={table ? XMarkIcon : TableCellsIcon} />}
+            icon={<Icon icon={table ? IconClose : IconTable} />}
             aria-expanded={table}
             aria-controls="shipment-daily-data"
             onClick={() => setTable((v) => !v)}

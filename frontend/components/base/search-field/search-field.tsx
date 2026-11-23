@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { SearchField as AriaSearchField } from "react-aria-components";
 import type { SearchFieldProps as AriaSearchFieldProps } from "react-aria-components";
-import { RiSearchLine } from "@remixicon/react";
+import { IconSearch } from "@/icons";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { HintText } from "@/components/base/input/hint-text";
 import { InputBase } from "@/components/base/input/input";
@@ -58,7 +58,7 @@ export function SearchField({
   size = "medium",
   shape = "pill",
   isLoading = false,
-  icon: Icon = RiSearchLine,
+  icon: Icon = IconSearch,
   clearLabel = "Clear search",
   value: controlledValue,
   defaultValue = "",

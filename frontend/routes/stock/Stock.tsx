@@ -15,7 +15,7 @@ import { TextInput } from "@/kit";
 import { Selector } from "@/kit";
 import { TabList, Tab } from "@/kit";
 import { IconButton } from "@/kit";
-import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
+import { IconMore } from "@/icons";
 import { DropdownMenu } from "@/kit";
 import { proportional, type TableColumn } from "@/kit";
 import {

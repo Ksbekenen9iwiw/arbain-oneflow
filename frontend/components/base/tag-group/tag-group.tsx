@@ -9,7 +9,7 @@ import {
   TagList as AriaTagList,
 } from "react-aria-components";
 import type { TagGroupProps as AriaTagGroupProps, TagProps as AriaTagProps } from "react-aria-components";
-import { RiCloseLine } from "@remixicon/react";
+import { IconClose } from "@/icons";
 import { CHIP_COLORS } from "@/components/base/badges/chip";
 import type { ChipColor } from "@/components/base/badges/chip";
 import { HintText } from "@/components/base/input/hint-text";
@@ -108,7 +108,7 @@ export function Tag({ color = "neutral", icon: Icon, className, children, ...pro
           "transition-[background-color,color,box-shadow,filter] duration-150 ease-out",
           size === "small" ? "h-6 px-1.5 text-caption-1-medium" : "h-7 px-2 text-body-medium",
           allowsRemoving && (size === "small" ? "pe-0.5" : "pe-1"),
-          isSelected ? "bg-accent-500 text-white" : CHIP_COLORS[color],
+          isSelected ? "icon-on-fill bg-accent-500 text-white" : CHIP_COLORS[color],
           allowsSelection ? "cursor-pointer" : "cursor-default",
           allowsSelection && !isSelected && isHovered && (color === "neutral" ? "bg-background-tertiary-hover" : "brightness-95"),
           isFocusVisible && "ring-2 ring-border-focus-ring",
@@ -130,7 +130,7 @@ export function Tag({ color = "neutral", icon: Icon, className, children, ...pro
                 size === "small" ? "size-4" : "size-5",
               )}
             >
-              <RiCloseLine aria-hidden className={size === "small" ? "size-3" : "size-3.5"} />
+              <IconClose aria-hidden className={size === "small" ? "size-3" : "size-3.5"} />
             </AriaButton>
           ) : null}
         </>

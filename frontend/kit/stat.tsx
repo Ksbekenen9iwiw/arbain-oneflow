@@ -4,10 +4,10 @@ import { cx } from "@/utils/cx";
 export type StatTone = "accent" | "danger" | "warning" | "success" | "neutral";
 
 const TILE: Record<StatTone, string> = {
-  accent: "from-accent-400 to-accent-500 text-white",
-  danger: "from-rose-500 to-rose-600 text-white",
-  warning: "from-orange-400 to-orange-500 text-white",
-  success: "from-emerald-500 to-emerald-600 text-white",
+  accent: "icon-on-fill from-accent-400 to-accent-500 text-white",
+  danger: "icon-on-fill from-rose-500 to-rose-600 text-white",
+  warning: "icon-on-fill from-orange-400 to-orange-500 text-white",
+  success: "icon-on-fill from-emerald-500 to-emerald-600 text-white",
   neutral: "from-background-tertiary-default to-background-tertiary-default text-foreground-icon-primary",
 };
 

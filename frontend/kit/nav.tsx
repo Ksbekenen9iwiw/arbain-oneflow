@@ -1,5 +1,5 @@
 import { Children, isValidElement, useState, type ReactElement, type ReactNode } from "react";
-import { RiCheckLine, RiMoreLine } from "@remixicon/react";
+import { IconCheck, IconMore } from "@/icons";
 import { Tabs, TabList as BaseTabList, Tab as BaseTab } from "@/components/base/tabs/tabs";
 import {
   SegmentedControl as BaseSegmented,
@@ -201,7 +201,7 @@ export function DropdownMenu({
         aria-label={iconLabel}
         className={cx(TRIGGER, iconLabel ? "size-8" : "px-2.5 py-2")}
       >
-        {iconLabel ? <RiMoreLine aria-hidden className="size-4" /> : button?.label}
+        {iconLabel ? <IconMore aria-hidden className="size-4" /> : button?.label}
       </DropdownTrigger>
       <DropdownPopover
         aria-label={label}

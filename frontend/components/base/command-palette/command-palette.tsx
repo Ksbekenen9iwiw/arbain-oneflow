@@ -17,7 +17,7 @@ import {
   useFilter,
 } from "react-aria-components";
 import type { Key, MenuItemProps as AriaMenuItemProps } from "react-aria-components";
-import { RiArrowDownLine, RiArrowUpLine, RiCloseCircleFill, RiCornerDownLeftLine, RiSearchLine } from "@remixicon/react";
+import { IconArrowDown, IconArrowUp, IconCloseCircle, IconEnter, IconSearch } from "@/icons";
 import { Kbd } from "@/components/base/kbd/kbd";
 import { useDirection } from "@/components/foundations/direction/direction";
 import { ScrollFade, useScrollFade } from "@/components/foundations/scroll-fade/scroll-fade";
@@ -286,7 +286,7 @@ export function CommandPalette({
               autoFocus
               className="group/search flex h-10 shrink-0 items-center gap-2.5 border-b border-separator-border ps-3.5 pe-2.5"
             >
-              <RiSearchLine
+              <IconSearch
                 className="size-4 shrink-0 text-foreground-icon-secondary transition-colors duration-150 group-data-[empty]/search:text-foreground-icon-tertiary"
                 aria-hidden
               />
@@ -303,7 +303,7 @@ export function CommandPalette({
                   "group-data-[empty]/search:pointer-events-none group-data-[empty]/search:opacity-0 motion-safe:group-data-[empty]/search:scale-50",
                 )}
               >
-                <RiCloseCircleFill className="size-4" aria-hidden />
+                <IconCloseCircle className="size-4" aria-hidden />
               </AriaButton>
             </AriaSearchField>
             <div
@@ -352,16 +352,16 @@ export function CommandPalette({
                   <>
                     <span className="flex items-center gap-1.5">
                       <Kbd aria-label="Arrow up">
-                        <RiArrowUpLine className="size-3" aria-hidden />
+                        <IconArrowUp className="size-3" aria-hidden />
                       </Kbd>
                       <Kbd aria-label="Arrow down">
-                        <RiArrowDownLine className="size-3" aria-hidden />
+                        <IconArrowDown className="size-3" aria-hidden />
                       </Kbd>
                       Navigate
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Kbd aria-label="Enter">
-                        <RiCornerDownLeftLine className="size-3" aria-hidden />
+                        <IconEnter className="size-3" aria-hidden />
                       </Kbd>
                       Select
                     </span>

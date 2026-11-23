@@ -6,6 +6,7 @@ Project-specific guidance for AI coding agents.
 - UI is BoardUI Free (source under `frontend/components/`) on Tailwind CSS v4. Do not add BoardUI Pro components or another component library.
 - Screens import from `@/kit` (layout, text, controls, fields, nav, data, structure, stat): thin OneFlow wrappers over the BoardUI components. Extend the kit instead of styling per screen.
 - Brand tokens (honey-amber accent, Inter, motion) live in `frontend/styles/oneflow.css`, imported by `styles/globals.css`.
+- Icons are Rune Icons duotone from `@/icons` (`IconSearch`, passed as component references). This replaces the `@remixicon/react` rule below. The second tone is `--icon-duo`.
 - Dark mode is the `.dark` class on `<html>`, managed by `frontend/ThemeSwitch.tsx`.
 
 

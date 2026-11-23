@@ -25,7 +25,7 @@ import type {
   MenuProps as AriaMenuProps,
   MenuSectionProps as AriaMenuSectionProps,
 } from "react-aria-components";
-import { RiArrowRightSLine, RiCheckLine } from "@remixicon/react";
+import { IconCheck, IconChevronRight } from "@/icons";
 import { MENU_ITEM, MENU_ITEM_ACTIVE } from "@/components/base/dropdown/menu-styles";
 import { useDirection } from "@/components/foundations/direction/direction";
 import { ScrollFade, useScrollFade } from "@/components/foundations/scroll-fade/scroll-fade";
@@ -346,10 +346,10 @@ export function ContextMenuItem({ icon: Icon, shortcut, variant = "default", cla
             />
           ) : null}
           <span className="min-w-0 flex-1 truncate">{children}</span>
-          {isSelected ? <RiCheckLine aria-hidden className="size-4 shrink-0 text-accent-500" /> : null}
+          {isSelected ? <IconCheck aria-hidden className="size-4 shrink-0 text-accent-500" /> : null}
           {shortcut ? <kbd className="shrink-0 ps-3 font-sans text-body-regular text-text-tertiary">{shortcut}</kbd> : null}
           {hasSubmenu ? (
-            <RiArrowRightSLine aria-hidden className="-me-1 size-5 shrink-0 text-foreground-icon-secondary rtl:-scale-x-100" />
+            <IconChevronRight aria-hidden className="-me-1 size-5 shrink-0 text-foreground-icon-secondary rtl:-scale-x-100" />
           ) : null}
         </>
       )}

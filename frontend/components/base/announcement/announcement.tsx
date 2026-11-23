@@ -3,7 +3,7 @@
 import type { ComponentType, HTMLAttributes, ReactNode, Ref } from "react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { RiShieldStarFill } from "@remixicon/react";
+import { IconShield } from "@/icons";
 import { Button } from "@/components/base/buttons/button";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { cx, sortCx } from "@/utils/cx";
@@ -16,7 +16,7 @@ import { cx, sortCx } from "@/utils/cx";
  *
  *   card            flex-col, gap 12, p 12, radius 12, border, white, no shadow
  *   ├─ content      flex-col, gap 4
- *   │  ├─ icon      shield-star-fill, 20×20 (RiShieldStarFill)
+ *   │  ├─ icon      shield-star-fill, 20×20 (IconShield)
  *   │  ├─ close     CloseButton size="xs" (absolute, top-right)
  *   │  └─ text      flex-col, gap 2
  *   │     ├─ title  Body 1/Medium (14/20), text/primary
@@ -90,7 +90,7 @@ const styles = sortCx({
 export function Announcement({
   title,
   description,
-  icon: Icon = RiShieldStarFill,
+  icon: Icon = IconShield,
   actionLabel,
   onAction,
   dismissible = false,

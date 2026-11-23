@@ -2,7 +2,7 @@ import { InputGroup, InputGroupText } from "@/kit";
 import { TextInput, type TextInputProps } from "@/kit";
 import { IconButton } from "@/kit";
 import { Icon } from "@/kit";
-import { MinusIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { IconMinus, IconPlus } from "@/icons";
 import { MAX_QUANTITY, steppedQuantity } from "./quantityStep";
 import { useEffect, useRef } from "react";
 import { playMotion } from "./motion";
@@ -70,7 +70,7 @@ export function QuantityInput({
         <IconButton
           label={`Kurangi ${controlLabel.toLowerCase()}`}
           tooltip={`Kurangi ${controlLabel.toLowerCase()}`}
-          icon={<Icon icon={MinusIcon} />}
+          icon={<Icon icon={IconMinus} />}
           type="button"
           size="sm"
           variant="ghost"
@@ -103,7 +103,7 @@ export function QuantityInput({
         <IconButton
           label={`Tambah ${controlLabel.toLowerCase()}`}
           tooltip={`Tambah ${controlLabel.toLowerCase()}`}
-          icon={<Icon icon={PlusIcon} />}
+          icon={<Icon icon={IconPlus} />}
           type="button"
           size="sm"
           variant="ghost"

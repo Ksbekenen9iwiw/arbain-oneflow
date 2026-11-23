@@ -9,7 +9,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { RiCheckLine } from "@remixicon/react";
+import { IconCheck } from "@/icons";
 import { Modal, ModalDialog, ModalHeader } from "@/components/base/modal/modal";
 import { cx } from "@/utils/cx";
 
@@ -248,7 +248,7 @@ export function Stepper({
                         : "bg-background-tertiary-default text-text-tertiary",
                 )}
               >
-                {isDone && !isError ? <RiCheckLine aria-hidden className="size-3.5" /> : index + 1}
+                {isDone && !isError ? <IconCheck aria-hidden className="size-3.5" /> : index + 1}
               </span>
               <span
                 className={cx(

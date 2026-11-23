@@ -10,7 +10,7 @@ import {
 } from "react";
 import { Switch } from "@/kit";
 import { Icon, IconButton } from "@/kit";
-import { RiMoonLine, RiSunLine } from "@remixicon/react";
+import { IconMoon, IconSun } from "@/icons";
 import {
   THEME_STORAGE_KEY,
   nextThemeMode,
@@ -125,7 +125,7 @@ export function ThemeSwitch({ compact = false }: { compact?: boolean; spread?: b
         tooltip={label}
         size="sm"
         variant="ghost"
-        icon={<Icon icon={isDark ? RiSunLine : RiMoonLine} />}
+        icon={<Icon icon={isDark ? IconSun : IconMoon} />}
         onClick={toggleMode}
       />
     );

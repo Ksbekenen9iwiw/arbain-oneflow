@@ -116,12 +116,12 @@ const styles = sortCx({
 
   variant: {
     primary: [
-      "bg-button-primary text-text-white shadow-xs",
+      "icon-on-fill bg-button-primary text-text-white shadow-xs",
       "disabled:text-button-primary-disabled-foreground disabled:shadow-none",
       "aria-disabled:text-button-primary-disabled-foreground aria-disabled:shadow-none",
     ].join(" "),
     danger: [
-      "bg-button-danger text-text-white shadow-xs",
+      "icon-on-fill bg-button-danger text-text-white shadow-xs",
       "disabled:text-foreground-disabled-danger disabled:shadow-none",
       "aria-disabled:text-foreground-disabled-danger aria-disabled:shadow-none",
     ].join(" "),
