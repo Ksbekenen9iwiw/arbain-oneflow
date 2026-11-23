@@ -4,11 +4,7 @@ import { HStack, VStack } from "@/kit";
 import { Text, Heading } from "@/kit";
 import { Button } from "@/kit";
 import { Icon } from "@/kit";
-import {
-  CheckCircleIcon,
-  InboxIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
+import { IconCheckCircle, IconInbox, IconSearch } from "@/icons";
 import { List, ListItem } from "@/kit";
 import {
   Table as KitTable,
@@ -136,7 +132,7 @@ export function Empty({
   return (
     <MotionStack gap={3} hAlign="center" padding={8} motionKey={title}>
       {kind === "search" ? (
-        <Icon icon={MagnifyingGlassIcon} color="accent" size="lg" />
+        <Icon icon={IconSearch} color="accent" size="lg" />
       ) : (
         <HoneycombArt tone={kind === "complete" ? "success" : "accent"} />
       )}

@@ -17,7 +17,7 @@ import { Avatar } from "@/kit";
 import { Divider } from "@/kit";
 import { Icon } from "@/kit";
 import { IconButton } from "@/kit";
-import { ViewColumnsIcon } from "@heroicons/react/24/outline";
+import { IconColumns } from "@/icons";
 import {
   VStack,
   HStack,
@@ -128,7 +128,7 @@ export default function ActivityDetail() {
                         ? "Sembunyikan detail aktivitas"
                         : "Tampilkan detail aktivitas"
                   }
-                  icon={<Icon icon={ViewColumnsIcon} />}
+                  icon={<Icon icon={IconColumns} />}
                   variant="secondary"
                   aria-expanded={isNarrow ? narrowPanelOpen : panel}
                   onClick={() => {

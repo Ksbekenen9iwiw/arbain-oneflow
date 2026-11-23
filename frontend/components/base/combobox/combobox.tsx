@@ -16,7 +16,7 @@ import type {
   ListBoxItemProps as AriaListBoxItemProps,
   ListBoxSectionProps as AriaListBoxSectionProps,
 } from "react-aria-components";
-import { RiCheckLine } from "@remixicon/react";
+import { IconCheck } from "@/icons";
 import { MENU_ITEM, MENU_ITEM_ACTIVE, MENU_ITEMS_CONTAINER, MENU_POPOVER_SURFACE } from "@/components/base/dropdown/menu-styles";
 import { HintText } from "@/components/base/input/hint-text";
 import { InputBase, type InputSize } from "@/components/base/input/input";
@@ -174,7 +174,7 @@ export function ComboBoxItem({ className, children, ...props }: ComboBoxItemProp
       {({ isSelected }) => (
         <>
           <span className="flex min-w-0 flex-1 items-center gap-2">{children}</span>
-          {isSelected ? <RiCheckLine className="size-4 shrink-0 text-accent-500" aria-hidden /> : null}
+          {isSelected ? <IconCheck className="size-4 shrink-0 text-accent-500" aria-hidden /> : null}
         </>
       )}
     </AriaListBoxItem>

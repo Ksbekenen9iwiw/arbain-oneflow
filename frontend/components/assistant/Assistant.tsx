@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { RiAddLine, RiArrowRightUpLine, RiArrowUpLine, RiCheckLine, RiSparkling2Line, RiStopFill } from "@remixicon/react";
+import { IconArrowUp, IconArrowUpRight, IconCheck, IconPlus, IconSparkles, IconStop } from "@/icons";
 import { Drawer } from "@/components/base/drawer/drawer";
 import { cx } from "@/utils/cx";
 import { useApp } from "../../router";
@@ -82,7 +82,7 @@ function Thinking() {
   return (
     <div role="status" className="flex flex-col gap-3">
       <p className="flex items-center gap-2 text-body-medium">
-        <RiSparkling2Line aria-hidden className="assistant-spark size-4 text-accent-500" />
+        <IconSparkles aria-hidden className="assistant-spark size-4 text-accent-500" />
         <span className="agent-progress-loading-text">Mencari di data kamu…</span>
       </p>
       <div aria-hidden className="flex flex-col gap-2.5 rounded-2xl border border-separator-border p-3.5">
@@ -199,7 +199,7 @@ export default function Assistant({
       <div className="flex h-full min-h-0 flex-col">
         <header className="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
           <span className="flex items-center gap-2 text-headline-semibold text-text-primary">
-            <RiSparkling2Line aria-hidden className="size-5 text-accent-500" />
+            <IconSparkles aria-hidden className="size-5 text-accent-500" />
             Tanya OneFlow
           </span>
           <span className="flex items-center gap-1">
@@ -212,7 +212,7 @@ export default function Assistant({
                 }}
                 className="assistant-press flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-body-medium text-text-secondary outline-none hover:bg-background-tertiary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring"
               >
-                <RiAddLine aria-hidden className="size-4" />
+                <IconPlus aria-hidden className="size-4" />
                 Baru
               </button>
             )}
@@ -229,7 +229,7 @@ export default function Assistant({
           {messages.length === 0 && (
             <div className="flex flex-1 flex-col justify-end gap-4">
               <div className="assistant-card flex flex-col gap-1">
-                <RiSparkling2Line aria-hidden className="mb-2 size-7 text-accent-500" />
+                <IconSparkles aria-hidden className="mb-2 size-7 text-accent-500" />
                 <p className="text-title-1-medium text-text-primary">Mau tahu apa hari ini?</p>
                 <p className="text-body-medium text-text-secondary">Jawaban diambil dari data OneFlow kamu.</p>
               </div>
@@ -243,7 +243,7 @@ export default function Assistant({
                     className="assistant-row assistant-press group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-separator-border bg-background-primary-default px-3.5 py-3 text-start text-body-medium text-text-primary outline-none hover:border-accent-500 hover:bg-background-secondary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring"
                   >
                     {question}
-                    <RiArrowRightUpLine
+                    <IconArrowUpRight
                       aria-hidden
                       className="size-4 shrink-0 text-text-tertiary transition-[transform,color] duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent-500"
                     />
@@ -276,7 +276,7 @@ export default function Assistant({
                         key={tool}
                         className="assistant-card flex items-center gap-1 rounded-full bg-background-tertiary-default py-1 ps-1.5 pe-2.5 text-caption-1-medium text-text-secondary"
                       >
-                        <RiCheckLine aria-hidden className="size-3.5 text-chart-9-active" />
+                        <IconCheck aria-hidden className="size-3.5 text-chart-9-active" />
                         {tool}
                       </span>
                     ))}
@@ -297,7 +297,7 @@ export default function Assistant({
                         className="assistant-press group flex items-center gap-1 rounded-full bg-background-tertiary-default py-1 ps-2.5 pe-2 text-caption-1-medium text-text-primary capitalize outline-none hover:bg-background-quaternary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring"
                       >
                         {source.label}
-                        <RiArrowRightUpLine aria-hidden className="size-3.5 text-text-tertiary transition-colors group-hover:text-accent-500" />
+                        <IconArrowUpRight aria-hidden className="size-3.5 text-text-tertiary transition-colors group-hover:text-accent-500" />
                       </a>
                     ))}
                   </div>
@@ -348,16 +348,16 @@ export default function Assistant({
                 onClick={() => request.current?.abort()}
                 className="assistant-press flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-text-primary text-background-primary-default outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
               >
-                <RiStopFill aria-hidden className="oneflow-enter size-4" />
+                <IconStop aria-hidden className="oneflow-enter size-4" />
               </button>
             ) : (
               <button
                 type="submit"
                 aria-label="Kirim"
                 disabled={!draft.trim()}
-                className="assistant-press flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-accent-500 text-white outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring disabled:cursor-default disabled:bg-background-tertiary-default disabled:text-text-tertiary"
+                className="assistant-press icon-on-fill flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-accent-500 text-white outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring disabled:cursor-default disabled:bg-background-tertiary-default disabled:text-text-tertiary"
               >
-                <RiArrowUpLine aria-hidden className="size-5" />
+                <IconArrowUp aria-hidden className="size-5" />
               </button>
             )}
           </div>

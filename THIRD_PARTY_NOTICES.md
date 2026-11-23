@@ -8,6 +8,7 @@ Paket source tidak menyertakan runtime atau source dependensi. Instalasi mengamb
 | asgiref | 3.12.1 | BSD-3-Clause |
 | sqlparse | 0.6.0 | Lihat LICENSE dalam distribusi sqlparse |
 | tzdata | 2026.5 | Apache-2.0 |
+| Rune Icons (path ikon disalin ke `frontend/icons/`) | 0.1.0 | Apache-2.0, teks di `frontend/icons/LICENSE-runeicons` |
 
 Python 3.12 dan SQLite disediakan lingkungan pengguna, bukan dibundel. Bila tim kelak mendistribusikan runtime atau dependensi, sertakan notifikasi dan teks lisensi yang diwajibkan distribusi tersebut.
 

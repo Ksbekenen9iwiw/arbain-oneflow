@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from "react";
-import { RiArrowDownSLine } from "@remixicon/react";
+import { IconChevronDown } from "@/icons";
 import { cx } from "@/utils/cx";
 import { withReturn } from "../../navigation";
 import type { Row } from "../../types";
@@ -138,7 +138,7 @@ export default function VisitPlan({
                             }
                             className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-icon-secondary outline-none transition-colors hover:bg-background-secondary-default focus-visible:ring-2 focus-visible:ring-focus-ring"
                           >
-                            <RiArrowDownSLine
+                            <IconChevronDown
                               className={cx(
                                 "size-5 transition-transform duration-200 motion-reduce:transition-none",
                                 expanded && "rotate-180",

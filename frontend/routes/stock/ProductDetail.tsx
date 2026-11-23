@@ -1,5 +1,5 @@
 import { StatGrid, StatTile } from "@/kit";
-import { RiLock2Line, RiShoppingBag3Line, RiStackLine } from "@remixicon/react";
+import { IconLayers, IconLock, IconStore } from "@/icons";
 import { proportional } from "@/kit";
 import { Grid } from "@/kit";
 import { MotionPanel } from "../../motion";
@@ -234,19 +234,19 @@ export default function ProductDetail() {
                       {d.can_manage && (
                         <>
                           <StatTile
-                            icon={RiStackLine}
+                            icon={IconLayers}
                             label="Fisik di gudang"
                             value={`${quantity(p.on_hand)} ${p.unit}`}
                           />
                           <StatTile
-                            icon={RiLock2Line}
+                            icon={IconLock}
                             label="Dipesan"
                             value={`${quantity(p.reserved)} ${p.unit}`}
                           />
                         </>
                       )}
                       <StatTile
-                        icon={RiShoppingBag3Line}
+                        icon={IconStore}
                         tone="accent"
                         label="Siap jual"
                         value={`${quantity(p.available)} ${p.unit}`}

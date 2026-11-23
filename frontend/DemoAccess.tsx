@@ -5,7 +5,7 @@ import { Divider } from "@/kit";
 import { Icon } from "@/kit";
 import { List, ListItem } from "@/kit";
 import { Token } from "@/kit";
-import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { IconCheckCircle } from "@/icons";
 import { VStack, HStack, Text, Button, FormDialog, useResponsive } from "./ui";
 import type { Row } from "./types";
 
@@ -115,7 +115,7 @@ export function DemoAccess({
                   }
                   endContent={
                     isSelected ? (
-                      <Icon icon={CheckCircleIcon} color="accent" size="md" />
+                      <Icon icon={IconCheckCircle} color="accent" size="md" />
                     ) : undefined
                   }
                 />

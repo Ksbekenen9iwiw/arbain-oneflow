@@ -3,16 +3,7 @@
 import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
 
 import { useMemo, useState } from "react";
-import {
-  RiArchiveLine,
-  RiDeleteBin6Line,
-  RiDownload2Line,
-  RiEditLine,
-  RiFileCopyLine,
-  RiMore2Fill,
-  RiSearchLine,
-  RiUserLine,
-} from "@remixicon/react";
+import { IconBox, IconCopy, IconDownload, IconMoreVertical, IconPencil, IconSearch, IconTrash, IconUser } from "@/icons";
 import { Focusable } from "react-aria-components";
 import {
   flexRender,
@@ -245,7 +236,7 @@ function RowActionButton({
   icon,
   label,
 }: {
-  icon: typeof RiEditLine;
+  icon: typeof IconPencil;
   label: string;
 }) {
   const localize = useTemplateCopy();
@@ -260,10 +251,10 @@ function RowActionButton({
 }
 
 const MORE_MENU_ACTIONS = [
-  { icon: RiUserLine, label: "View profile" },
-  { icon: RiFileCopyLine, label: "Duplicate row" },
-  { icon: RiDownload2Line, label: "Download invoice" },
-  { icon: RiArchiveLine, label: "Archive customer" },
+  { icon: IconUser, label: "View profile" },
+  { icon: IconCopy, label: "Duplicate row" },
+  { icon: IconDownload, label: "Download invoice" },
+  { icon: IconBox, label: "Archive customer" },
 ] as const;
 
 /** The "⋮" action: tooltip on hover, contextual dropdown menu on click. The
@@ -285,7 +276,7 @@ function RowMoreMenu({ name }: { name: string }) {
             isOpen && "border-border-button-active bg-background-primary-active",
           )}
         >
-          <RiMore2Fill className="size-4 shrink-0" aria-hidden />
+          <IconMoreVertical className="size-4 shrink-0" aria-hidden />
         </DropdownTrigger>
         <Tooltip size="md">More actions</Tooltip>
       </TooltipTrigger>
@@ -411,8 +402,8 @@ export function DataTableExample({
         header: "Actions",
         cell: ({ row }) => localize((
           <div className="flex items-center justify-end gap-2.5">
-            <RowActionButton icon={RiDeleteBin6Line} label="Delete" />
-            <RowActionButton icon={RiEditLine} label="Edit" />
+            <RowActionButton icon={IconTrash} label="Delete" />
+            <RowActionButton icon={IconPencil} label="Edit" />
             <RowMoreMenu name={row.original.name} />
           </div>
         )),
@@ -529,7 +520,7 @@ export function DataTableExample({
           <InputBase
             aria-label="Search customers"
             placeholder="Search"
-            leadingIcon={RiSearchLine}
+            leadingIcon={IconSearch}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);

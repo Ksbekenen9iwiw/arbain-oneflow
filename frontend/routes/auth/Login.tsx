@@ -1,6 +1,6 @@
 // Split sign-in: OneFlow card on the left, product photo on the right.
 import { useLayoutEffect, useRef, useState } from "react";
-import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
+import { IconEye, IconEyeOff } from "@/icons";
 import { BrandMark } from "../../BrandMark";
 import { Banner, Button, TextInput } from "@/kit";
 import { ServerForm } from "../../ui";
@@ -102,7 +102,7 @@ export default function Login() {
   }
 
   const hasServerError = showServerErrors && serverErrors.length > 0;
-  const Eye = showPassword ? RiEyeOffLine : RiEyeLine;
+  const Eye = showPassword ? IconEyeOff : IconEye;
   const passwordField = (
     <TextInput
       label="Sandi"

@@ -12,7 +12,7 @@ import { Select, SelectItem } from "@/components/base/select/select";
 import { ComboBox, ComboBoxItem } from "@/components/base/combobox/combobox";
 import { DatePicker } from "@/components/base/date-picker/date-picker";
 import { hintTextClassName } from "@/components/base/input/hint-text";
-import { RiSearchLine } from "@remixicon/react";
+import { IconSearch } from "@/icons";
 import { cx } from "@/utils/cx";
 
 export type FieldStatus = { type: "error" | "warning" | "success"; message?: string };
@@ -147,7 +147,7 @@ export function TextInput({
         hint={status?.message || description}
         onKeyDown={onKeyDown as never}
         onBlur={onBlur}
-        leadingIcon={startIcon === "search" ? RiSearchLine : undefined}
+        leadingIcon={startIcon === "search" ? IconSearch : undefined}
         trailingAddon={endContent}
       />
     </div>

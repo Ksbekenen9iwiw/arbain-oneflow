@@ -12,10 +12,7 @@ import { Banner } from "@/kit";
 import { Link } from "@/kit";
 import { Token } from "@/kit";
 import { Icon } from "@/kit";
-import {
-  ExclamationCircleIcon,
-  ExclamationTriangleIcon,
-} from "@heroicons/react/24/outline";
+import { IconAlertCircle, IconAlertTriangle } from "@/icons";
 import type { Row } from "./types";
 import { useResponsive } from "./responsive";
 
@@ -246,7 +243,7 @@ export function Status({ value, label }: { value: string; label?: string }) {
         icon={
           critical || warning ? (
             <Icon
-              icon={critical ? ExclamationCircleIcon : ExclamationTriangleIcon}
+              icon={critical ? IconAlertCircle : IconAlertTriangle}
               color="inherit"
             />
           ) : undefined

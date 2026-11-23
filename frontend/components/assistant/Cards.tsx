@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
-import { RiArrowRightUpLine, RiMapPin2Line } from "@remixicon/react";
+import { IconArrowUpRight, IconMapPin } from "@/icons";
 import { cx } from "@/utils/cx";
 
 type Tone = "danger" | "warning" | "ok" | "accent";
@@ -94,7 +94,7 @@ function Name({ href, children, open }: { href?: string | null; children: ReactN
       className="group/name flex min-w-0 items-center gap-0.5 rounded-sm text-body-medium text-text-primary outline-none hover:text-accent-500 focus-visible:ring-2 focus-visible:ring-border-focus-ring"
     >
       <span className="truncate">{children}</span>
-      <RiArrowRightUpLine
+      <IconArrowUpRight
         aria-hidden
         className="size-3.5 shrink-0 -translate-x-1 opacity-0 transition-[opacity,transform] duration-200 group-hover/name:translate-x-0 group-hover/name:opacity-100 group-focus-visible/name:translate-x-0 group-focus-visible/name:opacity-100"
       />
@@ -207,7 +207,7 @@ function Route({ card, open }: { card: Extract<Card, { kind: "route" }>; open: A
                   <span className="flex items-baseline justify-between gap-2">
                     <span className="truncate text-body-medium text-text-primary">{stop.name}</span>
                     <span className="flex shrink-0 items-center gap-0.5 text-caption-1-regular text-text-tertiary">
-                      <RiMapPin2Line aria-hidden className="size-3" />
+                      <IconMapPin aria-hidden className="size-3" />
                       {stop.area}
                     </span>
                   </span>

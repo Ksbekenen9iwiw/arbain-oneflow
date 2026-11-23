@@ -1,21 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  RiArchiveLine,
-  RiCalendarTodoLine,
-  RiFileCopy2Line,
-  RiLightbulbLine,
-  RiFileList3Line,
-  RiFlaskLine,
-  RiGroupLine,
-  RiLogoutBoxRLine,
-  RiMenuLine,
-  RiAddLine,
-  RiQuestionLine,
-  RiSearchLine,
-  RiSparkling2Line,
-  RiSideBarLine,
-  RiMoonLine,
-} from "@remixicon/react";
+import { IconBox, IconCalendar, IconFlag, IconHelp, IconLibrary, IconLogout, IconMenu, IconMoon, IconOrders, IconPlus, IconSample, IconSearch, IconSidebar, IconSparkles, IconUsers } from "@/icons";
 import { BrandMark } from "../BrandMark";
 import { useContentMotion } from "../motion";
 import { RequestFeedback, usePendingFeedback } from "../RequestFeedback";
@@ -82,7 +66,7 @@ function NavItem({
     "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
     collapsed ? "w-9" : "w-full",
     isSelected
-      ? "bg-linear-to-b from-accent-400 to-accent-500 shadow-nav-selected"
+      ? "icon-on-fill bg-linear-to-b from-accent-400 to-accent-500 shadow-nav-selected"
       : "hover:bg-background-secondary-hover",
     isDisabled ? "cursor-not-allowed opacity-45" : "cursor-pointer",
   );
@@ -203,7 +187,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       id: "/",
       label: "Dashboard",
       hint: "Ringkasan kerja harian, prioritas & pantauan apotek",
-      icon: RiCalendarTodoLine,
+      icon: IconCalendar,
       href: "/",
       isSelected: path === "/",
       tourId: "nav-dashboard",
@@ -214,7 +198,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             id: "/attention/",
             label: "Perlu perhatian",
             hint: "Produk dan outlet titip jual yang melambat, serta peluang",
-            icon: RiLightbulbLine,
+            icon: IconFlag,
             href: "/attention/",
             isSelected: path === "/attention/",
           },
@@ -226,7 +210,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             id: "/customers/",
             label: "Pelanggan",
             hint: "Daftar apotek & mitra, aktivitas, serta stok titipan",
-            icon: RiGroupLine,
+            icon: IconUsers,
             href: "/customers/",
             isSelected:
               path.startsWith("/customers") || path.startsWith("/activities"),
@@ -238,7 +222,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       id: "/orders/",
       label: "Pesanan",
       hint: "Daftar pesanan, konfirmasi, dan status pengiriman",
-      icon: RiFileList3Line,
+      icon: IconOrders,
       href: "/orders/",
       isSelected: path.startsWith("/orders"),
       tourId: "nav-orders",
@@ -247,7 +231,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       id: "/samples/",
       label: "Pengajuan sampel",
       hint: "Pengajuan, pengiriman & hasil evaluasi sampel",
-      icon: RiFlaskLine,
+      icon: IconSample,
       href: "/samples/",
       isSelected: path.startsWith("/samples"),
       tourId: "nav-samples",
@@ -256,7 +240,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       id: "/stock/",
       label: "Produk & stok",
       hint: "Stok produk gudang, pengadaan & riwayat mutasi",
-      icon: RiArchiveLine,
+      icon: IconBox,
       href: "/stock/",
       isSelected: path.startsWith("/stock") || path.startsWith("/products"),
       tourId: "nav-stock",
@@ -267,7 +251,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             id: "/company-data/",
             label: "Data perusahaan",
             hint: "Laporan dan dokumen asli CV Arba’in",
-            icon: RiFileCopy2Line,
+            icon: IconLibrary,
             href: "/company-data/",
             isSelected: path === "/company-data/",
           },
@@ -330,7 +314,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               tooltip={collapsed ? "Buka sidebar" : "Ringkas sidebar"}
               size="sm"
               variant="ghost"
-              icon={<Icon icon={RiSideBarLine} />}
+              icon={<Icon icon={IconSidebar} />}
               aria-expanded={!collapsed}
               aria-controls="workspace-navigation"
               onClick={() => setIsCollapsed(!collapsed)}
@@ -350,7 +334,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             collapsed ? "w-9" : "w-full",
           )}
         >
-          <RiSearchLine
+          <IconSearch
             aria-hidden
             className="size-5 shrink-0 text-foreground-icon-secondary"
           />
@@ -377,7 +361,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               collapsed ? "w-9 justify-center" : "w-full",
             )}
           >
-            <RiSparkling2Line
+            <IconSparkles
               aria-hidden
               className="size-5 shrink-0 text-accent-500"
             />
@@ -404,7 +388,7 @@ export default function Shell({ children }: { children: ReactNode }) {
                 ? "Buka tur interaktif cara memakai halaman ini"
                 : "Tur tersedia di Dashboard, Pelanggan, Pesanan, Sampel & Stok"
             }
-            icon={RiQuestionLine}
+            icon={IconHelp}
             isDisabled={!canTour}
             collapsed={collapsed}
             onClick={startTour}
@@ -452,7 +436,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         type="submit"
         label="Keluar dari akun"
         tooltip="Keluar dari akun"
-        icon={<Icon icon={RiLogoutBoxRLine} />}
+        icon={<Icon icon={IconLogout} />}
         variant="ghost"
         size="sm"
       />
@@ -480,7 +464,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             <IconButton
               label="Buka menu"
               variant="ghost"
-              icon={<Icon icon={RiMenuLine} />}
+              icon={<Icon icon={IconMenu} />}
               onClick={() => setIsDrawerOpen(true)}
             />
             <a
@@ -495,14 +479,14 @@ export default function Shell({ children }: { children: ReactNode }) {
                 <IconButton
                   label="Tanya OneFlow"
                   variant="ghost"
-                  icon={<Icon icon={RiSparkling2Line} />}
+                  icon={<Icon icon={IconSparkles} />}
                   onClick={() => setIsAssistantOpen(true)}
                 />
               )}
               <IconButton
                 label="Cari atau lompat ke halaman"
                 variant="ghost"
-                icon={<Icon icon={RiSearchLine} />}
+                icon={<Icon icon={IconSearch} />}
                 onClick={() => setIsPaletteOpen(true)}
               />
             </div>
@@ -595,22 +579,22 @@ export default function Shell({ children }: { children: ReactNode }) {
         {actions.length > 0 && (
           <CommandPaletteSection title="Tindakan cepat">
             {actions.map((item) => (
-              <CommandPaletteItem key={item.id} id={item.id} icon={RiAddLine}>
+              <CommandPaletteItem key={item.id} id={item.id} icon={IconPlus}>
                 {item.label}
               </CommandPaletteItem>
             ))}
           </CommandPaletteSection>
         )}
         <CommandPaletteSection title="Lainnya">
-          <CommandPaletteItem id="theme" icon={RiMoonLine}>
+          <CommandPaletteItem id="theme" icon={IconMoon}>
             Ganti tema terang/gelap
           </CommandPaletteItem>
           {canTour && (
-            <CommandPaletteItem id="tour" icon={RiQuestionLine}>
+            <CommandPaletteItem id="tour" icon={IconHelp}>
               Panduan halaman ini
             </CommandPaletteItem>
           )}
-          <CommandPaletteItem id="logout" icon={RiLogoutBoxRLine}>
+          <CommandPaletteItem id="logout" icon={IconLogout}>
             Keluar dari akun
           </CommandPaletteItem>
         </CommandPaletteSection>

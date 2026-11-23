@@ -3,12 +3,7 @@
 import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  RiFileExcel2Line,
-  RiFileImageLine,
-  RiFileTextLine,
-  RiUploadCloud2Line,
-} from "@remixicon/react";
+import { IconFileImage, IconFileSheet, IconFileText, IconUpload } from "@/icons";
 import { cx } from "@/utils/cx";
 
 /**
@@ -55,10 +50,10 @@ function extensionFor(fileName: string) {
 function DefaultFileIcon({ file }: { file: File }) {
   const extension = extensionFor(file.name);
   const Icon = extension === "xlsx"
-    ? RiFileExcel2Line
+    ? IconFileSheet
     : ["jpg", "jpeg", "png"].includes(extension)
-      ? RiFileImageLine
-      : RiFileTextLine;
+      ? IconFileImage
+      : IconFileText;
 
   return <Icon className="size-6 shrink-0 text-foreground-icon-secondary" aria-hidden />;
 }
@@ -309,7 +304,7 @@ export function FileUpload({
         )}
       >
         <span className="t-stagger-line t-stagger-line--1 flex size-10 items-center justify-center rounded-full bg-file-upload-icon-background p-2.5">
-          <RiUploadCloud2Line
+          <IconUpload
             className="size-6 shrink-0 text-file-upload-icon-foreground transition-colors duration-150 ease group-hover:text-file-upload-icon-foreground-hover"
             aria-hidden
           />

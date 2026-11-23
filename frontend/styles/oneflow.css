@@ -271,3 +271,21 @@ button:not(:disabled):active, a[role="button"]:active { transition: transform 12
 @keyframes assistant-spark {
   50% { transform: scale(0.8) rotate(20deg); opacity: 0.55; }
 }
+
+/* Rune duotone icons: main shape = text colour, second tone = honey amber.
+   `icon-on-fill` is for icons on a coloured fill, where amber would not read. */
+:root {
+  --icon-duo: var(--color-accent-400);
+}
+.dark {
+  --icon-duo: var(--color-accent-300);
+}
+.icon-on-fill {
+  --icon-duo: color-mix(in srgb, currentColor 55%, transparent);
+}
+.rune-duo-stroke {
+  stroke: var(--icon-duo);
+}
+.rune-duo-fill {
+  fill: var(--icon-duo);
+}

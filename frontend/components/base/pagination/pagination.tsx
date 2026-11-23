@@ -3,7 +3,7 @@
 import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
 
 import { useEffect, useRef, useState } from "react";
-import { RiArrowLeftLine, RiArrowRightLine } from "@remixicon/react";
+import { IconArrowLeft, IconArrowRight } from "@/icons";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
 
@@ -117,7 +117,7 @@ export function Pagination({
         variant="secondary"
         size="small"
         iconOnly={isCompact}
-        leadingIcon={RiArrowLeftLine}
+        leadingIcon={IconArrowLeft}
         aria-label={isCompact ? previousLabel : undefined}
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
@@ -161,8 +161,8 @@ export function Pagination({
         variant="secondary"
         size="small"
         iconOnly={isCompact}
-        leadingIcon={isCompact ? RiArrowRightLine : undefined}
-        trailingIcon={isCompact ? undefined : RiArrowRightLine}
+        leadingIcon={isCompact ? IconArrowRight : undefined}
+        trailingIcon={isCompact ? undefined : IconArrowRight}
         aria-label={isCompact ? nextLabel : undefined}
         disabled={page >= totalPages}
         onClick={() => onChange(page + 1)}

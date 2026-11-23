@@ -20,7 +20,7 @@ import {
   Pressable,
 } from "react-aria-components";
 import type { DialogRenderProps, DialogTriggerProps, ModalOverlayProps } from "react-aria-components";
-import { RiErrorWarningLine } from "@remixicon/react";
+import { IconAlertCircle } from "@/icons";
 import { Button } from "@/components/base/buttons/button";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { SpinnerGlyph } from "@/components/base/spinner/spinner";
@@ -357,7 +357,7 @@ export function AlertDialog({
   title,
   description,
   variant = "danger",
-  icon = RiErrorWarningLine,
+  icon = IconAlertCircle,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   onConfirm,

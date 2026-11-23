@@ -9,13 +9,7 @@ import {
   type Ref,
 } from "react";
 import { Focusable } from "react-aria-components";
-import {
-  RiAlertLine,
-  RiCheckboxCircleLine,
-  RiCloseLine,
-  RiErrorWarningLine,
-  RiInformationLine,
-} from "@remixicon/react";
+import { IconAlertCircle, IconAlertTriangle, IconCheckCircle, IconClose, IconInfo } from "@/icons";
 import { Button as BaseButton, ButtonLink } from "@/components/base/buttons/button";
 import { Avatar as BaseAvatar } from "@/components/base/avatar/avatar";
 import { Chip, type ChipColor } from "@/components/base/badges/chip";
@@ -38,11 +32,11 @@ export type IconComponent = ComponentType<{
 }>;
 
 const NAMED_ICONS: Record<string, IconComponent> = {
-  info: RiInformationLine,
-  error: RiErrorWarningLine,
-  warning: RiAlertLine,
-  success: RiCheckboxCircleLine,
-  close: RiCloseLine,
+  info: IconInfo,
+  error: IconAlertCircle,
+  warning: IconAlertTriangle,
+  success: IconCheckCircle,
+  close: IconClose,
 };
 
 const ICON_SIZE = { xs: "size-3.5", sm: "size-4", md: "size-5", lg: "size-6", xl: "size-8" };
@@ -68,7 +62,7 @@ export function Icon({
   color?: keyof typeof ICON_COLOR;
   className?: string;
 }) {
-  const Glyph = typeof icon === "string" ? (NAMED_ICONS[icon] ?? RiInformationLine) : icon;
+  const Glyph = typeof icon === "string" ? (NAMED_ICONS[icon] ?? IconInfo) : icon;
   return (
     <Glyph
       aria-hidden
@@ -257,22 +251,22 @@ type Tone = "info" | "success" | "warning" | "error";
 const BANNER_TONE: Record<Tone, { box: string; icon: IconComponent; iconClass: string }> = {
   info: {
     box: "bg-status-blue-background/40 border-status-blue-background",
-    icon: RiInformationLine,
+    icon: IconInfo,
     iconClass: "text-status-blue-text",
   },
   success: {
     box: "bg-status-lime-background/40 border-status-lime-background",
-    icon: RiCheckboxCircleLine,
+    icon: IconCheckCircle,
     iconClass: "text-status-lime-text",
   },
   warning: {
     box: "bg-status-orange-background/40 border-status-orange-background",
-    icon: RiAlertLine,
+    icon: IconAlertTriangle,
     iconClass: "text-status-orange-text",
   },
   error: {
     box: "bg-status-rose-background/40 border-status-rose-background",
-    icon: RiErrorWarningLine,
+    icon: IconAlertCircle,
     iconClass: "text-status-rose-text",
   },
 };

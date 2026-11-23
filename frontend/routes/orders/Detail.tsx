@@ -15,13 +15,7 @@ import { Avatar } from "@/kit";
 import { Divider } from "@/kit";
 import { Icon } from "@/kit";
 import { IconButton } from "@/kit";
-import {
-  ViewColumnsIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  TruckIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/outline";
+import { IconCheckCircle, IconCloseCircle, IconColumns, IconFileText, IconTruck } from "@/icons";
 import { List, ListItem } from "@/kit";
 import { proportional } from "@/kit";
 import {
@@ -245,7 +239,7 @@ export default function Detail() {
                           : "Tampilkan detail pelanggan"
                     }
                     variant="secondary"
-                    icon={<Icon icon={ViewColumnsIcon} />}
+                    icon={<Icon icon={IconColumns} />}
                     aria-expanded={isNarrow ? narrowPanelOpen : panel}
                     onClick={() => {
                       if (isNarrow) setNarrowPanelOpen(true);
@@ -523,12 +517,12 @@ export default function Detail() {
                         <Icon
                           icon={
                             event.id === "created"
-                              ? DocumentTextIcon
+                              ? IconFileText
                               : event.id === "confirmed"
-                                ? CheckCircleIcon
+                                ? IconCheckCircle
                                 : event.id === "shipped"
-                                  ? TruckIcon
-                                  : XCircleIcon
+                                  ? IconTruck
+                                  : IconCloseCircle
                           }
                           color="secondary"
                         />
