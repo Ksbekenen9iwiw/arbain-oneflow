@@ -292,7 +292,7 @@ export default function ProductDetail() {
                       label={`Batch & kedaluwarsa (${d.batches.length})`}
                     />
                     <Tab value="supply" label="Pengadaan" />
-                    <Tab value="movements" label="Riwayat mutasi" />
+                    <Tab value="movements" label="Log transaksi" />
                     <Tab
                       value="reservations"
                       label={`Dipesan (${d.reservations.length})`}
@@ -304,24 +304,14 @@ export default function ProductDetail() {
                         <Heading level={2}>Batch & masa simpan</Heading>
                       </VStack>
                       <HStack gap={6} wrap="wrap">
-                        <Fact label="Ditahan / kedaluwarsa">
+                        <Fact label="Tidak bisa dijual">
                           {quantity(d.batch_summary.ineligible)} {p.unit}
                         </Fact>
                         <Fact label="Minimum sisa masa simpan">
-                          {d.shelf_life_days === null ||
-                          d.shelf_life_days === undefined
-                            ? "Perlu konfigurasi"
-                            : `${quantity(d.shelf_life_days)} hari`}
+                          {quantity(d.shelf_life_days)} hari
+                          {d.shelf_life_is_default ? " (aturan umum)" : ""}
                         </Fact>
                       </HStack>
-                      {(d.shelf_life_days === null ||
-                        d.shelf_life_days === undefined) && (
-                        <Banner
-                          status="warning"
-                          title="Masa simpan minimum belum dikonfigurasi"
-                          description="Isi minimum sisa masa simpan di Edit produk."
-                        />
-                      )}
                       {d.batches.some((r: Row) => Number(r.on_hand) <= 0) && (
                         <HStack>
                           <Button
@@ -382,7 +372,7 @@ export default function ProductDetail() {
                                     ? "Sudah kedaluwarsa"
                                     : r.days_left == null
                                       ? "Tanggal belum diisi"
-                                      : `${quantity(r.days_left)} hari lagi`}
+                                      : `${quantity(r.days_left)} hari lagi${r.is_near_expiry ? " · di bawah batas" : ""}`}
                                 </Text>
                               </VStack>
                             ),

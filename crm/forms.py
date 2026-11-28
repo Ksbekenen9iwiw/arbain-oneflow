@@ -242,6 +242,20 @@ class CancelOrderForm(forms.Form):
 
 class ConfirmOrderForm(forms.Form):
     expected_receipt_date = forms.DateField(label='Estimasi tanggal diterima pelanggan', required=False, widget=forms.DateInput(attrs={'type': 'date'}), help_text='Wajib bila produk memiliki kebijakan masa simpan minimum; dipakai untuk memilih batch dengan FEFO.')
+    accept_near_expiry = forms.BooleanField(label='Outlet setuju menerima barang mendekati kedaluwarsa', required=False)
+    near_expiry_note = forms.CharField(label='Catatan persetujuan outlet', required=False, max_length=500, widget=forms.Textarea(attrs={'rows': 2}),
+                                       help_text='Siapa yang menyetujui di outlet dan alasannya.')
+
+    def clean(self):
+        data = super().clean()
+        if data.get('accept_near_expiry') and not (data.get('near_expiry_note') or '').strip():
+            self.add_error('near_expiry_note', 'Tulis catatan persetujuan outlet.')
+        return data
+
+
+class StockPolicyForm(forms.Form):
+    min_shelf_life_days = StrictIntegerField(label='Minimum sisa masa simpan (hari)', min_value=0, max_value=3650,
+                                             help_text='Berlaku untuk produk yang tidak punya aturan sendiri. 180 hari = 6 bulan.')
 
 
 class BatchSwapForm(forms.Form):

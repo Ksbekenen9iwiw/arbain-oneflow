@@ -276,6 +276,20 @@ export default function Detail() {
                   tabIndex={-1}
                 />
               )}
+              {order.near_expiry && (
+                <Banner
+                  status="info"
+                  title="Outlet setuju menerima barang mendekati kedaluwarsa"
+                  description={`${order.near_expiry.note} · ${order.near_expiry.by?.name || ""}, ${dateLabel(order.near_expiry.at, true)}`}
+                />
+              )}
+              {d.near_expiry_lines?.length > 0 && d.blockers.length === 0 && (
+                <Banner
+                  status="warning"
+                  title="Stok yang tersedia mendekati kedaluwarsa"
+                  description={`${d.near_expiry_lines.join(", ")}: sisa masa simpan di bawah batas. Konfirmasi hanya bisa dengan persetujuan outlet.`}
+                />
+              )}
               {d.blockers.length > 0 && (
                 <VStack gap={3}>
                   <Banner

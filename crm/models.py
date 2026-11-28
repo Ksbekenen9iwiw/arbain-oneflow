@@ -74,6 +74,16 @@ class SamplePolicy(models.Model):
         return None not in (self.repeat_threshold, self.review_period_days, self.evaluation_days)
 
 
+class StockPolicy(models.Model):
+    """One company-wide row. Products without their own rule follow it."""
+
+    DEFAULT_MIN_SHELF_LIFE_DAYS = 180
+
+    min_shelf_life_days = models.PositiveIntegerField('Minimum sisa masa simpan bawaan (hari)', default=DEFAULT_MIN_SHELF_LIFE_DAYS)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='updated_stock_policies', null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class ProductSupplySetting(models.Model):
     """Per-product replenishment inputs. Null means belum diisi, never a made-up default."""
 
@@ -256,6 +266,11 @@ class Order(models.Model):
     total_rupiah = models.PositiveBigIntegerField(default=0)
     expected_receipt_date = models.DateField('Estimasi tanggal diterima pelanggan', null=True, blank=True)
     cancel_reason = models.TextField(blank=True)
+    # The outlet agreed to receive lots below the minimum shelf life.
+    near_expiry_accepted = models.BooleanField('Outlet setuju menerima barang mendekati kedaluwarsa', default=False)
+    near_expiry_note = models.TextField('Catatan persetujuan outlet', blank=True)
+    near_expiry_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='near_expiry_orders', null=True, blank=True)
+    near_expiry_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)

@@ -23,6 +23,7 @@ urlpatterns = [
     path('products/<int:product_id>/edit/', views.product_edit, name='product_edit'),
     path('products/<int:product_id>/batches/<int:batch_id>/status/', views.batch_status, name='batch_status'),
     path('stock/', views.stock, name='stock'),
+    path('stock/policy/', views.stock_policy, name='stock_policy'),
     path('stock/<int:product_id>/receive/', views.stock_receive, name='stock_receive'),
     path('stock/<int:product_id>/reconcile/', views.stock_reconcile, name='stock_reconcile'),
     path('orders/', views.orders, name='orders'),

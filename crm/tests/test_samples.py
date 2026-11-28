@@ -7,7 +7,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from crm.errors import BusinessError
-from crm.models import Order, SampleAllocation, SampleRequest, SampleRequestLine, StockMovement
+from crm.models import Order, SampleAllocation, SampleRequest, SampleRequestLine, StockMovement, StockPolicy
 from crm.selectors import dashboard_metrics
 from crm.services.inventory import receive_stock
 from crm.services.samples import (
@@ -27,6 +27,7 @@ from crm.tests.factories import make_customer, make_product, make_shipped_order,
 @override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class SampleRequestTests(TestCase):
     def setUp(self):
+        StockPolicy.objects.create(pk=1, min_shelf_life_days=0)  # these cases predate the 180-day default
         self.sales = make_user('sales', 'SALES')
         self.other = make_user('other', 'SALES')
         self.warehouse = make_user('warehouse', 'WAREHOUSE')
