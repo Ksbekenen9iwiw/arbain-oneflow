@@ -85,7 +85,47 @@ class AssistantTests(TestCase):
             self.assertEqual(post({'question': 'Halo'}).json(), {'answer': 'Baik.', 'sources': [], 'cards': [], 'tools': [], 'follow_ups': []})
             self.assertEqual(self.client.get('/', HTTP_X_ONEFLOW_PAGE='1').json()['data']['assistant_suggestions'], assistant.SUGGESTIONS['SALES'])
         with mock.patch.object(assistant, '_call', return_value={'candidates': []}):
-            self.assertEqual(post({'question': 'Halo'}).status_code, 503)
+            self.assertEqual(post({'question': 'Lain'}).status_code, 503)
         with override_settings(GEMINI_API_KEY=''):
-            self.assertEqual(post({'question': 'Halo'}).status_code, 503)
+            self.assertEqual(post({'question': 'Lain'}).status_code, 503)
             self.assertEqual(self.client.get('/', HTTP_X_ONEFLOW_PAGE='1').json()['data']['assistant_suggestions'], [])
+
+    def test_usage_is_counted_cached_and_limited(self):
+        from crm.models import AssistantPolicy, AssistantUsage
+        post = lambda body: self.client.post('/assistant/ask/', json.dumps(body), content_type='application/json')
+        reply = {**says('Baik.'), 'usageMetadata': {'promptTokenCount': 900, 'candidatesTokenCount': 100}}
+        self.client.force_login(self.sales)
+        with mock.patch.object(assistant, '_call', return_value=reply) as call:
+            self.assertEqual(post({'question': 'Halo'}).json()['answer'], 'Baik.')
+            # Same question, same data: answered from the saved copy, Gemini is not called again.
+            self.assertEqual(post({'question': '  halo '}).json()['answer'], 'Baik.')
+            self.assertEqual(call.call_count, 1)
+            # New data makes the saved answer stale.
+            Activity.objects.create(customer=self.mine, sales=self.sales, status='PLANNED', scheduled_date=date(2026, 12, 1))
+            post({'question': 'Halo'})
+            self.assertEqual(call.call_count, 2)
+        row = AssistantUsage.objects.get(user=self.sales)
+        self.assertEqual((row.questions, row.from_cache, row.input_tokens, row.output_tokens), (3, 1, 1800, 200))
+        AssistantPolicy.objects.create(pk=1, daily_per_user=2, monthly_company=100, input_price_rupiah=2000, output_price_rupiah=8000)
+        with mock.patch.object(assistant, '_call', return_value=reply) as call:
+            blocked = post({'question': 'Pertanyaan baru'})
+            self.assertEqual((blocked.status_code, call.call_count), (429, 0))
+        self.assertIn('besok', blocked.json()['error'])
+        AssistantPolicy.objects.filter(pk=1).update(daily_per_user=50, monthly_company=2)
+        self.client.force_login(self.other)
+        self.assertEqual(post({'question': 'Halo juga'}).status_code, 429)
+
+    def test_usage_page_is_for_the_manager(self):
+        from crm.models import AssistantPolicy
+        from crm.services import assistant_usage
+        assistant_usage.record(self.sales, 1_000_000, 500_000)
+        self.client.force_login(self.sales)
+        self.assertEqual(self.client.get('/assistant/usage/').status_code, 403)
+        self.client.force_login(self.manager)
+        usage = self.client.get('/assistant/usage/', HTTP_X_ONEFLOW_PAGE='1').json()['data']['usage']
+        self.assertEqual((usage['billed'], usage['priced'], usage['cost_rupiah']), ('1', False, None))
+        self.assertLess(self.client.post('/assistant/policy/', {'daily_per_user': 10, 'monthly_company': 500,
+                                                                'input_price_rupiah': 2000, 'output_price_rupiah': 8000}).status_code, 400)
+        self.assertEqual(AssistantPolicy.objects.get(pk=1).daily_per_user, 10)
+        usage = self.client.get('/assistant/usage/', HTTP_X_ONEFLOW_PAGE='1').json()['data']['usage']
+        self.assertEqual((usage['cost_rupiah'], usage['people'][0]['name']), ('6000', 'sales'))

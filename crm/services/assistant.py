@@ -67,8 +67,13 @@ def ask(actor, question, history=()):
         'tools': [{'functionDeclarations': declarations}], 'generationConfig': {'temperature': 0},
     }
     sources, cards, used = [], [], []
+    tokens = {'input': 0, 'output': 0}
     for _ in range(MAX_STEPS):
-        candidates = _call(body).get('candidates') or [{}]
+        reply_body = _call(body)
+        spent = reply_body.get('usageMetadata') or {}
+        tokens['input'] += spent.get('promptTokenCount') or 0
+        tokens['output'] += (spent.get('candidatesTokenCount') or 0) + (spent.get('thoughtsTokenCount') or 0)
+        candidates = reply_body.get('candidates') or [{}]
         content = candidates[0].get('content') or {}
         parts = content.get('parts') or []
         calls = [part['functionCall'] for part in parts if 'functionCall' in part]
@@ -77,7 +82,7 @@ def ask(actor, question, history=()):
             if not text:
                 break
             return {'answer': text, 'sources': sources, 'cards': cards[:4],
-                    'tools': [LABELS[name] for name in used], 'follow_ups': follow_ups(actor, used)}
+                    'tools': [LABELS[name] for name in used], 'follow_ups': follow_ups(actor, used), 'usage': tokens}
         contents.append(content)
         replies = []
         for call in calls:

@@ -113,6 +113,7 @@ export function AttendanceRecapTab({
             </Grid>
 
             <DataTable
+              title="Presensi & kunjungan"
               rows={(attendanceMode === "daily"
                 ? (recap.days || []).slice(0, 2)
                 : recap.days || []

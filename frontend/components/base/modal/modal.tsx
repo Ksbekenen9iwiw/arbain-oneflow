@@ -63,7 +63,7 @@ import { cx, sortCx } from "@/utils/cx";
 
 type IconComponent = ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
 
-export type ModalSize = "sm" | "md" | "lg" | "xl";
+export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
 
 const styles = sortCx({
   overlay: "group/modal fixed inset-x-0 top-0 z-100 flex h-(--visual-viewport-height) items-center justify-center p-4 sm:p-6",
@@ -93,6 +93,8 @@ const styles = sortCx({
     md: "max-w-[480px]",
     lg: "max-w-[640px]",
     xl: "max-w-[800px]",
+    // Fills the viewport, for a section opened full screen.
+    full: "h-full max-w-[1600px]",
   },
   icon: {
     default: "bg-background-tertiary-default text-foreground-icon-secondary",
@@ -140,7 +142,7 @@ export function ModalTrigger({ children, ...props }: ModalTriggerProps) {
 /* -------------------------------------------------------------------- modal */
 
 export interface ModalProps extends Omit<ModalOverlayProps, "children" | "className" | "style"> {
-  /** Panel width: 400, 480 (default), 640, or 800px. */
+  /** Panel width: 400, 480 (default), 640, or 800px; `full` fills the viewport. */
   size?: ModalSize;
   /** `alertdialog` for confirmations that interrupt the user; see AlertDialog. */
   role?: "dialog" | "alertdialog";

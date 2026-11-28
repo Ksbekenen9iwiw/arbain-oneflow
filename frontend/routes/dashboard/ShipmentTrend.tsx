@@ -1,3 +1,4 @@
+import { Expandable, useExpanded } from "@/kit";
 import { useQueryState } from "../../router";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Recharts composition from Astryx dashboard and dashboard-scorecard templates.
@@ -42,7 +43,7 @@ const compactRupiah = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 2,
 });
 
-export default function ShipmentTrend({
+function ShipmentTrendInner({
   days,
   today,
   defaultPeriod = "month",
@@ -55,6 +56,7 @@ export default function ShipmentTrend({
 }) {
   const [period, setPeriod] = useQueryState("period", defaultPeriod),
     [table, setTable] = useState(false);
+  const expanded = useExpanded();
   const chartRef = useRef<HTMLDivElement>(null);
   useContentMotion(chartRef, `${period}:${table}`, "fade");
   const rows =
@@ -79,7 +81,7 @@ export default function ShipmentTrend({
   const shownTotal = useCountUp(Number(total));
   return (
     <VStack gap={2} ref={chartRef}>
-      <HStack hAlign="between" gap={2} vAlign="center" wrap="wrap">
+      <HStack hAlign="between" gap={2} vAlign="center" wrap="wrap" className="pe-9">
         <Heading level={3} accessibilityLevel={2}>
           Nilai barang terkirim
         </Heading>
@@ -112,7 +114,7 @@ export default function ShipmentTrend({
       ) : (
         <ResponsiveContainer
           width="100%"
-          height={compact ? 168 : 200}
+          height={expanded ? 420 : compact ? 168 : 200}
           minWidth={0}
         >
           <ComposedChart
@@ -258,6 +260,7 @@ export default function ShipmentTrend({
       {!compact && count > 0 && table && (
         <VStack id="shipment-daily-data" paddingBlockEnd={6}>
           <DataTable
+            title="Nilai barang terkirim per hari"
             rows={rows.map((d) => ({ ...d, id: d.date }))}
             columns={[
               {
@@ -277,5 +280,13 @@ export default function ShipmentTrend({
         </VStack>
       )}
     </VStack>
+  );
+}
+
+export default function ShipmentTrend(props: Parameters<typeof ShipmentTrendInner>[0]) {
+  return (
+    <Expandable title="Nilai barang terkirim" flush>
+      <ShipmentTrendInner {...props} />
+    </Expandable>
   );
 }

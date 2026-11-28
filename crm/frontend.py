@@ -95,7 +95,9 @@ def encode(value, role):
     if isinstance(value, Order):
         result = dict(id=str(value.pk), number=f'OF-{value.pk:04d}', customer=encode(value.customer, role),
                       sales=person(value.sales), status=value.status, status_label="Menunggu pengiriman" if value.status == "CONFIRMED" else value.get_status_display(),
-                      total=str(value.total_rupiah), cancel_reason=value.cancel_reason)
+                      total=str(value.total_rupiah), cancel_reason=value.cancel_reason,
+                      near_expiry=dict(note=value.near_expiry_note, by=person(value.near_expiry_by) if value.near_expiry_by else None,
+                                       at=encode(value.near_expiry_at, role)) if value.near_expiry_accepted else None)
         if hasattr(value, 'list_lines'):
             result['items'] = [dict(id=str(line.pk), name=line.product.name, sku=line.product.sku,
                                     unit=line.product.unit, quantity=str(line.quantity),
@@ -120,6 +122,7 @@ def encode(value, role):
     if isinstance(value, StockMovement):
         return dict(id=str(value.pk), product=encode(value.product, role), delta=str(value.delta),
                     kind=value.get_kind_display(), actor=person(value.actor), reason=value.reason,
+                    batch_code=value.batch.code if value.batch_id else None,
                     order_id=str(value.order_id) if value.order_id else None,
                     sample_request_id=str(value.sample_request_id) if value.sample_request_id else None,
                     input_quantity=str(value.input_quantity), created_at=encode(value.created_at, role))
@@ -181,7 +184,7 @@ def render_page(request, template, context=None, status=200, screen=None):
     data['assistant_suggestions'] = assistant.SUGGESTIONS.get(role, []) if assistant.enabled() else []
     payload = {'screen': screen or Path(template).stem, 'url': page_url, 'data': data,
                'role': role, 'user': person(user) if user and user.is_authenticated else None,
-               'csrf': get_token(request), 'demo': settings.ONEFLOW_DEMO, 'today': timezone.localdate().isoformat(),
+               'csrf': get_token(request), 'demo': settings.ONEFLOW_DEMO, 'today': timezone.localdate().isoformat(), 'now': timezone.now().isoformat(),
                'messages': [{'text': str(m), 'type': m.tags} for m in get_messages(request)]}
     context.update(frontend_payload=payload, frontend_assets=assets(), role=role,
                    demo_mode=settings.ONEFLOW_DEMO, today_date=timezone.localdate())

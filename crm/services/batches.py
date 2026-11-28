@@ -11,7 +11,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from crm.errors import BusinessError
-from crm.models import InventoryBalance, StockBatch
+from crm.models import InventoryBalance, StockBatch, StockPolicy
 
 
 def fefo_key(batch):
@@ -118,29 +118,52 @@ def resolve_receipt_batch(product, batch_code, received_date, expiry_date):
     return batch
 
 
-def eligible_batches(product, receipt_date):
+def default_shelf_life_days():
+    """Company-wide minimum remaining shelf life, in days."""
+    policy = StockPolicy.objects.filter(pk=1).first()
+    return policy.min_shelf_life_days if policy else StockPolicy.DEFAULT_MIN_SHELF_LIFE_DAYS
+
+
+def shelf_life_days(product):
+    """The rule a product follows: its own, else the company default."""
+    if product.min_shelf_life_days is not None:
+        return product.min_shelf_life_days
+    return default_shelf_life_days()
+
+
+def meets_shelf_life(product, batch, receipt_date, accept_near_expiry=False):
+    """Whether ``batch`` may be handed over on ``receipt_date``.
+
+    A product's own rule needs a dated lot. The company default only judges
+    dated lots: stock recorded before lot dates existed stays usable.
+    """
+    baseline = receipt_date or timezone.localdate()
+    if batch.expiry_date is not None and batch.expiry_date < baseline:
+        return False
+    if accept_near_expiry:
+        return True
+    if product.min_shelf_life_days is not None:
+        return batch.expiry_date is not None and (batch.expiry_date - baseline).days >= product.min_shelf_life_days
+    return batch.expiry_date is None or (batch.expiry_date - baseline).days >= default_shelf_life_days()
+
+
+def eligible_batches(product, receipt_date, accept_near_expiry=False):
     """Active, unexpired lots with free units, FEFO-sorted, filtered by shelf-life policy.
 
     ``receipt_date`` is the day the goods are expected to reach the recipient: an
     order's promised date, or the day a sample is handed over. ``None`` means the
-    day is unknown, and a shelf-life policy refuses to guess.
+    day is unknown, and a product's own shelf-life rule refuses to guess.
+    ``accept_near_expiry`` drops the minimum when the outlet agreed to it; lots
+    past their expiry date are never picked.
     """
     ensure_legacy_batch(product)
-    # A batch the recipient would already receive past its expiry date must never
-    # be picked; compare calendar dates against the promised receipt day.
-    baseline = receipt_date or timezone.localdate()
-    batches = [batch for batch in product.batches.all()
-               if batch.status == StockBatch.Status.ACTIVE and batch.available > 0
-               and (batch.expiry_date is None or batch.expiry_date >= baseline)]
-    batches.sort(key=fefo_key)
-    if product.min_shelf_life_days is None:
-        return batches
-    if receipt_date is None:
+    if product.min_shelf_life_days is not None and receipt_date is None and not accept_near_expiry:
         raise BusinessError(
             'INVALID_INPUT',
             f'{product.sku}: isi estimasi tanggal diterima sebelum konfirmasi karena masa simpan minimum sudah diatur.',
         )
-    minimum = product.min_shelf_life_days
-    return [batch for batch in batches
-            if batch.expiry_date is not None
-            and (batch.expiry_date - receipt_date).days >= minimum]
+    batches = [batch for batch in product.batches.all()
+               if batch.status == StockBatch.Status.ACTIVE and batch.available > 0
+               and meets_shelf_life(product, batch, receipt_date, accept_near_expiry)]
+    batches.sort(key=fefo_key)
+    return batches

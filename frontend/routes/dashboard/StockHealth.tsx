@@ -1,8 +1,9 @@
+import { Expandable } from "@/kit";
 import { cx } from "@/utils/cx";
 import { RollingNumber } from "../../continuity";
 
 /** Product balances by condition on one bar; each part opens that stock filter. */
-export default function StockHealth({
+function StockHealthInner({
   safe,
   low,
   conflict,
@@ -73,5 +74,13 @@ export default function StockHealth({
         ))}
       </div>
     </section>
+  );
+}
+
+export default function StockHealth(props: Parameters<typeof StockHealthInner>[0]) {
+  return (
+    <Expandable title="Kondisi stok" className={props.className}>
+      <StockHealthInner {...props} />
+    </Expandable>
   );
 }

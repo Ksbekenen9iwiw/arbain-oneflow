@@ -287,6 +287,7 @@ export default function Samples() {
               {quantity(d.total)} pengajuan
             </ResultsSummary>
             <DataTable
+              title="Pengajuan sampel"
               rows={d.samples}
               empty={
                 <Empty

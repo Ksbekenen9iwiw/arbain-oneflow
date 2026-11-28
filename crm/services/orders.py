@@ -4,7 +4,7 @@ from django.utils import timezone
 from crm.access import active_sales, customers_for, orders_for, require_role, role_of
 from crm.errors import BusinessError
 from crm.models import BatchAllocation, BatchSwap, InventoryBalance, Order, OrderLine, Product, StockBatch, StockMovement
-from crm.services.batches import eligible_batches, sync_balance
+from crm.services.batches import eligible_batches, meets_shelf_life, sync_balance
 from crm.services.inventory import atomic_write, integer_input
 
 
@@ -82,7 +82,7 @@ def _lines_and_balances(order):
     lines = list(order.lines.select_related('product').order_by('product_id'))
     if not lines:
         raise BusinessError('INVALID_INPUT', 'Pesanan tidak memiliki produk.')
-    balances = {b.product_id: b for b in InventoryBalance.objects.filter(product_id__in=[line.product_id for line in lines]).order_by('product_id')}
+    balances = {b.product_id: b for b in InventoryBalance.objects.select_for_update().filter(product_id__in=[line.product_id for line in lines]).order_by('product_id')}
     for line in lines:
         integer_input(line.quantity, 1)
         if line.product_id not in balances:
@@ -92,7 +92,7 @@ def _lines_and_balances(order):
 
 def _plan_line(line, order):
     """Return the FEFO allocation plan for one line and the leftover shortage."""
-    batches = eligible_batches(line.product, order.expected_receipt_date)
+    batches = eligible_batches(line.product, order.expected_receipt_date, order.near_expiry_accepted)
     plan, remaining = [], line.quantity
     for batch in batches:
         if remaining <= 0:
@@ -119,7 +119,7 @@ def _release_line_allocations(line):
 
 
 @atomic_write
-def confirm_order(actor, order_id, expected_receipt_date=None):
+def confirm_order(actor, order_id, expected_receipt_date=None, accept_near_expiry=False, near_expiry_note=''):
     require_role(actor, {'SALES', 'MANAGER'})
     order = get_object_or_404(orders_for(actor), pk=order_id)
     if order.status == Order.Status.CONFIRMED:
@@ -131,6 +131,13 @@ def confirm_order(actor, order_id, expected_receipt_date=None):
     if expected_receipt_date is not None:
         order.expected_receipt_date = expected_receipt_date
         order.save(update_fields=['expected_receipt_date'])
+    if accept_near_expiry:
+        note = near_expiry_note.strip() if isinstance(near_expiry_note, str) else ''
+        if not note:
+            raise BusinessError('INVALID_INPUT', 'Tulis catatan persetujuan outlet untuk barang mendekati kedaluwarsa.')
+        order.near_expiry_accepted, order.near_expiry_note = True, note
+        order.near_expiry_by, order.near_expiry_at = actor, timezone.now()
+        order.save(update_fields=['near_expiry_accepted', 'near_expiry_note', 'near_expiry_by', 'near_expiry_at'])
     lines, balances = _lines_and_balances(order)
     plans = {}
     for line in lines:
@@ -144,7 +151,8 @@ def confirm_order(actor, order_id, expected_receipt_date=None):
         plan, remaining, batches = _plan_line(line, order)
         if remaining:
             eligible_total = sum(batch.available for batch in batches)
-            raise BusinessError('INSUFFICIENT_STOCK', f'{line.product.sku}: stok yang memenuhi masa simpan/kedaluwarsa {eligible_total} {line.product.unit}, pesanan meminta {line.quantity}.')
+            hint = '' if order.near_expiry_accepted else ' Bila outlet setuju menerima barang mendekati kedaluwarsa, centang persetujuannya.'
+            raise BusinessError('SHELF_LIFE', f'{line.product.sku}: stok yang memenuhi masa simpan {eligible_total} {line.product.unit}, pesanan meminta {line.quantity}.{hint}')
         plans[line.pk] = plan
     for line in lines:
         for batch, quantity in plans[line.pk]:
@@ -247,6 +255,7 @@ def swap_batch(actor, order_id, line_id, from_batch_id, to_batch_id, quantity, r
     reason = reason.strip() if isinstance(reason, str) else ''
     if not reason:
         raise BusinessError('INVALID_INPUT', 'Alasan penggantian batch wajib diisi.')
+    InventoryBalance.objects.select_for_update().filter(product=line.product).first()
     from_batch = get_object_or_404(StockBatch.objects.filter(product=line.product), pk=from_batch_id)
     to_batch = get_object_or_404(StockBatch.objects.filter(product=line.product), pk=to_batch_id)
     if from_batch_id == to_batch_id:
@@ -258,9 +267,8 @@ def swap_batch(actor, order_id, line_id, from_batch_id, to_batch_id, quantity, r
         raise BusinessError('INVALID_STATE', 'Alokasi pada batch asal tidak mencukupi.')
     if to_batch.available < quantity:
         raise BusinessError('INSUFFICIENT_STOCK', f'Batch {to_batch.code} hanya memiliki {to_batch.available} unit bebas.')
-    if line.product.min_shelf_life_days is not None and order.expected_receipt_date:
-        if to_batch.expiry_date is None or (to_batch.expiry_date - order.expected_receipt_date).days < line.product.min_shelf_life_days:
-            raise BusinessError('INVALID_INPUT', f'Batch {to_batch.code} tidak memenuhi masa simpan minimum.')
+    if not meets_shelf_life(line.product, to_batch, order.expected_receipt_date, order.near_expiry_accepted):
+        raise BusinessError('INVALID_INPUT', f'Batch {to_batch.code} tidak memenuhi masa simpan minimum.')
     from_batch.reserved -= quantity
     from_batch.save(update_fields=['reserved'])
     to_batch.reserved += quantity

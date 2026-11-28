@@ -94,14 +94,46 @@ Buka `https://<nama-service>.onrender.com/login/`.
 Kalau berhasil: halaman login tampil rapi (berarti whitenoise dan bundle React
 jalan), dan keempat akun bisa masuk.
 
+## Dipakai mitra tanpa teknisi IT
+
+Bagian ini untuk pemakaian sungguhan, bukan demo. Panduan untuk pengguna ada di
+`docs/panduan-mitra.md`.
+
+**Disiapkan satu kali oleh pengembang, lewat dashboard Render (tanpa shell):**
+
+1. **Paket berbayar.** Di `render.yaml`, `plan: free` pada web membuat layanan
+   tidur setelah 15 menit dan database gratis punya masa berlaku. Ganti kedua
+   `plan` ke paket berbayar terkecil. Cek harga dan fitur cadangan database di
+   halaman harga Render sebelum memutuskan; itu belum diverifikasi di repo ini.
+2. **Matikan mode demo:** `ONEFLOW_DEMO=0`. Dengan nilai `1`, setiap deploy
+   mengembalikan password akun demo.
+3. **Manajer pertama:** isi `ONEFLOW_ADMIN_USERNAME`, `ONEFLOW_ADMIN_PASSWORD`
+   (dan `ONEFLOW_ADMIN_NAME`) di Environment. Saat start, akun Manajer dibuat
+   bila belum ada Manajer aktif. Setelah masuk, ganti password lewat menu
+   **Ganti password**, lalu hapus kedua variabel itu. Cara yang sama dipakai
+   bila semua Manajer kehilangan akses.
+4. **Pembaruan otomatis:** biarkan Auto-Deploy menyala untuk branch `main`.
+   Migrasi database berjalan sendiri saat start.
+5. **Pemantau:** `/healthz/` menjawab 200 hanya bila aplikasi bisa membaca
+   database. Daftarkan alamat itu di layanan pemantau uptime (misalnya
+   UptimeRobot) dengan email mitra dan pengembang sebagai penerima, dan nyalakan
+   notifikasi gagal deploy di Render.
+6. **API AI:** isi `GEMINI_API_KEY`, pasang batas anggaran di Google AI Studio,
+   lalu isi batas dan harga token di menu **Pemakaian AI**.
+
+**Dikerjakan Manajer dari layar OneFlow:** tambah dan nonaktifkan pengguna, buat
+ulang password, unduh cadangan data, atur batas AI.
+
+**Memulihkan dari berkas cadangan** (jarang, oleh pengembang): buka berkas
+`.json.gz`, lalu `python manage.py loaddata <berkas>.json` pada database kosong
+yang sudah dimigrasi. Berkas tidak memuat password; isi `ONEFLOW_ADMIN_*`
+untuk Manajer pertama, lalu buat ulang password pengguna lain dari menu Pengguna.
+Pemulihan ini belum pernah dicoba terhadap PostgreSQL.
+
 ## Mengganti password
 
-Lewat Shell Render (oneflow → Shell), atau hapus database lalu biarkan seed
-berjalan ulang saat deploy berikutnya.
-
-```bash
-python manage.py changepassword nadia
-```
+Tiap pengguna: menu **Ganti password**. Untuk orang lain: Manajer, menu
+**Pengguna** → **Buat ulang password**.
 
 ## Catatan penting
 

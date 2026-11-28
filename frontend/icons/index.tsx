@@ -1329,3 +1329,17 @@ export const IconMoreVertical = rune(
     <circle className="rune-duo-fill" cx="12" cy="19" r="2" />
   </>,
 );
+
+// Drawn for OneFlow: Rune has no expand glyph in duotone.
+export const IconExpand = rune(
+  <>
+    <rect className="rune-duo-fill" x="7" y="7" width="10" height="10" rx="2" />
+    <path
+      d="M15 3H21V9M21 3L14.5 9.5M9 21H3V15M3 21L9.5 14.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </>,
+);

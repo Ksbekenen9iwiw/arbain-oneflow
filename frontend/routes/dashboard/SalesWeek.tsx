@@ -1,3 +1,4 @@
+import { Expandable, useExpanded } from "@/kit";
 import { useState } from "react";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
@@ -9,7 +10,7 @@ const iso = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 /** Visits scheduled per day for the seven days starting today. */
-export default function SalesWeek({
+function SalesWeekInner({
   agenda,
   today,
   className,
@@ -18,6 +19,7 @@ export default function SalesWeek({
   today: string;
   className?: string;
 }) {
+  const expanded = useExpanded();
   const [active, setActive] = useState<number | null>(null);
   const start = new Date(`${today}T00:00:00`);
   const days = Array.from({ length: 7 }, (_, offset) => {
@@ -36,7 +38,8 @@ export default function SalesWeek({
     <section
       aria-label="Jadwal 7 hari"
       className={cx(
-        "flex h-56 min-w-0 flex-1 flex-col gap-3 rounded-2xl bg-background-secondary-default px-4 pt-4 pb-3",
+        "flex min-w-0 flex-1 flex-col gap-3 rounded-2xl bg-background-secondary-default px-4 pt-4 pb-3",
+        expanded ? "h-full min-h-[60vh]" : "h-56",
         className,
       )}
     >
@@ -87,5 +90,13 @@ export default function SalesWeek({
         </ResponsiveContainer>
       </div>
     </section>
+  );
+}
+
+export default function SalesWeek(props: Parameters<typeof SalesWeekInner>[0]) {
+  return (
+    <Expandable title="Jadwal 7 hari" className={props.className}>
+      <SalesWeekInner {...props} />
+    </Expandable>
   );
 }

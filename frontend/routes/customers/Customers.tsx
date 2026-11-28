@@ -47,6 +47,7 @@ export default function Customers() {
       return_to: back || "",
       q: nextQuery,
       sales: d.selected_sales,
+      product: d.selected_product,
       status: d.selected_status,
       view: d.selected_view,
       sort: d.selected_sort,
@@ -189,7 +190,9 @@ export default function Customers() {
       },
     },
   ];
-  const filtered = Boolean(d.query || d.selected_sales || d.selected_status);
+  const filtered = Boolean(
+    d.query || d.selected_sales || d.selected_status || d.selected_product,
+  );
   return (
     <Layout
       height="fill"
@@ -243,11 +246,13 @@ export default function Customers() {
               </FilterRow>
               <Collapsible
                 trigger={
-                  d.selected_sales || d.selected_status
+                  d.selected_sales || d.selected_status || d.selected_product
                     ? "Filter · aktif"
                     : "Filter"
                 }
-                defaultIsOpen={Boolean(d.selected_sales || d.selected_status)}
+                defaultIsOpen={Boolean(
+                  d.selected_sales || d.selected_status || d.selected_product,
+                )}
               >
                 <FilterRow>
                   {manager && (
@@ -273,6 +278,16 @@ export default function Customers() {
                       { value: "pending", label: "Perlu verifikasi" },
                     ]}
                     onChange={(v) => update({ status: v })}
+                  />
+                  <Selector
+                    label="Menerima produk"
+                    width="16rem"
+                    value={d.selected_product}
+                    options={[
+                      { value: "", label: "Semua produk" },
+                      ...d.product_options,
+                    ]}
+                    onChange={(product) => update({ product })}
                   />
                 </FilterRow>
               </Collapsible>
@@ -308,6 +323,7 @@ export default function Customers() {
             </ResultsSummary>
             {d.customers.length ? (
               <Table
+                title="Pelanggan"
                 {...tablePresentation}
                 data={d.customers}
                 columns={columns}

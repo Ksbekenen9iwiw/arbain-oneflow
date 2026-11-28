@@ -17,6 +17,13 @@ export function requestIssue(
         "Periksa koneksi, lalu coba masuk kembali. Isian tetap tersedia.",
       retry: null,
     };
+  if (isWrite && globalThis.navigator?.onLine === false)
+    return {
+      title: "Tindakan ini butuh koneksi",
+      description:
+        "Server harus memeriksa stok terbaru dulu, jadi tidak bisa diantrekan. Coba lagi saat tersambung.",
+      retry: null,
+    };
   return isWrite
     ? {
         title: "Status penyimpanan belum dapat dipastikan",

@@ -48,6 +48,7 @@ class Product(models.Model):
     # reserve until someone fills it in.
     min_shelf_life_days = models.PositiveIntegerField('Minimum sisa masa simpan saat diterima pelanggan (hari)', null=True, blank=True)
     is_active = models.BooleanField('Aktif', default=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         ordering = ['sku']
@@ -72,6 +73,16 @@ class SamplePolicy(models.Model):
     @property
     def is_configured(self):
         return None not in (self.repeat_threshold, self.review_period_days, self.evaluation_days)
+
+
+class StockPolicy(models.Model):
+    """One company-wide row. Products without their own rule follow it."""
+
+    DEFAULT_MIN_SHELF_LIFE_DAYS = 180
+
+    min_shelf_life_days = models.PositiveIntegerField('Minimum sisa masa simpan bawaan (hari)', default=DEFAULT_MIN_SHELF_LIFE_DAYS)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='updated_stock_policies', null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class ProductSupplySetting(models.Model):
@@ -256,6 +267,11 @@ class Order(models.Model):
     total_rupiah = models.PositiveBigIntegerField(default=0)
     expected_receipt_date = models.DateField('Estimasi tanggal diterima pelanggan', null=True, blank=True)
     cancel_reason = models.TextField(blank=True)
+    # The outlet agreed to receive lots below the minimum shelf life.
+    near_expiry_accepted = models.BooleanField('Outlet setuju menerima barang mendekati kedaluwarsa', default=False)
+    near_expiry_note = models.TextField('Catatan persetujuan outlet', blank=True)
+    near_expiry_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='near_expiry_orders', null=True, blank=True)
+    near_expiry_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
@@ -578,3 +594,45 @@ class CompanyReportRow(models.Model):
         ordering = ['report_id', 'page', 'id']
         indexes = [models.Index(fields=['kind', 'sales', 'region'], name='company_row_filters')]
         constraints = [models.UniqueConstraint(fields=['report', 'page', 'source_row', 'kind'], name='unique_company_report_row')]
+
+
+class ClientSubmission(models.Model):
+    """One write sent with a client-generated key, so a retry never runs twice."""
+
+    key = models.CharField(max_length=64, unique=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='client_submissions')
+    path = models.CharField(max_length=300)
+    ok = models.BooleanField(null=True)
+    message = models.TextField(blank=True)
+    result_url = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class AssistantPolicy(models.Model):
+    """One company-wide row: how much Tanya OneFlow may be used, and what a token costs."""
+
+    daily_per_user = models.PositiveIntegerField('Batas pertanyaan per pengguna per hari', default=40)
+    monthly_company = models.PositiveIntegerField('Batas pertanyaan perusahaan per bulan', default=3000)
+    input_price_rupiah = models.PositiveIntegerField('Harga 1 juta token masukan (Rp)', null=True, blank=True)
+    output_price_rupiah = models.PositiveIntegerField('Harga 1 juta token keluaran (Rp)', null=True, blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='updated_assistant_policies', null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class AssistantUsage(models.Model):
+    """Tanya OneFlow use by one person on one day."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='assistant_usage')
+    day = models.DateField()
+    questions = models.PositiveIntegerField(default=0)
+    from_cache = models.PositiveIntegerField(default=0)
+    input_tokens = models.PositiveBigIntegerField(default=0)
+    output_tokens = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-day', 'user_id']
+        constraints = [models.UniqueConstraint(fields=['user', 'day'], name='unique_assistant_usage_day')]

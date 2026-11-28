@@ -1,14 +1,28 @@
 from django.urls import path
 from crm import views
 from crm.views.customers import customer_verify
-from crm.views.assistant import assistant_ask
+from crm.views import team
+from crm.views.assistant import assistant_ask, assistant_policy, assistant_usage_page
+from crm import offline
 from crm.views.company_archive import company_archive, company_archive_file
 
 urlpatterns = [
+    path('sw.js', offline.service_worker, name='service_worker'),
+    path('sync/token/', offline.sync_token, name='sync_token'),
+    path('manifest.webmanifest', offline.manifest, name='manifest'),
     path('', views.today, name='today'),
     path('company-data/', company_archive, name='company_archive'),
     path('company-data/source/<int:report_id>/', company_archive_file, name='company_archive_file'),
     path('assistant/ask/', assistant_ask, name='assistant_ask'),
+    path('team/', team.team, name='team'),
+    path('team/add/', team.team_add, name='team_add'),
+    path('team/backup/', team.team_backup, name='team_backup'),
+    path('team/<int:user_id>/reset/', team.team_reset, name='team_reset'),
+    path('team/<int:user_id>/active/', team.team_active, name='team_active'),
+    path('account/password/', team.account_password, name='account_password'),
+    path('healthz/', team.healthz, name='healthz'),
+    path('assistant/usage/', assistant_usage_page, name='assistant_usage'),
+    path('assistant/policy/', assistant_policy, name='assistant_policy'),
     path('attention/', views.attention_page, name='attention'),
     path('actions/decision/', views.action_decision, name='action_decision'),
     path('targets/', views.target_save, name='target_save'),
@@ -23,6 +37,7 @@ urlpatterns = [
     path('products/<int:product_id>/edit/', views.product_edit, name='product_edit'),
     path('products/<int:product_id>/batches/<int:batch_id>/status/', views.batch_status, name='batch_status'),
     path('stock/', views.stock, name='stock'),
+    path('stock/policy/', views.stock_policy, name='stock_policy'),
     path('stock/<int:product_id>/receive/', views.stock_receive, name='stock_receive'),
     path('stock/<int:product_id>/reconcile/', views.stock_reconcile, name='stock_reconcile'),
     path('orders/', views.orders, name='orders'),

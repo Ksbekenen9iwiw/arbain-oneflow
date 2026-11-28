@@ -20,7 +20,7 @@ from crm.models import (
     StockBatch,
     StockMovement,
 )
-from crm.services.batches import eligible_batches, sync_balance
+from crm.services.batches import eligible_batches, meets_shelf_life, sync_balance
 from crm.services.inventory import atomic_write, integer_input
 
 
@@ -239,7 +239,7 @@ def recommend(request, as_of=None):
 
 def _lines_and_balances(request):
     lines = list(request.lines.select_related('product').order_by('product_id'))
-    balances = {balance.product_id: balance for balance in InventoryBalance.objects.filter(product_id__in=[line.product_id for line in lines])}
+    balances = {balance.product_id: balance for balance in InventoryBalance.objects.select_for_update().filter(product_id__in=[line.product_id for line in lines]).order_by('product_id')}
     if not lines or any(line.product_id not in balances for line in lines):
         raise BusinessError('INVALID_STATE', 'Saldo produk belum tersedia. Periksa gudang.')
     return lines, balances
@@ -384,8 +384,7 @@ def ship_request(actor, request_id):
                 raise BusinessError('INSUFFICIENT_STOCK', f'Batch {batch.code}: fisik {batch.on_hand}, alokasi {allocation.quantity}.')
             if batch.expiry_date is not None and batch.expiry_date < today:
                 raise BusinessError('EXPIRED_BATCH', f'Batch {batch.code} sudah kedaluwarsa.')
-            minimum = line.product.min_shelf_life_days
-            if minimum is not None and (batch.expiry_date is None or (batch.expiry_date - today).days < minimum):
+            if not meets_shelf_life(line.product, batch, today):
                 raise BusinessError('EXPIRED_BATCH', f'Batch {batch.code} tidak lagi memenuhi masa simpan minimum.')
         checked[line.pk] = allocations
     for line in lines:

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { IconBox, IconCalendar, IconFlag, IconHelp, IconLibrary, IconLogout, IconMenu, IconMoon, IconOrders, IconPlus, IconSample, IconSearch, IconSidebar, IconSparkles, IconUsers } from "@/icons";
+import { IconBox, IconCalendar, IconFlag, IconHelp, IconLibrary, IconLock, IconLogout, IconMenu, IconMoon, IconOrders, IconPlus, IconSample, IconSearch, IconShield, IconSidebar, IconSparkles, IconUsers } from "@/icons";
 import { BrandMark } from "../BrandMark";
 import { useContentMotion } from "../motion";
 import { RequestFeedback, usePendingFeedback } from "../RequestFeedback";
@@ -15,6 +15,8 @@ import {
   type IconComponent,
 } from "@/kit";
 import { Drawer } from "@/components/base/drawer/drawer";
+import { SyncDot, SyncPanel, syncSummary, useSync } from "../SyncCenter";
+import { dateLabel } from "../ui";
 import Assistant from "./assistant/Assistant";
 import {
   CommandPalette,
@@ -152,6 +154,13 @@ export default function Shell({ children }: { children: ReactNode }) {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
+  const syncState = useSync();
+  const [isSyncOpen, setIsSyncOpen] = useState(false);
+  useEffect(() => {
+    const open = () => setIsSyncOpen(true);
+    window.addEventListener("oneflow:queued", open);
+    return () => window.removeEventListener("oneflow:queued", open);
+  }, []);
 
   // Successful saves confirm themselves in a toast and never push content down.
   useEffect(() => {
@@ -201,6 +210,14 @@ export default function Shell({ children }: { children: ReactNode }) {
             icon: IconFlag,
             href: "/attention/",
             isSelected: path === "/attention/",
+          },
+          {
+            id: "/assistant/usage/",
+            label: "Pemakaian AI",
+            hint: "Jumlah pertanyaan Tanya OneFlow, batas, dan perkiraan biaya",
+            icon: IconSparkles,
+            href: "/assistant/usage/",
+            isSelected: path.startsWith("/assistant/"),
           },
         ]
       : []),
@@ -372,6 +389,26 @@ export default function Shell({ children }: { children: ReactNode }) {
             )}
           </button>
         )}
+        <button
+          type="button"
+          aria-label={`Antrean sinkron: ${syncSummary(syncState).label}`}
+          onClick={() => {
+            setIsDrawerOpen(false);
+            setIsSyncOpen(true);
+          }}
+          className={cx(
+            "flex h-8 shrink-0 cursor-pointer items-center gap-2 overflow-hidden rounded-full px-3 text-start outline-none",
+            "transition-colors hover:bg-background-tertiary-default focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+            collapsed ? "w-9 justify-center px-0" : "w-full",
+          )}
+        >
+          <SyncDot state={syncState} />
+          {!collapsed && (
+            <span className="text-caption-regular whitespace-nowrap text-text-secondary">
+              {syncSummary(syncState).label}
+            </span>
+          )}
+        </button>
         <nav
           aria-label="Workspace"
           className="flex min-h-0 flex-col gap-1 overflow-y-auto"
@@ -379,6 +416,25 @@ export default function Shell({ children }: { children: ReactNode }) {
           {nav.map((item) => (
             <NavItem key={item.id} {...item} collapsed={collapsed} />
           ))}
+          <SectionLabel collapsed={collapsed}>Akun</SectionLabel>
+          {role === "MANAGER" && (
+            <NavItem
+              label="Pengguna"
+              hint="Tambah pengguna, buat ulang password, unduh cadangan data"
+              icon={IconShield}
+              href="/team/"
+              isSelected={path.startsWith("/team/")}
+              collapsed={collapsed}
+            />
+          )}
+          <NavItem
+            label="Ganti password"
+            hint="Ganti password akunmu sendiri"
+            icon={IconLock}
+            href="/account/password/"
+            isSelected={path === "/account/password/"}
+            collapsed={collapsed}
+          />
           <SectionLabel collapsed={collapsed}>Bantuan</SectionLabel>
           <NavItem
             tourId="help"
@@ -475,6 +531,14 @@ export default function Shell({ children }: { children: ReactNode }) {
               OneFlow
             </a>
             <div className="flex items-center">
+              <button
+                type="button"
+                aria-label={`Antrean sinkron: ${syncSummary(syncState).label}`}
+                onClick={() => setIsSyncOpen(true)}
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+              >
+                <SyncDot state={syncState} className="size-2.5" />
+              </button>
               {canAsk && (
                 <IconButton
                   label="Tanya OneFlow"
@@ -491,6 +555,16 @@ export default function Shell({ children }: { children: ReactNode }) {
               />
             </div>
           </header>
+        )}
+        {(!syncState.online || page.savedAt) && (
+          <div role="status" className="oneflow-enter shrink-0 pb-2">
+            <Banner
+              container="section"
+              status="warning"
+              title={`Tanpa koneksi. Data per ${dateLabel(page.savedAt || page.now, true)}, bisa sudah berubah.`}
+              description="Yang kamu isi disimpan di perangkat dan dikirim saat tersambung. Stok dan status diputuskan server."
+            />
+          </div>
         )}
         {issue ? (
           <div className="shrink-0 pb-2">
@@ -539,6 +613,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      <SyncPanel state={syncState} isOpen={isSyncOpen} onOpenChange={setIsSyncOpen} />
       {isMobile && (
         <Drawer
           placement="start"

@@ -32,6 +32,7 @@ import {
   Banner,
   money,
   quantity,
+  dateLabel,
   Status,
   useResponsive,
   useSearchInput,
@@ -220,14 +221,24 @@ export default function Stock() {
       header={
         <PageHeader
           back={back ? { href: back, label: backLabel(back) } : undefined}
-          title="Produk & stok"
+          title="Produk & stok"
+
           actions={
             manage && (
-              <Button
-                label="Tambah produk"
-                variant="primary"
-                href={stockContext("/products/new/", page.url)}
-              />
+              <HStack gap={2}>
+                {page.role === "MANAGER" && (
+                  <Button
+                    label="Aturan masa simpan"
+                    variant="secondary"
+                    href={stockContext("/stock/policy/", page.url)}
+                  />
+                )}
+                <Button
+                  label="Tambah produk"
+                  variant="primary"
+                  href={stockContext("/products/new/", page.url)}
+                />
+              </HStack>
             )
           }
         />
@@ -244,7 +255,7 @@ export default function Stock() {
               >
                 <Tab value="products" label="Produk" />
                 <Tab value="planning" label="Pengadaan" />
-                <Tab value="movements" label="Riwayat mutasi" />
+                <Tab value="movements" label="Log transaksi" />
               </TabList>
             )}
             {d.selected_tab === "planning" ? (
@@ -263,7 +274,9 @@ export default function Stock() {
                     <StackItem size="fill" style={{ minWidth: "14rem" }}>
                       <TextInput
                         label="Cari produk"
-                        placeholder="Nama produk atau SKU"
+                        placeholder={
+                          manage ? "Nama, SKU, atau kode batch" : "Nama produk atau SKU"
+                        }
                         startIcon="search"
                         hasClear
                         width="100%"
@@ -375,6 +388,43 @@ export default function Stock() {
                   {d.products.length} produk · Siap jual = fisik − dipesan.
                   Kelayakan kirim diperiksa per batch.
                 </ResultsSummary>
+                {d.batch_matches?.length > 0 && (
+                  <VStack gap={2} className="oneflow-panel">
+                    <Text weight="medium">Batch yang cocok</Text>
+                    {d.batch_matches.map((b: Row) => (
+                      <VStack gap={1} key={b.id}>
+                        <Link
+                          href={stockContext(
+                            `/products/${b.product_id}/?section=batches`,
+                            page.url,
+                          )}
+                        >
+                          {b.code} · {b.name}
+                        </Link>
+                        <Text type="supporting">
+                          Sisa {quantity(b.on_hand)} {b.unit} (siap jual{" "}
+                          {quantity(b.available)}) · kedaluwarsa{" "}
+                          {dateLabel(b.expiry_date)}
+                        </Text>
+                        {b.orders.length > 0 && (
+                          <Text type="supporting">
+                            Terkirim ke:{" "}
+                            {b.orders.map((o: Row, i: number) => (
+                              <span key={o.id}>
+                                {i > 0 && ", "}
+                                <Link
+                                  href={withReturn(`/orders/${o.id}/`, page.url)}
+                                >
+                                  {o.customer}
+                                </Link>
+                              </span>
+                            ))}
+                          </Text>
+                        )}
+                      </VStack>
+                    ))}
+                  </VStack>
+                )}
                 {d.stock_filter === "low" && (
                   <Text type="supporting">
                     Produk dengan stok tersedia di bawah batas minimum, termasuk
@@ -393,6 +443,7 @@ export default function Stock() {
                   />
                 )}
                 <ServerTable
+                  title="Produk & stok"
                   rows={d.products}
                   columns={columns}
                   sort={d.selected_sort}
