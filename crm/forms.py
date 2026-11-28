@@ -258,6 +258,25 @@ class StockPolicyForm(forms.Form):
                                              help_text='Berlaku untuk produk yang tidak punya aturan sendiri. 180 hari = 6 bulan.')
 
 
+class TeamMemberForm(forms.Form):
+    full_name = forms.CharField(label='Nama lengkap', max_length=150)
+    username = forms.CharField(label='Nama pengguna untuk masuk', max_length=30, help_text='Huruf kecil, angka, titik, atau garis bawah. Contoh: endri')
+    role = forms.ChoiceField(label='Peran', initial='SALES', choices=[('SALES', 'Sales'), ('WAREHOUSE', 'Gudang'), ('MANAGER', 'Manajer')])
+
+    def clean_full_name(self):
+        return ' '.join(self.cleaned_data['full_name'].split())
+
+    def clean_username(self):
+        import re
+        from django.contrib.auth.models import User
+        username = self.cleaned_data['username'].strip().lower()
+        if not re.fullmatch('[a-z0-9._]{3,30}', username):
+            raise forms.ValidationError('Pakai 3 sampai 30 huruf kecil, angka, titik, atau garis bawah.')
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError('Nama pengguna ini sudah dipakai.')
+        return username
+
+
 class AssistantPolicyForm(forms.Form):
     daily_per_user = StrictIntegerField(label='Batas pertanyaan per pengguna per hari', min_value=0, max_value=100000)
     monthly_company = StrictIntegerField(label='Batas pertanyaan perusahaan per bulan', min_value=0, max_value=10000000)

@@ -11,9 +11,10 @@ services:
   - type: web
     name: oneflow
     runtime: docker
+    # free tidur setelah 15 menit; untuk pemakaian mitra ganti ke paket berbayar (lihat DEPLOY.md).
     plan: free
     region: singapore
-    healthCheckPath: /login/
+    healthCheckPath: /healthz/
     envVars:
       - key: DATABASE_URL
         fromDatabase:

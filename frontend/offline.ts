@@ -21,7 +21,7 @@ export interface QueueItem {
 }
 
 /** These need an answer from the server before anything else may happen. */
-const ONLINE_ONLY = /^\/(orders\/\d+\/confirm|assistant|login|logout)\//;
+const ONLINE_ONLY = /^\/(orders\/\d+\/confirm|assistant|team|account|login|logout)\//;
 export const canQueue = (url: string) => !ONLINE_ONLY.test(url.split("?")[0]);
 
 export const newKey = () =>

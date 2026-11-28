@@ -17,6 +17,8 @@ if os.environ.setdefault('ONEFLOW_DEMO', '0') == '1':
         django('seed_demo', '--show-demo-credentials')
     django('configure_judging_accounts', '--confirm-demo-reset', check=False)
 
+django('ensure_manager', check=False)
+
 os.execvp('gunicorn', ['gunicorn', 'oneflow.wsgi:application',
                       '--bind', f"0.0.0.0:{os.environ.get('PORT', '8000')}",
                       '--workers', os.environ.get('WEB_CONCURRENCY', '2'),

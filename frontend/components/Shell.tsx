@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { IconBox, IconCalendar, IconFlag, IconHelp, IconLibrary, IconLogout, IconMenu, IconMoon, IconOrders, IconPlus, IconSample, IconSearch, IconSidebar, IconSparkles, IconUsers } from "@/icons";
+import { IconBox, IconCalendar, IconFlag, IconHelp, IconLibrary, IconLock, IconLogout, IconMenu, IconMoon, IconOrders, IconPlus, IconSample, IconSearch, IconShield, IconSidebar, IconSparkles, IconUsers } from "@/icons";
 import { BrandMark } from "../BrandMark";
 import { useContentMotion } from "../motion";
 import { RequestFeedback, usePendingFeedback } from "../RequestFeedback";
@@ -416,6 +416,25 @@ export default function Shell({ children }: { children: ReactNode }) {
           {nav.map((item) => (
             <NavItem key={item.id} {...item} collapsed={collapsed} />
           ))}
+          <SectionLabel collapsed={collapsed}>Akun</SectionLabel>
+          {role === "MANAGER" && (
+            <NavItem
+              label="Pengguna"
+              hint="Tambah pengguna, buat ulang password, unduh cadangan data"
+              icon={IconShield}
+              href="/team/"
+              isSelected={path.startsWith("/team/")}
+              collapsed={collapsed}
+            />
+          )}
+          <NavItem
+            label="Ganti password"
+            hint="Ganti password akunmu sendiri"
+            icon={IconLock}
+            href="/account/password/"
+            isSelected={path === "/account/password/"}
+            collapsed={collapsed}
+          />
           <SectionLabel collapsed={collapsed}>Bantuan</SectionLabel>
           <NavItem
             tourId="help"

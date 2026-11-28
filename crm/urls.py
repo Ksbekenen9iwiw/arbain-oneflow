@@ -1,6 +1,7 @@
 from django.urls import path
 from crm import views
 from crm.views.customers import customer_verify
+from crm.views import team
 from crm.views.assistant import assistant_ask, assistant_policy, assistant_usage_page
 from crm import offline
 from crm.views.company_archive import company_archive, company_archive_file
@@ -13,6 +14,13 @@ urlpatterns = [
     path('company-data/', company_archive, name='company_archive'),
     path('company-data/source/<int:report_id>/', company_archive_file, name='company_archive_file'),
     path('assistant/ask/', assistant_ask, name='assistant_ask'),
+    path('team/', team.team, name='team'),
+    path('team/add/', team.team_add, name='team_add'),
+    path('team/backup/', team.team_backup, name='team_backup'),
+    path('team/<int:user_id>/reset/', team.team_reset, name='team_reset'),
+    path('team/<int:user_id>/active/', team.team_active, name='team_active'),
+    path('account/password/', team.account_password, name='account_password'),
+    path('healthz/', team.healthz, name='healthz'),
     path('assistant/usage/', assistant_usage_page, name='assistant_usage'),
     path('assistant/policy/', assistant_policy, name='assistant_policy'),
     path('attention/', views.attention_page, name='attention'),
