@@ -16,7 +16,7 @@ DELETE_ORDER = ['ConsignmentVisitEntry', 'ConsignmentStock', 'ProductCarryDirect
                 'BatchSwap', 'BatchAllocation', 'SampleAllocation', 'SampleFollowUp',
                 'ActionDecision', 'StockMovement', 'SampleRequestLine', 'SampleRequest',
                 'OrderLine', 'Order', 'Activity', 'PurchaseOrder', 'ProductSupplySetting',
-                'SamplePolicy', 'StockPolicy', 'SalesTarget', 'InventoryBalance', 'StockBatch', 'Product', 'Customer']
+                'SamplePolicy', 'StockPolicy', 'ClientSubmission', 'SalesTarget', 'InventoryBalance', 'StockBatch', 'Product', 'Customer']
 
 
 class Command(BaseCommand):

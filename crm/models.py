@@ -48,6 +48,7 @@ class Product(models.Model):
     # reserve until someone fills it in.
     min_shelf_life_days = models.PositiveIntegerField('Minimum sisa masa simpan saat diterima pelanggan (hari)', null=True, blank=True)
     is_active = models.BooleanField('Aktif', default=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         ordering = ['sku']
@@ -593,3 +594,19 @@ class CompanyReportRow(models.Model):
         ordering = ['report_id', 'page', 'id']
         indexes = [models.Index(fields=['kind', 'sales', 'region'], name='company_row_filters')]
         constraints = [models.UniqueConstraint(fields=['report', 'page', 'source_row', 'kind'], name='unique_company_report_row')]
+
+
+class ClientSubmission(models.Model):
+    """One write sent with a client-generated key, so a retry never runs twice."""
+
+    key = models.CharField(max_length=64, unique=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='client_submissions')
+    path = models.CharField(max_length=300)
+    ok = models.BooleanField(null=True)
+    message = models.TextField(blank=True)
+    result_url = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']

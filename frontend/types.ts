@@ -27,5 +27,9 @@ export interface Page {
   csrf: string;
   demo: boolean;
   today: string;
+  /** Server time this page was built. */
+  now?: string;
+  /** Set when the page is a copy kept on the device, shown without a connection. */
+  savedAt?: string;
   messages: { text: string; type: string }[];
 }

@@ -2,9 +2,13 @@ from django.urls import path
 from crm import views
 from crm.views.customers import customer_verify
 from crm.views.assistant import assistant_ask
+from crm import offline
 from crm.views.company_archive import company_archive, company_archive_file
 
 urlpatterns = [
+    path('sw.js', offline.service_worker, name='service_worker'),
+    path('sync/token/', offline.sync_token, name='sync_token'),
+    path('manifest.webmanifest', offline.manifest, name='manifest'),
     path('', views.today, name='today'),
     path('company-data/', company_archive, name='company_archive'),
     path('company-data/source/<int:report_id>/', company_archive_file, name='company_archive_file'),

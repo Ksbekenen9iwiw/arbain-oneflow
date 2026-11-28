@@ -82,7 +82,7 @@ def _lines_and_balances(order):
     lines = list(order.lines.select_related('product').order_by('product_id'))
     if not lines:
         raise BusinessError('INVALID_INPUT', 'Pesanan tidak memiliki produk.')
-    balances = {b.product_id: b for b in InventoryBalance.objects.filter(product_id__in=[line.product_id for line in lines]).order_by('product_id')}
+    balances = {b.product_id: b for b in InventoryBalance.objects.select_for_update().filter(product_id__in=[line.product_id for line in lines]).order_by('product_id')}
     for line in lines:
         integer_input(line.quantity, 1)
         if line.product_id not in balances:
@@ -255,6 +255,7 @@ def swap_batch(actor, order_id, line_id, from_batch_id, to_batch_id, quantity, r
     reason = reason.strip() if isinstance(reason, str) else ''
     if not reason:
         raise BusinessError('INVALID_INPUT', 'Alasan penggantian batch wajib diisi.')
+    InventoryBalance.objects.select_for_update().filter(product=line.product).first()
     from_batch = get_object_or_404(StockBatch.objects.filter(product=line.product), pk=from_batch_id)
     to_batch = get_object_or_404(StockBatch.objects.filter(product=line.product), pk=to_batch_id)
     if from_batch_id == to_batch_id:

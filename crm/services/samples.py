@@ -239,7 +239,7 @@ def recommend(request, as_of=None):
 
 def _lines_and_balances(request):
     lines = list(request.lines.select_related('product').order_by('product_id'))
-    balances = {balance.product_id: balance for balance in InventoryBalance.objects.filter(product_id__in=[line.product_id for line in lines])}
+    balances = {balance.product_id: balance for balance in InventoryBalance.objects.select_for_update().filter(product_id__in=[line.product_id for line in lines]).order_by('product_id')}
     if not lines or any(line.product_id not in balances for line in lines):
         raise BusinessError('INVALID_STATE', 'Saldo produk belum tersedia. Periksa gudang.')
     return lines, balances

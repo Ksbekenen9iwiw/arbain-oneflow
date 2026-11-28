@@ -184,7 +184,7 @@ def render_page(request, template, context=None, status=200, screen=None):
     data['assistant_suggestions'] = assistant.SUGGESTIONS.get(role, []) if assistant.enabled() else []
     payload = {'screen': screen or Path(template).stem, 'url': page_url, 'data': data,
                'role': role, 'user': person(user) if user and user.is_authenticated else None,
-               'csrf': get_token(request), 'demo': settings.ONEFLOW_DEMO, 'today': timezone.localdate().isoformat(),
+               'csrf': get_token(request), 'demo': settings.ONEFLOW_DEMO, 'today': timezone.localdate().isoformat(), 'now': timezone.now().isoformat(),
                'messages': [{'text': str(m), 'type': m.tags} for m in get_messages(request)]}
     context.update(frontend_payload=payload, frontend_assets=assets(), role=role,
                    demo_mode=settings.ONEFLOW_DEMO, today_date=timezone.localdate())

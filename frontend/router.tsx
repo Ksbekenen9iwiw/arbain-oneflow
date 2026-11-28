@@ -1,3 +1,4 @@
+import { canQueue, enqueue, newKey } from "./offline";
 import { flushSync } from "react-dom";
 import {
   createContext,
@@ -105,12 +106,16 @@ export function Router({
       setRequestKind(data ? "write" : "read");
       setRefreshing(!data && url.split("?")[0] === previous.url.split("?")[0]);
       setIssue(null);
+      // Every write carries a key, so sending it again later cannot run it twice.
+      const key = data ? newKey() : "";
       try {
         const response = await fetch(url, {
           method: data ? "POST" : "GET",
           body: data,
           credentials: "same-origin",
-          headers: { "X-OneFlow-Page": "1" },
+          headers: data
+            ? { "X-OneFlow-Page": "1", "X-OneFlow-Key": key }
+            : { "X-OneFlow-Page": "1" },
           signal: abort.signal,
         });
         if (
@@ -126,6 +131,7 @@ export function Router({
         }
         const next: Page = await response.json();
         if (id !== sequence.current) return;
+        next.savedAt = response.headers.get("X-OneFlow-Saved") || undefined;
         next.url =
           new URL(response.url).pathname + new URL(response.url).search;
         if (next.screen === "order_detail" && next.data.detail_url)
@@ -193,7 +199,21 @@ export function Router({
           !(e instanceof DOMException && e.name === "AbortError")
         ) {
           if (optimistic) setPage(currentPage.current);
-          setIssue(requestIssue(url, !!data, replace));
+          const user = currentPage.current.user;
+          if (data && user && canQueue(url)) {
+            // Keep the write on the device; it is sent when the connection returns.
+            await enqueue(
+              {
+                key,
+                url,
+                userId: user.id,
+                basedOn: currentPage.current.now || new Date().toISOString(),
+                label: document.querySelector("h1")?.textContent?.trim() || "Perubahan",
+              },
+              data,
+            );
+            dirty.current = false;
+          } else setIssue(requestIssue(url, !!data, replace));
         }
       } finally {
         if (id === sequence.current) {
@@ -251,6 +271,13 @@ export function Router({
       "",
       location.href,
     );
+    // Offline, the service worker may start the app from the saved home page.
+    if (
+      initial.screen !== "login" &&
+      !navigator.onLine &&
+      initial.url.split("?")[0] !== location.pathname
+    )
+      void load(location.pathname + location.search, undefined, true);
     const beforeUnload = (e: BeforeUnloadEvent) => {
       if (dirty.current || posting.current) {
         e.preventDefault();
