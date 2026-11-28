@@ -43,6 +43,7 @@ export function ProductTractionTab({
         )}
       </HStack>
       <DataTable
+        title="Barang laku vs kurang laku"
         rows={productTraction}
         columns={[
           {

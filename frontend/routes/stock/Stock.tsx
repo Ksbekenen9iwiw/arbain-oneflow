@@ -220,7 +220,8 @@ export default function Stock() {
       header={
         <PageHeader
           back={back ? { href: back, label: backLabel(back) } : undefined}
-          title="Produk & stok"
+          title="Produk & stok"
+
           actions={
             manage && (
               <Button
@@ -393,6 +394,7 @@ export default function Stock() {
                   />
                 )}
                 <ServerTable
+                  title="Produk & stok"
                   rows={d.products}
                   columns={columns}
                   sort={d.selected_sort}

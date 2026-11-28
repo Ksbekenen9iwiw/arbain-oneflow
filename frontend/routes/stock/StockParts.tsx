@@ -66,7 +66,9 @@ export function ServerTable({
   sort,
   update,
   empty,
+  title,
 }: {
+  title: string;
   rows: Row[];
   columns: TableColumn<Row>[];
   sort: string;
@@ -91,6 +93,7 @@ export function ServerTable({
   });
   return rows.length ? (
     <Table
+      title={title}
       {...tablePresentation}
       data={rows}
       columns={columns}
@@ -212,6 +215,7 @@ export function MovementView({
         {singleProduct ? " · Produk ini saja" : ""}
       </ResultsSummary>
       <ServerTable
+        title="Riwayat mutasi"
         rows={d.movements}
         sort={d.selected_sort}
         update={update}

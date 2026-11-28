@@ -373,6 +373,7 @@ export default function CompanyArchive() {
                   </HStack>
                 )}
                 <DataTable
+                  title="Laporan"
                   rows={sourceTab ? data.sources : data.rows}
                   columns={columnsFor(tab)}
                   empty={

@@ -85,6 +85,7 @@ export default function SupplyPlanning({
         {quantity(d.planning.length)} produk
       </ResultsSummary>
       <DataTable
+        title="Pengadaan"
         rows={d.planning}
         empty={
           <Empty

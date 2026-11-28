@@ -453,6 +453,7 @@ export default function Today() {
         />
       </HStack>
       <DataTable
+        title="Rincian per sales"
         rows={m.sales_rows.map((r: Row) => ({
           ...r,
           id: r.sales_id,
@@ -686,6 +687,7 @@ export default function Today() {
             </TabList>
           )}
           <DataTable
+            title="Agenda"
             rows={agendaRows}
             group={
               grouped
@@ -851,6 +853,7 @@ export default function Today() {
             )}
           </HStack>
           <DataTable
+            title="Prioritas pelanggan"
             rows={visibleRecommendations.map((a: Row) => ({ ...a, id: a.key }))}
             empty={
               <Empty
@@ -1025,6 +1028,7 @@ export default function Today() {
             />
           </HStack>
           <DataTable
+            title="Tugas sampel"
             rows={d.sample_tasks || []}
             empty={
               <Empty
@@ -1150,6 +1154,7 @@ export default function Today() {
         </HStack>
       </HStack>
       <DataTable
+        title="Rekap tim"
         rows={teamRows}
         empty={<Empty title="Belum ada Sales aktif" />}
         columns={[
@@ -1622,6 +1627,7 @@ export default function Today() {
                     />
                   </HStack>
                   <DataTable
+                    title="Peringatan pasokan"
                     rows={d.supply_alerts}
                     columns={[
                       {
@@ -1692,6 +1698,7 @@ export default function Today() {
                       />
                     </HStack>
                     <DataTable
+                      title="Stok perlu perhatian"
                       rows={d.stock_attention || []}
                       empty={
                         <Empty

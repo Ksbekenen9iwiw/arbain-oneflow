@@ -308,6 +308,7 @@ export default function Customers() {
             </ResultsSummary>
             {d.customers.length ? (
               <Table
+                title="Pelanggan"
                 {...tablePresentation}
                 data={d.customers}
                 columns={columns}

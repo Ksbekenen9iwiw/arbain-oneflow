@@ -28,6 +28,7 @@ export function OrderTable({
   const { page } = useApp();
   return (
     <DataTable
+      title="Pesanan"
       rows={rows}
       columns={[
         {

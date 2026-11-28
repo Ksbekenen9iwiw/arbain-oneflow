@@ -20,6 +20,7 @@ export function RawMaterialAlertsTab({
       aria-label="Alarm Bahan Baku"
     >
       <DataTable
+        title="Alarm bahan baku"
         rows={rawMaterialAlerts}
         columns={[
           {

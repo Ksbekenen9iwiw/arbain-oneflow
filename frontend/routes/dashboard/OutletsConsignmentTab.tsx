@@ -33,6 +33,7 @@ export function OutletsConsignmentTab({
       aria-label="Stok di Apotek"
     >
       <DataTable
+        title="Stok di apotek"
         rows={consignmentOutlets.map((o: Row) => ({
           ...o,
           id: o.customer_id,

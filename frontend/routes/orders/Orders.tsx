@@ -430,6 +430,7 @@ export default function Orders() {
             </ResultsSummary>
             {d.orders.length ? (
               <Table
+                title="Pesanan"
                 {...tablePresentation}
                 data={d.orders}
                 idKey="id"

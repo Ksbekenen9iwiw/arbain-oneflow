@@ -1,3 +1,4 @@
+import { Expandable, useExpanded } from "@/kit";
 import { useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
@@ -17,13 +18,14 @@ const short = (iso: string) => {
 };
 
 /** Completed visits per week; one stacked series per sales when there are several. */
-export default function VisitWeeks({
+function VisitWeeksInner({
   weeks,
   className,
 }: {
   weeks: Row[];
   className?: string;
 }) {
+  const expanded = useExpanded();
   const [active, setActive] = useState<number | null>(null);
   const people: Row[] = weeks[0]?.by_sales || [];
   const data = weeks.map((week, index) => ({
@@ -41,11 +43,12 @@ export default function VisitWeeks({
     <section
       aria-label="Kunjungan selesai"
       className={cx(
-        "flex h-64 min-w-0 shrink-0 flex-col gap-3 rounded-2xl bg-background-secondary-default px-4 pt-4 pb-3",
+        "flex min-w-0 shrink-0 flex-col gap-3 rounded-2xl bg-background-secondary-default px-4 pt-4 pb-3",
+        expanded ? "h-full min-h-[60vh]" : "h-64",
         className,
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 pe-9">
         <div className="flex flex-col gap-0.5">
           <p className="text-body-medium text-text-secondary">
             Kunjungan selesai · {point ? point.full : `${weeks.length} minggu`}
@@ -118,5 +121,13 @@ export default function VisitWeeks({
         </p>
       )}
     </section>
+  );
+}
+
+export default function VisitWeeks(props: Parameters<typeof VisitWeeksInner>[0]) {
+  return (
+    <Expandable title="Kunjungan selesai" className={props.className}>
+      <VisitWeeksInner {...props} />
+    </Expandable>
   );
 }

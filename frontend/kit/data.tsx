@@ -1,3 +1,4 @@
+import { Expandable } from "./expand";
 import { Fragment, type CSSProperties, type ReactNode } from "react";
 import { IconArrowDown, IconArrowUp, IconArrowUpDown, IconChevronDown } from "@/icons";
 import { cx } from "@/utils/cx";
@@ -67,10 +68,22 @@ export interface TableProps<T> {
   /** Consecutive rows sharing a key sit under one labelled group row. */
   group?: (row: T) => { key: string; label: ReactNode };
   "aria-label"?: string;
+  /** Names the table and lets it open full screen. */
+  title?: string;
 }
 
 /** Desktop table on BoardUI's `bui-table` styles, with sort and row expansion. */
-export function Table<T extends AnyRow>({
+export function Table<T extends AnyRow>({ title, ...props }: TableProps<T>) {
+  return title ? (
+    <Expandable title={title} placement="above">
+      <TableBody {...props} />
+    </Expandable>
+  ) : (
+    <TableBody {...props} />
+  );
+}
+
+function TableBody<T extends AnyRow>({
   data,
   columns,
   idKey = "id",
@@ -78,7 +91,7 @@ export function Table<T extends AnyRow>({
   hasHover,
   group,
   "aria-label": ariaLabel,
-}: TableProps<T>) {
+}: Omit<TableProps<T>, "title">) {
   const sort = plugins?.sort;
   const expansion = plugins?.expansion ?? plugins?.rowExpansion;
   const total = columns.reduce(

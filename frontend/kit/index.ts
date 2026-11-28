@@ -7,3 +7,4 @@ export * from "./data";
 export * from "./structure";
 export { useMediaQuery } from "./hooks";
 export * from "./stat";
+export * from "./expand";

@@ -1,8 +1,9 @@
+import { Expandable } from "@/kit";
 import { cx } from "@/utils/cx";
 import type { Row } from "../../types";
 
 /** Units sold against units still on display, per sales, from the outlet summaries. */
-export default function ConsignmentShare({
+function ConsignmentShareInner({
   outlets,
   className,
 }: {
@@ -33,7 +34,7 @@ export default function ConsignmentShare({
         className,
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 pe-9">
         <div className="flex flex-col gap-0.5">
           <p className="text-body-medium text-text-secondary">Titip jual · terjual</p>
           <p className="text-title-1-medium text-text-primary tabular-nums">
@@ -77,5 +78,13 @@ export default function ConsignmentShare({
         ))}
       </ul>
     </section>
+  );
+}
+
+export default function ConsignmentShare(props: Parameters<typeof ConsignmentShareInner>[0]) {
+  return (
+    <Expandable title="Titip jual" className={props.className}>
+      <ConsignmentShareInner {...props} />
+    </Expandable>
   );
 }

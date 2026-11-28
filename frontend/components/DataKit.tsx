@@ -234,7 +234,10 @@ export function DataTable({
   columns,
   empty,
   group,
+  title,
 }: {
+  /** Names the table and lets it open full screen. */
+  title?: string;
   rows: Row[];
   columns: TableColumn<Row>[];
   empty?: ReactNode;
@@ -268,6 +271,7 @@ export function DataTable({
   return rows.length ? (
     <Table
       {...tablePresentation}
+      title={title}
       data={group ? rows : ordered}
       plugins={group ? undefined : { sort: sorting }}
       group={group}
