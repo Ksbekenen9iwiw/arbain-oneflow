@@ -72,6 +72,7 @@ export default function Orders() {
       return_to: back || "",
       q: nextQuery,
       sales: d.selected_sales,
+      product: d.selected_product,
       status: d.selected_status || "all",
       sort: d.selected_sort,
       page: "",
@@ -247,7 +248,11 @@ export default function Orders() {
     },
   ];
   const filtered = Boolean(
-    d.query || d.selected_sales || d.shipped_from || d.shipped_to,
+    d.query ||
+      d.selected_sales ||
+      d.selected_product ||
+      d.shipped_from ||
+      d.shipped_to,
   );
   return (
     <Layout
@@ -304,13 +309,23 @@ export default function Orders() {
                     <TextInput
                       label="Cari pesanan"
                       startIcon="search"
-                      placeholder="Nomor pesanan atau pelanggan"
+                      placeholder="Nomor pesanan, pelanggan, atau kode batch"
                       value={query}
                       onChange={setQuery}
                       hasClear
                       width="100%"
                     />
                   </StackItem>
+                  <Selector
+                    label="Produk"
+                    width="16rem"
+                    value={d.selected_product}
+                    options={[
+                      { value: "", label: "Semua produk" },
+                      ...d.product_options,
+                    ]}
+                    onChange={(product) => update({ product })}
+                  />
                 </FilterRow>
                 {(manager || shipped) && (
                   <Collapsible

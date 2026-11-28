@@ -20,7 +20,7 @@ from crm.models import (
     StockBatch,
     StockMovement,
 )
-from crm.services.batches import eligible_batches, sync_balance
+from crm.services.batches import eligible_batches, meets_shelf_life, sync_balance
 from crm.services.inventory import atomic_write, integer_input
 
 
@@ -384,8 +384,7 @@ def ship_request(actor, request_id):
                 raise BusinessError('INSUFFICIENT_STOCK', f'Batch {batch.code}: fisik {batch.on_hand}, alokasi {allocation.quantity}.')
             if batch.expiry_date is not None and batch.expiry_date < today:
                 raise BusinessError('EXPIRED_BATCH', f'Batch {batch.code} sudah kedaluwarsa.')
-            minimum = line.product.min_shelf_life_days
-            if minimum is not None and (batch.expiry_date is None or (batch.expiry_date - today).days < minimum):
+            if not meets_shelf_life(line.product, batch, today):
                 raise BusinessError('EXPIRED_BATCH', f'Batch {batch.code} tidak lagi memenuhi masa simpan minimum.')
         checked[line.pk] = allocations
     for line in lines:

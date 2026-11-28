@@ -18,6 +18,19 @@ def activity_due(activity):
 CUSTOMER_PAGE_SIZE = 50
 
 
+def product_filter(params):
+    """Validated ``product`` query parameter: (id as string, options for the picker)."""
+    from django.http import Http404
+    from crm.models import Product
+    selected = params.get('product', '')
+    if selected:
+        if not selected.isascii() or not selected.isdecimal() or len(selected) > 18:
+            raise Http404
+        selected = str(get_object_or_404(Product, pk=selected).pk)
+    options = [{'value': str(pk), 'label': f'{sku} · {name}'} for pk, sku, name in Product.objects.order_by('sku').values_list('pk', 'sku', 'name')]
+    return selected, options
+
+
 def customer_records(actor, params, as_of):
     """Filter the authorized scope, independent of the currently visible results."""
     from django.db.models import Prefetch
@@ -43,6 +56,11 @@ def customer_records(actor, params, as_of):
         records = records.filter(owner_id=selected_sales)
     if query:
         records = records.filter(Q(name__icontains=query) | Q(code__icontains=query) | Q(phone__icontains=query))
+    selected_product, product_options = product_filter(params)
+    if selected_product:
+        # Outlets that hold the product on consignment or were sent it.
+        records = records.filter(Q(consignment_stocks__product_id=selected_product)
+                                 | Q(orders__status__in=['CONFIRMED', 'SHIPPED'], orders__lines__product_id=selected_product)).distinct()
     if status == 'pending':
         records = records.filter(source_pending=True)
     elif status:
@@ -78,6 +96,7 @@ def customer_records(actor, params, as_of):
             'total': result.paginator.count, 'page_size': CUSTOMER_PAGE_SIZE,
             'query': query, 'selected_sales': selected_sales, 'selected_status': status,
             'selected_view': view, 'selected_sort': sort, 'view_counts': counts,
+            'selected_product': selected_product, 'product_options': product_options,
             'sales_options': [{'value': str(s.pk), 'label': s.get_full_name() or s.username} for s in owners] if role_of(actor) == 'MANAGER' else []}
 
 
@@ -218,6 +237,7 @@ ORDER_PAGE_SIZE = 25
 
 def order_records(actor, params):
     from django.db.models import Count
+    from crm.models import OrderLine
     from django.utils.dateparse import parse_date
     from django.http import Http404
     role = role_of(actor)
@@ -247,7 +267,12 @@ def order_records(actor, params):
         number = query.upper().removeprefix('OF-')
         if number.isascii() and number.isdecimal() and len(number) <= 18:
             condition |= Q(pk=int(number))
-        records = records.filter(condition)
+        # A batch code finds the orders holding or shipped from that lot.
+        condition |= Q(lines__allocations__batch__code__iexact=query) | Q(movements__batch__code__iexact=query)
+        records = records.filter(pk__in=orders_for(actor).filter(condition).values('pk'))
+    selected_product, product_options = product_filter(params)
+    if selected_product:
+        records = records.filter(pk__in=OrderLine.objects.filter(product_id=selected_product).values('order_id'))
     start, end, date_error = None, None, ''
     raw_start = params.get('shipped_from', '') if status == 'SHIPPED' else ''
     raw_end = params.get('shipped_to', '') if status == 'SHIPPED' else ''
@@ -286,6 +311,7 @@ def order_records(actor, params):
     return {'orders': list(result.object_list), 'page': result.number, 'pages': result.paginator.num_pages,
             'total': result.paginator.count, 'page_size': ORDER_PAGE_SIZE, 'selected_status': status, 'allowed_statuses': allowed, 'status_counts': counts,
             'query': query, 'selected_sales': sales, 'selected_sort': sort,
+            'selected_product': selected_product, 'product_options': product_options,
             'sales_options': [{'value': str(s.pk), 'label': s.get_full_name() or s.username} for s in sales_options],
             'shipped_from': start, 'shipped_to': end, 'date_error': date_error,
             'date_from_input': raw_start, 'date_to_input': raw_end}

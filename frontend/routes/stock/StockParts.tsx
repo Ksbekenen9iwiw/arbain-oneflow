@@ -3,6 +3,7 @@ import { withReturn } from "../../navigation";
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 // Astryx TablePaginatedTable pattern, with pagination and sorting owned by Django.
 import { useEffect, useState } from "react";
+import { TextInput } from "@/kit";
 import {
   proportional,
   useTableSortable,
@@ -127,8 +128,19 @@ export function MovementView({
     setFrom(d.date_from || "");
     setTo(d.date_to || "");
   }, [revision]);
+  const [search, setSearch] = useState(d.query || "");
+  useEffect(() => setSearch(d.query || ""), [revision]);
+  const exportUrl = () => {
+    const params = new URLSearchParams(page.url.split("?")[1] || "");
+    params.set("tab", "movements");
+    params.set("format", "csv");
+    params.delete("page");
+    if (singleProduct) params.set("product", String(d.selected_product));
+    return "/stock/?" + params;
+  };
   const filtered =
     d.query ||
+    d.selected_actor ||
     d.selected_kind ||
     d.date_from ||
     d.date_to ||
@@ -138,7 +150,7 @@ export function MovementView({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          update({ from, to, page: "1" });
+          update({ from, to, q: search, page: "1" });
         }}
       >
         <VStack gap={3}>
@@ -158,14 +170,31 @@ export function MovementView({
               </StackItem>
             )}
             <Selector
-              label="Jenis mutasi"
+              label="Jenis"
               width="12rem"
               value={d.selected_kind}
               options={[{ value: "", label: "Semua jenis" }, ...d.kind_options]}
               onChange={(kind) => update({ kind, page: "1" })}
             />
+            <Selector
+              label="Pelaku"
+              width="12rem"
+              value={d.selected_actor}
+              options={[{ value: "", label: "Semua orang" }, ...d.actor_options]}
+              onChange={(actor) => update({ actor, page: "1" })}
+            />
           </FilterRow>
           <FilterRow>
+            <StackItem size="fill" style={{ minWidth: "12rem" }}>
+              <TextInput
+                label={singleProduct ? "Cari kode batch" : "Cari produk atau kode batch"}
+                startIcon="search"
+                hasClear
+                width="100%"
+                value={search}
+                onChange={setSearch}
+              />
+            </StackItem>
             <DateInput
               label="Mulai tanggal"
               placeholder="Pilih tanggal"
@@ -184,7 +213,7 @@ export function MovementView({
             />
             <Button
               variant="secondary"
-              label="Terapkan periode"
+              label="Terapkan"
               type="submit"
               isLoading={delayedRefreshing}
               isDisabled={delayedBusy}
@@ -202,6 +231,7 @@ export function MovementView({
                     from: "",
                     to: "",
                     kind: "",
+                    actor: "",
                     product: "",
                     q: "",
                     page: "1",
@@ -211,11 +241,19 @@ export function MovementView({
             : undefined
         }
       >
-        {d.movement_total} mutasi · Waktu Indonesia Barat (WIB)
+        {d.movement_total} catatan · WIB
         {singleProduct ? " · Produk ini saja" : ""}
+        {Number(d.movement_total) > 0 && (
+          <>
+            {" · "}
+            <a href={exportUrl()} download>
+              Unduh CSV
+            </a>
+          </>
+        )}
       </ResultsSummary>
       <ServerTable
-        title="Riwayat mutasi"
+        title="Log transaksi"
         rows={d.movements}
         sort={d.selected_sort}
         update={update}
@@ -223,12 +261,12 @@ export function MovementView({
           <Empty
             kind={filtered ? "search" : "empty"}
             title={
-              filtered ? "Tidak ada mutasi yang cocok" : "Belum ada mutasi"
+              filtered ? "Tidak ada catatan yang cocok" : "Belum ada catatan"
             }
             description={
               filtered
-                ? "Ubah atau reset filter riwayat."
-                : "Barang masuk, koreksi fisik, dan pengiriman akan tercatat di sini."
+                ? "Ubah atau reset filter."
+                : "Barang masuk, pengiriman, koreksi, tukar batch, dan pembatalan tercatat di sini."
             }
           />
         }
@@ -272,20 +310,30 @@ export function MovementView({
             : []),
           {
             key: "kind",
-            header: "Mutasi",
+            header: "Jenis",
             width: proportional(1, { minWidth: 60 }),
             renderCell: (r) => <Text>{r.kind}</Text>,
           },
           {
+            key: "batch",
+            header: "Batch",
+            width: proportional(1, { minWidth: 60 }),
+            renderCell: (r) => (
+              <Text color={r.batch_code ? undefined : "secondary"}>
+                {r.batch_code || "—"}
+              </Text>
+            ),
+          },
+          {
             key: "delta",
-            header: "Selisih",
+            header: "Jumlah",
             sortable: true,
             align: "end",
             width: proportional(1, { minWidth: 60 }),
             renderCell: (r) => (
-              <Text hasTabularNumbers>
-                {BigInt(r.delta) > 0n ? "+" : ""}
-                {quantity(r.delta)} {r.product.unit}
+              <Text hasTabularNumbers color={r.physical ? undefined : "secondary"}>
+                {r.physical && BigInt(r.delta) > 0n ? "+" : ""}
+                {quantity(r.physical ? r.delta : r.quantity)} {r.product.unit}
               </Text>
             ),
           },

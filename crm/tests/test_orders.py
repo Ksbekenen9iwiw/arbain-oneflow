@@ -17,6 +17,7 @@ from crm.tests.factories import make_customer, make_order, make_product, make_us
 
 class OrderTests(TestCase):
     def setUp(self):
+        models.StockPolicy.objects.create(pk=1, min_shelf_life_days=0)  # these cases predate the 180-day default
         self.assertTrue(hasattr(orders, 'create_draft'), 'create_draft not implemented')
         self.sales = make_user('sales', 'SALES')
         self.other = make_user('other', 'SALES')

@@ -13,6 +13,7 @@ from crm.tests.factories import make_customer, make_order, make_product, make_us
 
 class BatchTestsBase(TestCase):
     def setUp(self):
+        models.StockPolicy.objects.create(pk=1, min_shelf_life_days=0)  # these cases predate the 180-day default
         self.warehouse = make_user('warehouse', 'WAREHOUSE')
         self.sales = make_user('sales', 'SALES')
         self.customer = make_customer(self.sales)
@@ -114,7 +115,7 @@ class ShelfLifeTests(BatchTestsBase):
         order.save(update_fields=['expected_receipt_date'])
         with self.assertRaises(BusinessError) as caught:
             orders.confirm_order(self.sales, order.id)
-        self.assertEqual(caught.exception.code, 'INSUFFICIENT_STOCK')
+        self.assertEqual(caught.exception.code, 'SHELF_LIFE')
 
     def test_accepts_batch_meeting_minimum_shelf_life(self):
         self.receive(10, 'OK', self.today, self.today + timedelta(days=40))
@@ -143,7 +144,7 @@ class ShelfLifeTests(BatchTestsBase):
         order.save(update_fields=['expected_receipt_date'])
         with self.assertRaises(BusinessError) as caught:
             orders.confirm_order(self.sales, order.id)
-        self.assertEqual(caught.exception.code, 'INSUFFICIENT_STOCK')
+        self.assertEqual(caught.exception.code, 'SHELF_LIFE')
 
 
 class SwapTests(BatchTestsBase):
@@ -228,7 +229,7 @@ class BatchEligibilityTests(BatchTestsBase):
         self.receive(10, 'LOT-A', self.today, self.today + timedelta(days=30))
         self.client.force_login(self.warehouse)
         payload = self.client.get(f'/products/{self.product.id}/', HTTP_X_ONEFLOW_PAGE='1').json()['data']
-        self.assertIsNone(payload['shelf_life_days'])
+        self.assertEqual((payload['shelf_life_days'], payload['shelf_life_is_default']), ('0', True))
         self.assertEqual([batch['code'] for batch in payload['batches']], ['LOT-A'])
         self.assertEqual(payload['batch_summary'], {'on_hand': '10', 'reserved': '0', 'available': '10', 'ineligible': '0'})
         self.assertEqual(payload['batches'][0]['days_left'] is not None, True)
@@ -283,3 +284,188 @@ class BatchEligibilityTests(BatchTestsBase):
         self.assert_balance_matches_batches()
         order.refresh_from_db()
         self.assertEqual(order.status, 'CONFIRMED')
+
+class DefaultShelfLifeTests(BatchTestsBase):
+    """Company default: lots with under 180 days left are not sold unless the outlet agrees."""
+
+    def setUp(self):
+        super().setUp()
+        models.StockPolicy.objects.all().delete()
+
+    def order(self, quantity=8):
+        return make_order(self.sales, self.customer, self.product, quantity=quantity)
+
+    def test_exactly_180_days_is_allowed(self):
+        self.receive(10, 'EDGE', self.today, self.today + timedelta(days=180))
+        order = self.order()
+        orders.confirm_order(self.sales, order.id)
+        self.assertEqual(order.lines.get().allocations.get().batch.code, 'EDGE')
+
+    def test_under_180_days_is_refused_and_reserves_nothing(self):
+        self.receive(10, 'NEAR', self.today, self.today + timedelta(days=179))
+        order = self.order()
+        with self.assertRaises(BusinessError) as caught:
+            orders.confirm_order(self.sales, order.id)
+        self.assertEqual(caught.exception.code, 'SHELF_LIFE')
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.near_expiry_accepted), ('DRAFT', False))
+        self.assertEqual(models.StockBatch.objects.get(code='NEAR').reserved, 0)
+
+    def test_receipt_date_moves_the_boundary(self):
+        self.receive(10, 'LOT', self.today, self.today + timedelta(days=185))
+        with self.assertRaises(BusinessError):
+            orders.confirm_order(self.sales, self.order().id, self.today + timedelta(days=10))
+
+    def test_fresh_lot_is_picked_over_nearer_one(self):
+        self.receive(10, 'NEAR', self.today, self.today + timedelta(days=60))
+        self.receive(10, 'FRESH', self.today, self.today + timedelta(days=365))
+        order = self.order()
+        orders.confirm_order(self.sales, order.id)
+        self.assertEqual(order.lines.get().allocations.get().batch.code, 'FRESH')
+
+    def test_outlet_consent_allows_near_expiry_and_is_recorded(self):
+        self.receive(10, 'NEAR', self.today, self.today + timedelta(days=60))
+        order = self.order()
+        orders.confirm_order(self.sales, order.id, None, True, 'Bu Ani setuju, habis dalam sebulan')
+        order.refresh_from_db()
+        self.assertEqual(order.status, 'CONFIRMED')
+        self.assertEqual((order.near_expiry_accepted, order.near_expiry_by, order.near_expiry_note),
+                         (True, self.sales, 'Bu Ani setuju, habis dalam sebulan'))
+        self.assertIsNotNone(order.near_expiry_at)
+        orders.ship_order(self.warehouse, order.id)
+
+    def test_consent_needs_a_note(self):
+        self.receive(10, 'NEAR', self.today, self.today + timedelta(days=60))
+        order = self.order()
+        with self.assertRaises(BusinessError):
+            orders.confirm_order(self.sales, order.id, None, True, '  ')
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.near_expiry_accepted), ('DRAFT', False))
+
+    def test_consent_never_releases_expired_stock(self):
+        self.receive(10, 'DEAD', self.today - timedelta(days=30), self.today - timedelta(days=1))
+        with self.assertRaises(BusinessError):
+            orders.confirm_order(self.sales, self.order().id, None, True, 'Outlet setuju')
+
+    def test_undated_legacy_stock_stays_sellable(self):
+        self.receive(10, '')
+        order = self.order()
+        orders.confirm_order(self.sales, order.id)
+        order.refresh_from_db()
+        self.assertEqual(order.status, 'CONFIRMED')
+
+    def test_product_rule_overrides_default(self):
+        self.product.min_shelf_life_days = 30
+        self.product.save(update_fields=['min_shelf_life_days'])
+        self.receive(10, 'LOT', self.today, self.today + timedelta(days=60))
+        orders.confirm_order(self.sales, self.order().id, self.today)
+
+    def test_manager_changes_default(self):
+        manager = make_user('manager', 'MANAGER')
+        self.client.force_login(self.sales)
+        self.assertEqual(self.client.post('/stock/policy/', {'min_shelf_life_days': 90}).status_code, 403)
+        self.client.force_login(manager)
+        self.assertEqual(self.client.post('/stock/policy/', {'min_shelf_life_days': 90}).status_code, 302)
+        self.receive(10, 'LOT', self.today, self.today + timedelta(days=100))
+        orders.confirm_order(self.sales, self.order().id)
+
+    def test_confirm_endpoint_carries_consent(self):
+        self.receive(10, 'NEAR', self.today, self.today + timedelta(days=60))
+        order = self.order()
+        self.client.force_login(self.sales)
+        self.client.post(f'/orders/{order.id}/confirm/', {'accept_near_expiry': 'on'})
+        order.refresh_from_db()
+        self.assertEqual(order.status, 'DRAFT')
+        self.client.post(f'/orders/{order.id}/confirm/', {'accept_near_expiry': 'on', 'near_expiry_note': 'Outlet setuju'})
+        order.refresh_from_db()
+        self.assertEqual(order.status, 'CONFIRMED')
+        payload = self.client.get(f'/orders/{order.id}/', HTTP_X_ONEFLOW_PAGE='1').json()['data']
+        self.assertEqual(payload['order']['near_expiry']['note'], 'Outlet setuju')
+
+    def test_batch_list_flags_near_expiry(self):
+        self.receive(10, 'NEAR', self.today, self.today + timedelta(days=60))
+        self.receive(10, 'FRESH', self.today, self.today + timedelta(days=365))
+        self.client.force_login(self.warehouse)
+        payload = self.client.get(f'/products/{self.product.id}/', HTTP_X_ONEFLOW_PAGE='1').json()['data']
+        self.assertEqual({b['code']: b['is_near_expiry'] for b in payload['batches']}, {'NEAR': True, 'FRESH': False})
+        self.assertEqual(payload['batch_summary']['ineligible'], '10')
+
+
+class SearchAndLogTests(BatchTestsBase):
+    def setUp(self):
+        super().setUp()
+        self.manager = make_user('manager', 'MANAGER')
+        self.receive(10, 'LOT-771', self.today, self.today + timedelta(days=365))
+        self.other = make_product(sku='LAIN01')
+        inventory.receive_stock(self.warehouse, self.other.id, 10, 'Masuk', uuid4(), batch_code='ZED-9',
+                                received_date=self.today, expiry_date=self.today + timedelta(days=365))
+        self.shipped = make_order(self.sales, self.customer, self.product, quantity=3)
+        orders.confirm_order(self.sales, self.shipped.id)
+        orders.ship_order(self.warehouse, self.shipped.id)
+        self.cancelled = make_order(self.sales, self.customer, self.other, quantity=2)
+        orders.confirm_order(self.sales, self.cancelled.id)
+        orders.cancel_order(self.sales, self.cancelled.id, 'Outlet batal')
+
+    def get(self, url, user=None):
+        self.client.force_login(user or self.warehouse)
+        return self.client.get(url, HTTP_X_ONEFLOW_PAGE='1')
+
+    def test_stock_search_by_batch_code(self):
+        data = self.get('/stock/?q=lot-771').json()['data']
+        self.assertEqual([p['sku'] for p in data['products']], [self.product.sku])
+        match = data['batch_matches'][0]
+        self.assertEqual((match['code'], match['available']), ('LOT-771', '7'))
+        self.assertEqual(match['orders'][0]['id'], str(self.shipped.id))
+
+    def test_sales_stock_search_hides_batches(self):
+        data = self.get('/stock/?q=lot-771', self.sales).json()['data']
+        self.assertEqual((data['products'], data['batch_matches']), ([], []))
+
+    def test_orders_filter_by_product_and_batch(self):
+        data = self.get(f'/orders/?status=all&product={self.other.id}', self.manager).json()['data']
+        self.assertEqual([o['id'] for o in data['orders']], [str(self.cancelled.id)])
+        data = self.get('/orders/?status=all&q=LOT-771', self.manager).json()['data']
+        self.assertEqual([o['id'] for o in data['orders']], [str(self.shipped.id)])
+        self.assertEqual(self.get('/orders/?product=999999', self.manager).status_code, 404)
+
+    def test_customers_filter_by_product(self):
+        elsewhere = make_customer(self.sales, code='CUS002')
+        data = self.get(f'/customers/?product={self.product.id}', self.manager).json()['data']
+        names = [c['name'] for c in data['customers']]
+        self.assertIn(self.customer.name, names)
+        self.assertNotIn(elsewhere.name, names)
+
+    def test_log_merges_movements_and_cancellations(self):
+        data = self.get('/stock/?tab=movements', self.manager).json()['data']
+        kinds = [row['kind'] for row in data['movements']]
+        self.assertEqual(kinds.count('Pembatalan pesanan'), 1)
+        self.assertEqual(kinds.count('Pengiriman'), 1)
+        self.assertEqual(kinds.count('Barang masuk'), 2)
+        shipment = next(row for row in data['movements'] if row['kind'] == 'Pengiriman')
+        self.assertEqual((shipment['batch_code'], shipment['delta'], shipment['order_id']), ('LOT-771', '-3', str(self.shipped.id)))
+
+    def test_log_filters(self):
+        data = self.get('/stock/?tab=movements&q=zed-9').json()['data']
+        self.assertEqual([row['batch_code'] for row in data['movements']], ['ZED-9'])
+        data = self.get('/stock/?tab=movements&kind=CANCEL').json()['data']
+        self.assertEqual([(row['kind'], row['quantity'], row['reason']) for row in data['movements']], [('Pembatalan pesanan', '2', 'Outlet batal')])
+        data = self.get(f'/stock/?tab=movements&actor={self.sales.id}').json()['data']
+        self.assertEqual([row['kind'] for row in data['movements']], ['Pembatalan pesanan'])
+
+    def test_log_includes_batch_swap(self):
+        self.receive(10, 'LOT-772', self.today, self.today + timedelta(days=400))
+        order = make_order(self.sales, self.customer, self.product, quantity=2)
+        orders.confirm_order(self.sales, order.id)
+        line = order.lines.get()
+        source, target = models.StockBatch.objects.get(code='LOT-771'), models.StockBatch.objects.get(code='LOT-772')
+        orders.swap_batch(self.warehouse, order.id, line.id, source.id, target.id, 2, 'Kemasan rusak')
+        data = self.get('/stock/?tab=movements&kind=SWAP').json()['data']
+        self.assertEqual([(row['batch_code'], row['quantity']) for row in data['movements']], [('LOT-771 → LOT-772', '2')])
+
+    def test_log_is_closed_to_sales_and_exports_csv(self):
+        self.assertEqual(self.get('/stock/?tab=movements', self.sales).status_code, 403)
+        response = self.get('/stock/?tab=movements&format=csv', self.manager)
+        self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
+        body = response.content.decode('utf-8-sig')
+        self.assertIn('LOT-771', body)
+        self.assertEqual(len(body.strip().splitlines()), 5)

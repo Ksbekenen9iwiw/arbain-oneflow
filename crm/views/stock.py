@@ -63,7 +63,50 @@ def product_edit(request, product_id):
 @login_required
 @require_GET
 def stock(request):
-    return page(request, 'crm/stock.html', stock_records(request.user, request.GET))
+    context = stock_records(request.user, request.GET)
+    if 'export' in context:
+        return _movement_csv(context['export'])
+    return page(request, 'crm/stock.html', context)
+
+
+def _movement_csv(movements):
+    import csv
+
+    from django.http import HttpResponse
+    from django.utils import timezone
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="log-transaksi-{timezone.localdate().isoformat()}.csv"'
+    response.write('﻿')
+    writer = csv.writer(response)
+    writer.writerow(['Waktu', 'Jenis', 'SKU', 'Produk', 'Batch', 'Perubahan stok fisik', 'Jumlah', 'Pelaku', 'Dokumen', 'Keterangan'])
+    for row in movements:
+        document = f"OF-{int(row['order_id']):04d}" if row['order_id'] else (f"SP-{int(row['sample_request_id']):04d}" if row['sample_request_id'] else '')
+        # A leading apostrophe stops a spreadsheet from running free text as a formula.
+        reason = "'" + row['reason'] if row['reason'][:1] in ('=', '+', '-', '@') else row['reason']
+        writer.writerow([timezone.localtime(row['created_at']).strftime('%Y-%m-%d %H:%M'), row['kind'], row['product']['sku'],
+                         row['product']['name'], row['batch_code'] or '', row['delta'] if row['physical'] else '',
+                         row['quantity'], row['actor']['name'], document, reason])
+    return response
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def stock_policy(request):
+    require_role(request.user, {'MANAGER'})
+    from crm.forms import StockPolicyForm
+    from crm.models import StockPolicy
+    from crm.services.batches import default_shelf_life_days
+
+    form = StockPolicyForm(request.POST or None, initial={'min_shelf_life_days': default_shelf_life_days()})
+    if request.method == 'POST' and form.is_valid():
+        StockPolicy.objects.update_or_create(pk=1, defaults={'min_shelf_life_days': form.cleaned_data['min_shelf_life_days'], 'updated_by': request.user})
+        messages.success(request, 'Aturan masa simpan tersimpan.')
+        return redirect(stock_return_url(request))
+    return page(request, 'crm/form.html', {
+        'form': form, 'heading': 'Aturan masa simpan', 'submit_label': 'Simpan aturan', 'back_url': stock_return_url(request),
+        'help_text': 'Batch dengan sisa masa simpan di bawah angka ini tidak dipakai untuk pesanan dan sampel, kecuali outlet menyetujuinya saat pesanan dikonfirmasi.',
+    }, status=400 if request.method == 'POST' else 200)
 
 
 @login_required

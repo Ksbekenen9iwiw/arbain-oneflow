@@ -129,7 +129,18 @@ def _order_context(request, order):
             )
     swaps.sort(key=lambda swap: (swap['created_at'], swap['id']), reverse=True)
     can_swap = role in {'WAREHOUSE', 'MANAGER'} and order.status == 'CONFIRMED' and bool(lines)
+    # Lines that only fit if the outlet accepts lots below the minimum shelf life.
+    near_expiry_lines = []
+    if order.status == 'DRAFT':
+        from crm.services.batches import meets_shelf_life
+        for line in lines:
+            usable = [b for b in line.product.batches.all() if b.status == 'ACTIVE' and b.available > 0]
+            fresh = sum(b.available for b in usable if meets_shelf_life(line.product, b, order.expected_receipt_date))
+            unexpired = sum(b.available for b in usable if meets_shelf_life(line.product, b, order.expected_receipt_date, True))
+            if fresh < line.quantity <= unexpired:
+                near_expiry_lines.append(line.product.name)
     return {'order': order, 'lines': lines, 'line_checks': checks, 'blockers': blockers,
+            'near_expiry_lines': near_expiry_lines,
             'back_url': order_return_url(request), 'detail_url': order_detail_url(request, order.pk),
             'can_confirm': role in {'SALES', 'MANAGER'} and order.status == 'DRAFT',
             'can_ship': role in {'WAREHOUSE', 'MANAGER'} and order.status == 'CONFIRMED',
@@ -175,7 +186,9 @@ def order_confirm(request, order_id):
         context.update(confirm_form=form, dialog='confirm')
         return page(request, 'crm/order_detail.html', context, status=400)
     extra = {'confirm_form': form, 'dialog': 'confirm'}
-    return _transition(request, order_id, confirm_order, form.cleaned_data['expected_receipt_date'], extra=extra)
+    fields = form.cleaned_data
+    return _transition(request, order_id, confirm_order, fields['expected_receipt_date'],
+                       fields['accept_near_expiry'], fields['near_expiry_note'], extra=extra)
 
 
 @login_required

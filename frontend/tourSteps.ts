@@ -146,7 +146,7 @@ export function tourSteps(role: Page["role"]): TourStep[] {
       description:
         role === "SALES"
           ? "Buka produk untuk memeriksa jumlah tersedia, kondisi stok, dan harga satuan sebelum menawarkan ke pelanggan."
-          : "Buka produk untuk memeriksa batch dan kedaluwarsa. Tab Pengadaan menjelaskan kapan dan berapa banyak perlu ditambahkan; Riwayat mutasi menelusuri perubahan stok.",
+          : "Buka produk untuk memeriksa batch dan kedaluwarsa. Tab Pengadaan menjelaskan kapan dan berapa banyak perlu ditambahkan; Log transaksi menelusuri perubahan stok.",
       action: "Klik nama produk yang disorot.",
       destination: "product_detail",
       empty:
