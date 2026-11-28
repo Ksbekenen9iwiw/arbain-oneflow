@@ -25,6 +25,7 @@ import { playMotion } from "./motion";
 const loaders = {
   company_archive: () => import("./routes/company/CompanyArchive"),
   attention: () => import("./routes/dashboard/Attention"),
+  assistant_usage: () => import("./routes/dashboard/AssistantUsage"),
   login: () => import("./routes/auth/Login"),
   today: () => import("./routes/dashboard/Today"),
   customers: () => import("./routes/customers/Customers"),
@@ -45,6 +46,7 @@ const loaders = {
 
 const CompanyArchive = lazy(loaders.company_archive);
 const Attention = lazy(loaders.attention);
+const AssistantUsage = lazy(loaders.assistant_usage);
 const Login = lazy(loaders.login);
 const Today = lazy(loaders.today);
 const Customers = lazy(loaders.customers);
@@ -213,6 +215,9 @@ function App() {
       break;
     case "attention":
       content = <Attention />;
+      break;
+    case "assistant_usage":
+      content = <AssistantUsage />;
       break;
     case "today":
       content = <Today />;

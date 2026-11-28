@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from crm.models import (
-    ClientSubmission, Product, ProductSupplySetting, SamplePolicy, StockMovement, StockPolicy,
+    AssistantPolicy, ClientSubmission, Product, ProductSupplySetting, SamplePolicy, StockMovement, StockPolicy,
 )
 
 KEY = re.compile(r'[A-Za-z0-9-]{16,64}')
@@ -109,6 +109,7 @@ class OfflineSubmissions:
             'supply_settings': lambda: ProductSupplySetting.objects.filter(product_id=view_kwargs['product_id']),
             'stock_policy': lambda: StockPolicy.objects.filter(pk=1),
             'sample_policy': lambda: SamplePolicy.objects.all(),
+            'assistant_policy': lambda: AssistantPolicy.objects.filter(pk=1),
         }.get(name)
         if edited and edited().filter(updated_at__gt=based_on).exists():
             return JsonResponse({'message': (

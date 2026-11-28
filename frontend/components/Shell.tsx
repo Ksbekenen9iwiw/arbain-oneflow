@@ -211,6 +211,14 @@ export default function Shell({ children }: { children: ReactNode }) {
             href: "/attention/",
             isSelected: path === "/attention/",
           },
+          {
+            id: "/assistant/usage/",
+            label: "Pemakaian AI",
+            hint: "Jumlah pertanyaan Tanya OneFlow, batas, dan perkiraan biaya",
+            icon: IconSparkles,
+            href: "/assistant/usage/",
+            isSelected: path.startsWith("/assistant/"),
+          },
         ]
       : []),
     ...(role !== "WAREHOUSE"

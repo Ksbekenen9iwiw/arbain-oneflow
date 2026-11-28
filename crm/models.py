@@ -610,3 +610,29 @@ class ClientSubmission(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class AssistantPolicy(models.Model):
+    """One company-wide row: how much Tanya OneFlow may be used, and what a token costs."""
+
+    daily_per_user = models.PositiveIntegerField('Batas pertanyaan per pengguna per hari', default=40)
+    monthly_company = models.PositiveIntegerField('Batas pertanyaan perusahaan per bulan', default=3000)
+    input_price_rupiah = models.PositiveIntegerField('Harga 1 juta token masukan (Rp)', null=True, blank=True)
+    output_price_rupiah = models.PositiveIntegerField('Harga 1 juta token keluaran (Rp)', null=True, blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='updated_assistant_policies', null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class AssistantUsage(models.Model):
+    """Tanya OneFlow use by one person on one day."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='assistant_usage')
+    day = models.DateField()
+    questions = models.PositiveIntegerField(default=0)
+    from_cache = models.PositiveIntegerField(default=0)
+    input_tokens = models.PositiveBigIntegerField(default=0)
+    output_tokens = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-day', 'user_id']
+        constraints = [models.UniqueConstraint(fields=['user', 'day'], name='unique_assistant_usage_day')]

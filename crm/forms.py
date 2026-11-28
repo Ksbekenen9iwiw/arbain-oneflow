@@ -258,6 +258,14 @@ class StockPolicyForm(forms.Form):
                                              help_text='Berlaku untuk produk yang tidak punya aturan sendiri. 180 hari = 6 bulan.')
 
 
+class AssistantPolicyForm(forms.Form):
+    daily_per_user = StrictIntegerField(label='Batas pertanyaan per pengguna per hari', min_value=0, max_value=100000)
+    monthly_company = StrictIntegerField(label='Batas pertanyaan perusahaan per bulan', min_value=0, max_value=10000000)
+    input_price_rupiah = StrictIntegerField(label='Harga 1 juta token masukan (Rp)', min_value=0, max_value=10**9, required=False,
+                                            help_text='Kosongkan bila belum tahu; perkiraan biaya tidak ditampilkan.')
+    output_price_rupiah = StrictIntegerField(label='Harga 1 juta token keluaran (Rp)', min_value=0, max_value=10**9, required=False)
+
+
 class BatchSwapForm(forms.Form):
     line_id = forms.ChoiceField(label='Baris pesanan')
     from_batch_id = forms.ChoiceField(label='Batch asal')
